@@ -39,44 +39,44 @@ export default function Auth() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[var(--navy)] flex items-center justify-center">
-        <div className="text-white">Loading...</div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-foreground">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[var(--navy)] text-white flex items-center justify-center p-6">
+    <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-6">
       <ThemeToggle />
       
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center space-x-3 mb-4">
-            <div className="w-12 h-12 bg-[var(--orange-primary)] rounded-lg flex items-center justify-center">
-              <TrendingUp className="h-6 w-6 text-white" />
+            <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
+              <TrendingUp className="h-6 w-6 text-primary-foreground" />
             </div>
-            <h1 className="text-2xl font-bold">ProfitPath</h1>
+            <h1 className="text-2xl font-bold text-foreground">ProfitPath</h1>
           </div>
-          <p className="text-slate-400">Welcome back to your FBA dashboard</p>
+          <p className="text-muted-foreground">Welcome back to your FBA dashboard</p>
         </div>
 
-        <Card className="bg-[var(--charcoal)] border-[var(--slate-custom)]">
+        <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle className="text-center text-white">Sign In to Your Account</CardTitle>
+            <CardTitle className="text-center text-card-foreground">Sign In to Your Account</CardTitle>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="signin" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 bg-slate-800 mb-6">
+              <TabsList className="grid w-full grid-cols-2 bg-muted mb-6">
                 <TabsTrigger 
                   value="signin" 
-                  className="data-[state=active]:bg-[var(--orange-primary)] data-[state=active]:text-white"
+                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                 >
                   Sign In
                 </TabsTrigger>
                 <TabsTrigger 
                   value="signup"
-                  className="data-[state=active]:bg-[var(--orange-primary)] data-[state=active]:text-white"
+                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                 >
                   Sign Up
                 </TabsTrigger>
@@ -85,33 +85,33 @@ export default function Auth() {
               <TabsContent value="signin" className="space-y-4">
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email" className="text-white">Email</Label>
+                    <Label htmlFor="email" className="text-card-foreground">Email</Label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
+                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                       <Input
                         id="email"
                         type="email"
                         placeholder="Enter your email"
-                        className="pl-10 bg-slate-800 border-slate-600 text-white focus:ring-[var(--orange-primary)] focus:border-[var(--orange-primary)]"
+                        className="pl-10 bg-input border-border text-card-foreground focus:ring-primary focus:border-primary"
                       />
                     </div>
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="password" className="text-white">Password</Label>
+                    <Label htmlFor="password" className="text-card-foreground">Password</Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
+                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                       <Input
                         id="password"
                         type="password"
                         placeholder="Enter your password"
-                        className="pl-10 bg-slate-800 border-slate-600 text-white focus:ring-[var(--orange-primary)] focus:border-[var(--orange-primary)]"
+                        className="pl-10 bg-input border-border text-card-foreground focus:ring-primary focus:border-primary"
                       />
                     </div>
                   </div>
                   
                   <Button 
-                    className="w-full bg-[var(--orange-primary)] hover:bg-[var(--orange-light)] text-white"
+                    className="w-full bg-primary hover:bg-[var(--orange-hover)] text-primary-foreground"
                     disabled={isLoading}
                   >
                     Sign In
@@ -122,46 +122,46 @@ export default function Auth() {
               <TabsContent value="signup" className="space-y-4">
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name" className="text-white">Full Name</Label>
+                    <Label htmlFor="name" className="text-card-foreground">Full Name</Label>
                     <div className="relative">
-                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
+                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                       <Input
                         id="name"
                         type="text"
                         placeholder="Enter your full name"
-                        className="pl-10 bg-slate-800 border-slate-600 text-white focus:ring-[var(--orange-primary)] focus:border-[var(--orange-primary)]"
+                        className="pl-10 bg-input border-border text-card-foreground focus:ring-primary focus:border-primary"
                       />
                     </div>
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="signup-email" className="text-white">Email</Label>
+                    <Label htmlFor="signup-email" className="text-card-foreground">Email</Label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
+                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                       <Input
                         id="signup-email"
                         type="email"
                         placeholder="Enter your email"
-                        className="pl-10 bg-slate-800 border-slate-600 text-white focus:ring-[var(--orange-primary)] focus:border-[var(--orange-primary)]"
+                        className="pl-10 bg-input border-border text-card-foreground focus:ring-primary focus:border-primary"
                       />
                     </div>
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="signup-password" className="text-white">Password</Label>
+                    <Label htmlFor="signup-password" className="text-card-foreground">Password</Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
+                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                       <Input
                         id="signup-password"
                         type="password"
                         placeholder="Create a password"
-                        className="pl-10 bg-slate-800 border-slate-600 text-white focus:ring-[var(--orange-primary)] focus:border-[var(--orange-primary)]"
+                        className="pl-10 bg-input border-border text-card-foreground focus:ring-primary focus:border-primary"
                       />
                     </div>
                   </div>
                   
                   <Button 
-                    className="w-full bg-[var(--orange-primary)] hover:bg-[var(--orange-light)] text-white"
+                    className="w-full bg-primary hover:bg-[var(--orange-hover)] text-primary-foreground"
                     disabled={isLoading}
                   >
                     Create Account
@@ -172,16 +172,16 @@ export default function Auth() {
             
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-600" />
+                <div className="w-full border-t border-border" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-[var(--charcoal)] text-slate-400">Or continue with</span>
+                <span className="px-2 bg-card text-muted-foreground">Or continue with</span>
               </div>
             </div>
             
             <Button
               variant="outline"
-              className="w-full bg-slate-800 border-slate-600 text-white hover:bg-slate-700"
+              className="w-full bg-card border-border text-card-foreground hover:bg-muted"
               onClick={handleGoogleSignIn}
               disabled={isLoading}
             >

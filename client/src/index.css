@@ -3,63 +3,67 @@
 @tailwind utilities;
 
 :root {
-  --background: hsl(0, 0%, 100%);
-  --foreground: hsl(20, 14.3%, 4.1%);
-  --muted: hsl(60, 4.8%, 95.9%);
-  --muted-foreground: hsl(25, 5.3%, 44.7%);
-  --popover: hsl(0, 0%, 100%);
-  --popover-foreground: hsl(20, 14.3%, 4.1%);
-  --card: hsl(0, 0%, 100%);
-  --card-foreground: hsl(20, 14.3%, 4.1%);
-  --border: hsl(20, 5.9%, 90%);
-  --input: hsl(20, 5.9%, 90%);
-  --primary: hsl(20, 90%, 54%);
-  --primary-foreground: hsl(211, 100%, 99%);
-  --secondary: hsl(60, 4.8%, 95.9%);
-  --secondary-foreground: hsl(24, 9.8%, 10%);
-  --accent: hsl(60, 4.8%, 95.9%);
-  --accent-foreground: hsl(24, 9.8%, 10%);
+  /* Light Mode Colors */
+  --background: #ffffff;
+  --foreground: #0d0f13;
+  --muted: #f5f5f5;
+  --muted-foreground: #37414f;
+  --popover: #ffffff;
+  --popover-foreground: #0d0f13;
+  --card: #f5f5f5;
+  --card-foreground: #0d0f13;
+  --border: #e0e0e0;
+  --input: #e0e0e0;
+  --primary: #fd7014;
+  --primary-foreground: #ffffff;
+  --secondary: #f5f5f5;
+  --secondary-foreground: #0d0f13;
+  --accent: #f5f5f5;
+  --accent-foreground: #0d0f13;
   --destructive: hsl(0, 84.2%, 60.2%);
-  --destructive-foreground: hsl(60, 9.1%, 97.8%);
-  --ring: hsl(20, 14.3%, 4.1%);
+  --destructive-foreground: #ffffff;
+  --ring: #fd7014;
   --radius: 0.5rem;
 
-  /* ProfitPath Custom Variables */
-  --navy: hsl(240, 10%, 5%);
-  --charcoal: hsl(240, 10%, 13%);
-  --orange-primary: hsl(20, 90%, 54%);
-  --orange-light: hsl(20, 90%, 64%);
-  --slate-custom: hsl(240, 3.7%, 15.9%);
+  /* ProfitPath Light Mode Variables */
+  --navy: #0d0f13;
+  --charcoal: #f5f5f5;
+  --orange-primary: #fd7014;
+  --orange-hover: #fd8f47;
+  --slate-custom: #37414f;
+  --text-secondary: #37414f;
 }
 
 .dark {
-  --background: hsl(240, 10%, 5%);
-  --foreground: hsl(0, 0%, 98%);
-  --muted: hsl(240, 3.7%, 15.9%);
-  --muted-foreground: hsl(240, 5%, 64.9%);
-  --popover: hsl(240, 10%, 13%);
-  --popover-foreground: hsl(0, 0%, 98%);
-  --card: hsl(240, 10%, 13%);
-  --card-foreground: hsl(0, 0%, 98%);
-  --border: hsl(240, 3.7%, 15.9%);
-  --input: hsl(240, 3.7%, 15.9%);
-  --primary: hsl(20, 90%, 54%);
-  --primary-foreground: hsl(211, 100%, 99%);
-  --secondary: hsl(240, 3.7%, 15.9%);
-  --secondary-foreground: hsl(0, 0%, 98%);
-  --accent: hsl(240, 3.7%, 15.9%);
-  --accent-foreground: hsl(0, 0%, 98%);
+  /* Dark Mode Colors */
+  --background: #0d0f13;
+  --foreground: #ffffff;
+  --muted: #222831;
+  --muted-foreground: #b0b3b8;
+  --popover: #222831;
+  --popover-foreground: #ffffff;
+  --card: #222831;
+  --card-foreground: #ffffff;
+  --border: #37414f;
+  --input: #37414f;
+  --primary: #fd7014;
+  --primary-foreground: #ffffff;
+  --secondary: #222831;
+  --secondary-foreground: #ffffff;
+  --accent: #222831;
+  --accent-foreground: #ffffff;
   --destructive: hsl(0, 62.8%, 30.6%);
-  --destructive-foreground: hsl(0, 0%, 98%);
-  --ring: hsl(240, 4.9%, 83.9%);
+  --destructive-foreground: #ffffff;
+  --ring: #fd7014;
   --radius: 0.5rem;
 
   /* ProfitPath Dark Mode Variables */
-  --navy: hsl(240, 10%, 5%);
-  --charcoal: hsl(240, 10%, 13%);
-  --orange-primary: hsl(20, 90%, 54%);
-  --orange-light: hsl(20, 90%, 64%);
-  --slate-custom: hsl(240, 3.7%, 15.9%);
+  --navy: #0d0f13;
+  --charcoal: #222831;
+  --orange-primary: #fd7014;
+  --orange-hover: #fd8f47;
+  --slate-custom: #37414f;
+  --text-secondary: #b0b3b8;
 }
 
 @layer base {
@@ -68,21 +72,15 @@
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground;
-  }
-
-  html.dark body {
-    @apply bg-[var(--navy)] text-white;
-  }
-
-  html.light body {
-    @apply bg-white text-black;
+    @apply font-sans antialiased;
+    background-color: var(--background);
+    color: var(--foreground);
   }
 }
 
 @layer components {
   .gradient-text {
-    background: linear-gradient(45deg, hsl(20, 90%, 54%), hsl(20, 90%, 64%));
+    background: linear-gradient(45deg, #fd7014, #fd8f47);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -90,7 +88,7 @@
 
   .nav-active {
     background: rgba(253, 112, 20, 0.1);
-    border-right: 2px solid hsl(20, 90%, 54%);
+    border-right: 2px solid #fd7014;
   }
 
   .loading-skeleton {
@@ -99,6 +97,18 @@
 
   .fade-in {
     animation: fadeIn 0.5s ease-in-out;
+  }
+
+  /* Button hover states */
+  .btn-hover:hover {
+    background-color: #fd8f47;
+    transition: background-color 0.2s ease-in-out;
+  }
+
+  /* Card styles for better color consistency */
+  .card-bg {
+    background-color: var(--card);
+    border-color: var(--border);
   }
 }
 
