@@ -7,14 +7,26 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ThemeToggle } from "@/components/Navigation/ThemeToggle";
-import { TrendingUp, Mail, Lock, User } from "lucide-react";
+import { TrendingUp, Mail, Lock, User, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Auth() {
   const [, setLocation] = useLocation();
-  const { signIn, user, loading } = useAuth();
+  const { signIn, signInWithEmailPassword, signUpWithEmailPassword, user, loading } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Form states
+  const [signInForm, setSignInForm] = useState({ email: "", password: "" });
+  const [signUpForm, setSignUpForm] = useState({ 
+    name: "", 
+    email: "", 
+    password: "", 
+    confirmPassword: "" 
+  });
+  const [showSignInPassword, setShowSignInPassword] = useState(false);
+  const [showSignUpPassword, setShowSignUpPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Redirect if already authenticated
   if (user && !loading) {
@@ -36,6 +48,80 @@ export default function Auth() {
       setIsLoading(false);
     }
   };
+
+  const handleEmailSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!signInForm.email || !signInForm.password) {
+      toast({
+        title: "Missing fields",
+        description: "Please enter both email and password.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      await signInWithEmailPassword(signInForm.email, signInForm.password);
+      // The auth context will handle redirect
+    } catch (error: any) {
+      toast({
+        title: "Sign in failed",
+        description: error.message || "Please check your credentials and try again.",
+        variant: "destructive"
+      });
+      setIsLoading(false);
+    }
+  };
+
+  const handleEmailSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!signUpForm.name || !signUpForm.email || !signUpForm.password || !signUpForm.confirmPassword) {
+      toast({
+        title: "Missing fields",
+        description: "Please fill in all required fields.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (signUpForm.password !== signUpForm.confirmPassword) {
+      toast({
+        title: "Password mismatch",
+        description: "Passwords do not match. Please try again.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (signUpForm.password.length < 6) {
+      toast({
+        title: "Password too short",
+        description: "Password must be at least 6 characters long.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      await signUpWithEmailPassword(signUpForm.email, signUpForm.password, signUpForm.name);
+      // The auth context will handle redirect
+    } catch (error: any) {
+      toast({
+        title: "Sign up failed",
+        description: error.message || "Please try again later.",
+        variant: "destructive"
+      });
+      setIsLoading(false);
+    }
+  };
+
+  const isSignInFormValid = signInForm.email && signInForm.password;
+  const isSignUpFormValid = signUpForm.name && signUpForm.email && signUpForm.password && 
+    signUpForm.confirmPassword && signUpForm.password === signUpForm.confirmPassword;
 
   if (loading) {
     return (
@@ -83,7 +169,7 @@ export default function Auth() {
               </TabsList>
               
               <TabsContent value="signin" className="space-y-4">
-                <div className="space-y-4">
+                <form onSubmit={handleEmailSignIn} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="email" className="text-card-foreground">Email</Label>
                     <div className="relative">
@@ -92,7 +178,10 @@ export default function Auth() {
                         id="email"
                         type="email"
                         placeholder="Enter your email"
+                        value={signInForm.email}
+                        onChange={(e) => setSignInForm({...signInForm, email: e.target.value})}
                         className="pl-10 bg-input border-border text-card-foreground focus:ring-primary focus:border-primary"
+                        required
                       />
                     </div>
                   </div>
@@ -103,24 +192,35 @@ export default function Auth() {
                       <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                       <Input
                         id="password"
-                        type="password"
+                        type={showSignInPassword ? "text" : "password"}
                         placeholder="Enter your password"
-                        className="pl-10 bg-input border-border text-card-foreground focus:ring-primary focus:border-primary"
+                        value={signInForm.password}
+                        onChange={(e) => setSignInForm({...signInForm, password: e.target.value})}
+                        className="pl-10 pr-10 bg-input border-border text-card-foreground focus:ring-primary focus:border-primary"
+                        required
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowSignInPassword(!showSignInPassword)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-card-foreground"
+                      >
+                        {showSignInPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
                     </div>
                   </div>
                   
                   <Button 
+                    type="submit"
                     className="w-full bg-primary hover:bg-[var(--orange-hover)] text-primary-foreground"
-                    disabled={isLoading}
+                    disabled={isLoading || !isSignInFormValid}
                   >
-                    Sign In
+                    {isLoading ? "Signing In..." : "Sign In"}
                   </Button>
-                </div>
+                </form>
               </TabsContent>
               
               <TabsContent value="signup" className="space-y-4">
-                <div className="space-y-4">
+                <form onSubmit={handleEmailSignUp} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="name" className="text-card-foreground">Full Name</Label>
                     <div className="relative">
@@ -129,7 +229,10 @@ export default function Auth() {
                         id="name"
                         type="text"
                         placeholder="Enter your full name"
+                        value={signUpForm.name}
+                        onChange={(e) => setSignUpForm({...signUpForm, name: e.target.value})}
                         className="pl-10 bg-input border-border text-card-foreground focus:ring-primary focus:border-primary"
+                        required
                       />
                     </div>
                   </div>
@@ -142,7 +245,10 @@ export default function Auth() {
                         id="signup-email"
                         type="email"
                         placeholder="Enter your email"
+                        value={signUpForm.email}
+                        onChange={(e) => setSignUpForm({...signUpForm, email: e.target.value})}
                         className="pl-10 bg-input border-border text-card-foreground focus:ring-primary focus:border-primary"
+                        required
                       />
                     </div>
                   </div>
@@ -153,20 +259,62 @@ export default function Auth() {
                       <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                       <Input
                         id="signup-password"
-                        type="password"
-                        placeholder="Create a password"
-                        className="pl-10 bg-input border-border text-card-foreground focus:ring-primary focus:border-primary"
+                        type={showSignUpPassword ? "text" : "password"}
+                        placeholder="Create a password (min 6 characters)"
+                        value={signUpForm.password}
+                        onChange={(e) => setSignUpForm({...signUpForm, password: e.target.value})}
+                        className="pl-10 pr-10 bg-input border-border text-card-foreground focus:ring-primary focus:border-primary"
+                        required
+                        minLength={6}
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowSignUpPassword(!showSignUpPassword)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-card-foreground"
+                      >
+                        {showSignUpPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
                     </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="confirm-password" className="text-card-foreground">Confirm Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                      <Input
+                        id="confirm-password"
+                        type={showConfirmPassword ? "text" : "password"}
+                        placeholder="Confirm your password"
+                        value={signUpForm.confirmPassword}
+                        onChange={(e) => setSignUpForm({...signUpForm, confirmPassword: e.target.value})}
+                        className={`pl-10 pr-10 bg-input border-border text-card-foreground focus:ring-primary focus:border-primary ${
+                          signUpForm.confirmPassword && signUpForm.password !== signUpForm.confirmPassword 
+                            ? 'border-red-500 focus:border-red-500' 
+                            : ''
+                        }`}
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-card-foreground"
+                      >
+                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    {signUpForm.confirmPassword && signUpForm.password !== signUpForm.confirmPassword && (
+                      <p className="text-xs text-red-500">Passwords do not match</p>
+                    )}
                   </div>
                   
                   <Button 
+                    type="submit"
                     className="w-full bg-primary hover:bg-[var(--orange-hover)] text-primary-foreground"
-                    disabled={isLoading}
+                    disabled={isLoading || !isSignUpFormValid}
                   >
-                    Create Account
+                    {isLoading ? "Creating Account..." : "Create Account"}
                   </Button>
-                </div>
+                </form>
               </TabsContent>
             </Tabs>
             

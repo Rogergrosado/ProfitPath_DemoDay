@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { User as FirebaseUser } from "firebase/auth";
-import { auth, signInWithGoogle, signOutUser, handleRedirectResult, onAuthStateChanged } from "@/lib/firebase";
+import { auth, signInWithGoogle, signInWithEmail, signUpWithEmail, signOutUser, handleRedirectResult, onAuthStateChanged } from "@/lib/firebase";
 import type { User } from "@shared/schema";
 
 interface AuthContextType {
@@ -8,6 +8,8 @@ interface AuthContextType {
   firebaseUser: FirebaseUser | null;
   loading: boolean;
   signIn: () => void;
+  signInWithEmailPassword: (email: string, password: string) => Promise<void>;
+  signUpWithEmailPassword: (email: string, password: string, displayName: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -58,7 +60,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (createResponse.ok) {
               const userData = await createResponse.json();
               setUser(userData);
+            } else {
+              console.error("Failed to create user in database");
             }
+          } else {
+            console.error("Failed to fetch user from database:", response.status);
           }
         } catch (error) {
           console.error("Error fetching user data:", error);
@@ -77,13 +83,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signInWithGoogle();
   };
 
+  const signInWithEmailPassword = async (email: string, password: string) => {
+    try {
+      await signInWithEmail(email, password);
+      // The onAuthStateChanged listener will handle the rest
+    } catch (error: any) {
+      throw new Error(error.message || "Sign in failed");
+    }
+  };
+
+  const signUpWithEmailPassword = async (email: string, password: string, displayName: string) => {
+    try {
+      await signUpWithEmail(email, password, displayName);
+      // The onAuthStateChanged listener will handle the rest
+    } catch (error: any) {
+      throw new Error(error.message || "Sign up failed");
+    }
+  };
+
   const logout = async () => {
     await signOutUser();
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, firebaseUser, loading, signIn, logout }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      firebaseUser, 
+      loading, 
+      signIn, 
+      signInWithEmailPassword,
+      signUpWithEmailPassword,
+      logout 
+    }}>
       {children}
     </AuthContext.Provider>
   );
