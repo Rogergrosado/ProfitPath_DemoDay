@@ -66,7 +66,7 @@ export default function Dashboard() {
       <Sidebar />
       <ThemeToggle />
       
-      <main className="flex-1 ml-64 p-6">
+      <main className="flex-1 ml-60 p-6">
         <div className="fade-in">
           {/* Header */}
           <div className="mb-8">

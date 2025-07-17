@@ -35,11 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (firebaseUser) {
         // Check if user exists in our database
         try {
-          const response = await fetch("/api/users/profile", {
-            headers: {
-              "x-user-id": "1", // Temporary - in real app, verify Firebase token
-            },
-          });
+          const response = await fetch(`/api/users/firebase/${firebaseUser.uid}`);
           
           if (response.ok) {
             const userData = await response.json();

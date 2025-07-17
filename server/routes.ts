@@ -32,6 +32,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/users/firebase/:firebaseUid", async (req, res) => {
+    try {
+      const user = await storage.getUserByFirebaseUid(req.params.firebaseUid);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json(user);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   app.get("/api/users/profile", requireAuth, async (req, res) => {
     try {
       const authReq = req as AuthenticatedRequest;

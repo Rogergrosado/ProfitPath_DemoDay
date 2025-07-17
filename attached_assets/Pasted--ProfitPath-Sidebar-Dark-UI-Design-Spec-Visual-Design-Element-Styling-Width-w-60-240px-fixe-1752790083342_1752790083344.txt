@@ -1,0 +1,96 @@
+🧭 ProfitPath Sidebar – Dark UI Design Spec
+🖼️ Visual Design
+Element	Styling
+Width	w-60 (240px fixed)
+Height	h-screen
+Background	bg-[#222831] (Dark Charcoal)
+Text	text-gray-300 (Default), text-white (Active), text-sm or text-xs (Section headings)
+Accent	text-[#fd7014] (Vibrant Orange) for logo and active state
+Hover	hover:bg-[#37414f] (Slate Blue)
+Border	border-b border-[#37414f] for section dividers
+Transitions	transition-all duration-200 ease-in-out
+
+📐 Layout Structure (Tailwind Utility)
+jsx
+Copiar código
+<aside className="w-60 h-screen bg-[#222831] flex flex-col justify-between">
+  {/* Header */}
+  <div className="px-6 py-4 border-b border-[#37414f] flex items-center space-x-2">
+    <div className="text-[#fd7014] font-bold text-xl">P</div>
+    <span className="text-white font-semibold text-lg">ProfitPath</span>
+  </div>
+
+  {/* Navigation */}
+  <nav className="flex-1 px-4 py-4 overflow-y-auto space-y-6">
+    {/* Section Title */}
+    <div>
+      <p className="text-gray-400 uppercase text-xs px-2">Main</p>
+      <SidebarLink icon="🏠" label="Dashboard" path="/dashboard" />
+      <SidebarLink icon="🔬" label="Product Workspace" path="/products" />
+      <SidebarLink icon="📦" label="Inventory" path="/inventory" />
+    </div>
+
+    <div>
+      <p className="text-gray-400 uppercase text-xs px-2">Analytics</p>
+      <SidebarLink icon="⚡" label="Performance" path="/analytics/performance" />
+      <SidebarLink icon="📊" label="Reports" path="/analytics/reports" />
+    </div>
+
+    <div>
+      <p className="text-gray-400 uppercase text-xs px-2">Account</p>
+      <SidebarLink icon="👤" label="Profile" path="/profile" />
+      <SidebarLink icon="⚙️" label="Settings" path="/settings" />
+    </div>
+  </nav>
+
+  {/* Footer */}
+  <div className="px-4 py-4 border-t border-[#37414f]">
+    <button className="w-full text-left text-gray-300 hover:bg-[#37414f] rounded-md px-3 py-2 transition-all">
+      🚪 Logout
+    </button>
+  </div>
+</aside>
+🧩 SidebarLink.jsx – Reusable Navigation Item
+jsx
+Copiar código
+import { useLocation, Link } from 'react-router-dom';
+
+const SidebarLink = ({ icon, label, path }) => {
+  const location = useLocation();
+  const isActive = location.pathname === path;
+
+  return (
+    <Link
+      to={path}
+      className={`flex items-center gap-2 px-3 py-2 rounded-md transition-all
+        ${isActive ? 'bg-[#fd7014] text-white font-medium' : 'hover:bg-[#37414f] text-gray-300'}`}
+    >
+      <span>{icon}</span>
+      <span>{label}</span>
+    </Link>
+  );
+};
+
+export default SidebarLink;
+💡 Notes on Styling Decisions
+🔶 Accent Usage:
+Only the active link and logo use #fd7014.
+
+Hover states use #37414f to stay subtle and clean.
+
+🧭 Visual Hierarchy:
+Section headers (text-xs, uppercase, text-gray-400) clearly define groups.
+
+Icons on left, text on right—aligned for readability and scannability.
+
+🧑‍💼 Footer:
+Logout is deliberately separated by border-t for visibility without distracting.
+
+✅ Final Result
+Dark, minimal, elegant sidebar that guides user flow without overwhelming.
+
+Matches ProfitPath’s identity: analytical, modern, business-focused.
+
+Fully responsive-ready if needed (use hidden md:block to collapse on mobile).
+
+Easily extendable for notifications, quick links, or theme toggles.
