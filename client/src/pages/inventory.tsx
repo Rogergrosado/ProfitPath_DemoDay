@@ -19,8 +19,8 @@ export default function Inventory() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[var(--navy)] flex items-center justify-center">
-        <div className="text-white">Loading...</div>
+      <div className="min-h-screen bg-white dark:bg-[#0d0f13] flex items-center justify-center">
+        <div className="text-black dark:text-white">Loading...</div>
       </div>
     );
   }
@@ -44,7 +44,7 @@ export default function Inventory() {
   );
 
   return (
-    <div className="min-h-screen bg-[var(--navy)] text-white flex">
+    <div className="min-h-screen bg-white dark:bg-[#0d0f13] text-black dark:text-white flex">
       <Sidebar />
       <ThemeToggle />
       
@@ -55,17 +55,17 @@ export default function Inventory() {
             <div className="flex justify-between items-center">
               <div>
                 <h1 className="text-3xl font-bold mb-2">Inventory Management</h1>
-                <p className="text-slate-400">Monitor and manage your current stock levels</p>
+                <p className="text-gray-600 dark:text-slate-400">Monitor and manage your current stock levels</p>
               </div>
               <div className="flex space-x-3">
                 <Button 
                   variant="outline"
-                  className="bg-slate-700 hover:bg-slate-600 text-white border-slate-600"
+                  className="bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-black dark:text-white border-gray-300 dark:border-slate-600"
                 >
                   <Download className="h-4 w-4 mr-2" />
                   Export
                 </Button>
-                <Button className="bg-[var(--orange-primary)] hover:bg-[var(--orange-light)] text-white">
+                <Button className="bg-[#fd7014] hover:bg-[#e5640f] text-white">
                   <Package2 className="h-4 w-4 mr-2" />
                   Bulk Reorder
                 </Button>

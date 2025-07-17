@@ -13,8 +13,8 @@ export default function Reports() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[var(--navy)] flex items-center justify-center">
-        <div className="text-white">Loading...</div>
+      <div className="min-h-screen bg-white dark:bg-[#0d0f13] flex items-center justify-center">
+        <div className="text-black dark:text-white">Loading...</div>
       </div>
     );
   }
@@ -49,7 +49,7 @@ export default function Reports() {
   ];
 
   return (
-    <div className="min-h-screen bg-[var(--navy)] text-white flex">
+    <div className="min-h-screen bg-white dark:bg-[#0d0f13] text-black dark:text-white flex">
       <Sidebar />
       <ThemeToggle />
       
@@ -58,7 +58,7 @@ export default function Reports() {
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold mb-2">Reports Builder</h1>
-            <p className="text-slate-400">Create and customize business reports</p>
+            <p className="text-gray-600 dark:text-slate-400">Create and customize business reports</p>
           </div>
 
           {/* Report Templates */}

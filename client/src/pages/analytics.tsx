@@ -33,8 +33,8 @@ export default function Analytics() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[var(--navy)] flex items-center justify-center">
-        <div className="text-white">Loading...</div>
+      <div className="min-h-screen bg-white dark:bg-[#0d0f13] flex items-center justify-center">
+        <div className="text-black dark:text-white">Loading...</div>
       </div>
     );
   }
@@ -105,7 +105,7 @@ export default function Analytics() {
   ];
 
   return (
-    <div className="min-h-screen bg-[var(--navy)] text-white flex">
+    <div className="min-h-screen bg-white dark:bg-[#0d0f13] text-black dark:text-white flex">
       <Sidebar />
       <ThemeToggle />
       
@@ -116,14 +116,14 @@ export default function Analytics() {
             <div className="flex justify-between items-center">
               <div>
                 <h1 className="text-3xl font-bold mb-2">Performance Analytics</h1>
-                <p className="text-slate-400">Track your business performance and trends</p>
+                <p className="text-gray-600 dark:text-slate-400">Track your business performance and trends</p>
               </div>
               <div className="flex space-x-3">
                 <Select value={dateRange} onValueChange={setDateRange}>
-                  <SelectTrigger className="bg-[var(--charcoal)] border-[var(--slate-custom)] text-white">
+                  <SelectTrigger className="bg-gray-100 dark:bg-[#222831] border-gray-300 dark:border-slate-700 text-black dark:text-white">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-slate-800 border-slate-600">
+                  <SelectContent className="bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-600">
                     <SelectItem value="30">Last 30 Days</SelectItem>
                     <SelectItem value="90">Last 3 Months</SelectItem>
                     <SelectItem value="180">Last 6 Months</SelectItem>
@@ -131,7 +131,7 @@ export default function Analytics() {
                   </SelectContent>
                 </Select>
                 <SalesEntryModal>
-                  <Button className="bg-[var(--orange-primary)] hover:bg-[var(--orange-light)] text-white">
+                  <Button className="bg-[#fd7014] hover:bg-[#e5640f] text-white">
                     <Plus className="h-4 w-4 mr-2" />
                     Add Sale
                   </Button>
