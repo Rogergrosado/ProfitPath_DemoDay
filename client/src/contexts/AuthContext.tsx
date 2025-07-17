@@ -1,0 +1,93 @@
+import { createContext, useContext, useEffect, useState } from "react";
+import { User as FirebaseUser, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+import type { User } from "@shared/schema";
+
+interface AuthContextType {
+  user: User | null;
+  firebaseUser: FirebaseUser | null;
+  loading: boolean;
+  signInWithGoogle: () => Promise<void>;
+  logout: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextType | null>(null);
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setFirebaseUser(firebaseUser);
+      
+      if (firebaseUser) {
+        // Check if user exists in our database
+        try {
+          const response = await fetch("/api/users/profile", {
+            headers: {
+              "x-user-id": "1", // Temporary - in real app, verify Firebase token
+            },
+          });
+          
+          if (response.ok) {
+            const userData = await response.json();
+            setUser(userData);
+          } else if (response.status === 404) {
+            // Create new user
+            const newUserData = {
+              email: firebaseUser.email!,
+              displayName: firebaseUser.displayName || "",
+              photoURL: firebaseUser.photoURL,
+              firebaseUid: firebaseUser.uid,
+            };
+            
+            const createResponse = await fetch("/api/users", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(newUserData),
+            });
+            
+            if (createResponse.ok) {
+              const userData = await createResponse.json();
+              setUser(userData);
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+        }
+      } else {
+        setUser(null);
+      }
+      
+      setLoading(false);
+    });
+
+    return unsubscribe;
+  }, []);
+
+  const signInWithGoogle = async () => {
+    const provider = new GoogleAuthProvider();
+    await signInWithPopup(auth, provider);
+  };
+
+  const logout = async () => {
+    await signOut(auth);
+    setUser(null);
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, firebaseUser, loading, signInWithGoogle, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+}
