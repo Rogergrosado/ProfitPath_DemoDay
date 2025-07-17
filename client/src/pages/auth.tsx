@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function Auth() {
   const [, setLocation] = useLocation();
-  const { signInWithGoogle, user, loading } = useAuth();
+  const { signIn, user, loading } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -22,19 +22,17 @@ export default function Auth() {
     return null;
   }
 
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSignIn = () => {
     try {
       setIsLoading(true);
-      await signInWithGoogle();
-      toast({ title: "Successfully signed in!" });
-      setLocation("/dashboard");
+      signIn(); // This will redirect to Google
+      // Note: No need for setLocation here as it will redirect away
     } catch (error) {
       toast({ 
         title: "Sign in failed", 
         description: "Please try again later.",
         variant: "destructive" 
       });
-    } finally {
       setIsLoading(false);
     }
   };

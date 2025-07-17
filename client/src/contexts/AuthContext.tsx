@@ -1,13 +1,13 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { User as FirebaseUser, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { User as FirebaseUser } from "firebase/auth";
+import { auth, signInWithGoogle, signOutUser, handleRedirectResult, onAuthStateChanged } from "@/lib/firebase";
 import type { User } from "@shared/schema";
 
 interface AuthContextType {
   user: User | null;
   firebaseUser: FirebaseUser | null;
   loading: boolean;
-  signInWithGoogle: () => Promise<void>;
+  signIn: () => void;
   logout: () => Promise<void>;
 }
 
@@ -19,6 +19,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Handle redirect result on page load
+    handleRedirectResult().then(async (result) => {
+      if (result?.user) {
+        // User signed in via redirect
+        console.log("User signed in via redirect:", result.user);
+      }
+    }).catch((error) => {
+      console.error("Error handling redirect:", error);
+    });
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setFirebaseUser(firebaseUser);
       
@@ -67,18 +77,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return unsubscribe;
   }, []);
 
-  const signInWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
+  const signIn = () => {
+    signInWithGoogle();
   };
 
   const logout = async () => {
-    await signOut(auth);
+    await signOutUser();
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, firebaseUser, loading, signInWithGoogle, logout }}>
+    <AuthContext.Provider value={{ user, firebaseUser, loading, signIn, logout }}>
       {children}
     </AuthContext.Provider>
   );

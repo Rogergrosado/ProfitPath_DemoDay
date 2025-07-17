@@ -102,7 +102,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Inventory
   app.get("/api/inventory", requireAuth, async (req, res) => {
     try {
-      const inventory = await storage.getInventory(req.userId);
+      const authReq = req as AuthenticatedRequest;
+      const inventory = await storage.getInventory(authReq.userId);
       res.json(inventory);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -111,7 +112,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/inventory", requireAuth, async (req, res) => {
     try {
-      const itemData = insertInventorySchema.parse({ ...req.body, userId: req.userId });
+      const authReq = req as AuthenticatedRequest;
+      const itemData = insertInventorySchema.parse({ ...req.body, userId: authReq.userId });
       const item = await storage.createInventoryItem(itemData);
       res.json(item);
     } catch (error: any) {
@@ -143,9 +145,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Sales
   app.get("/api/sales", requireAuth, async (req, res) => {
     try {
+      const authReq = req as AuthenticatedRequest;
       const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
       const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
-      const sales = await storage.getSales(req.userId, startDate, endDate);
+      const sales = await storage.getSales(authReq.userId, startDate, endDate);
       res.json(sales);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -154,7 +157,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/sales", requireAuth, async (req, res) => {
     try {
-      const saleData = insertSaleSchema.parse({ ...req.body, userId: req.userId });
+      const authReq = req as AuthenticatedRequest;
+      const saleData = insertSaleSchema.parse({ ...req.body, userId: authReq.userId });
       const sale = await storage.createSale(saleData);
       res.json(sale);
     } catch (error: any) {
@@ -164,7 +168,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/performance/metrics", requireAuth, async (req, res) => {
     try {
-      const metrics = await storage.getSalesMetrics(req.userId);
+      const authReq = req as AuthenticatedRequest;
+      const metrics = await storage.getSalesMetrics(authReq.userId);
       res.json(metrics);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -174,7 +179,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Goals
   app.get("/api/goals", requireAuth, async (req, res) => {
     try {
-      const goals = await storage.getGoals(req.userId);
+      const authReq = req as AuthenticatedRequest;
+      const goals = await storage.getGoals(authReq.userId);
       res.json(goals);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -183,7 +189,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/goals", requireAuth, async (req, res) => {
     try {
-      const goalData = insertGoalSchema.parse({ ...req.body, userId: req.userId });
+      const authReq = req as AuthenticatedRequest;
+      const goalData = insertGoalSchema.parse({ ...req.body, userId: authReq.userId });
       const goal = await storage.createGoal(goalData);
       res.json(goal);
     } catch (error: any) {
@@ -215,7 +222,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Reports
   app.get("/api/reports", requireAuth, async (req, res) => {
     try {
-      const reports = await storage.getReports(req.userId);
+      const authReq = req as AuthenticatedRequest;
+      const reports = await storage.getReports(authReq.userId);
       res.json(reports);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
