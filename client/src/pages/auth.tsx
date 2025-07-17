@@ -107,9 +107,11 @@ export default function Auth() {
 
     try {
       setIsLoading(true);
+      console.log("Attempting sign up with:", { email: signUpForm.email, name: signUpForm.name });
       await signUpWithEmailPassword(signUpForm.email, signUpForm.password, signUpForm.name);
       // The auth context will handle redirect
     } catch (error: any) {
+      console.error("Sign up error:", error);
       toast({
         title: "Sign up failed",
         description: error.message || "Please try again later.",
