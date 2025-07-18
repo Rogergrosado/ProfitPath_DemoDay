@@ -23,11 +23,15 @@ interface PromoteToInventoryModalProps {
 
 export function PromoteToInventoryModal({ isOpen, onClose, product }: PromoteToInventoryModalProps) {
   const [formData, setFormData] = useState({
-    sku: product?.sku || "",
+    sku: product?.sku || `${product?.name?.substring(0, 3).toUpperCase()}-${Date.now().toString().slice(-4)}` || "",
     currentStock: "",
     costPrice: "",
     sellingPrice: product?.estimatedPrice || "",
-    reorderPoint: "10",
+    reorderPoint: "20",
+    supplierName: "",
+    supplierSku: "",
+    leadTimeDays: "7",
+    notes: `Promoted from Watchlist on ${new Date().toLocaleDateString()}`,
   });
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -53,7 +57,11 @@ export function PromoteToInventoryModal({ isOpen, onClose, product }: PromoteToI
         currentStock: "",
         costPrice: "",
         sellingPrice: "",
-        reorderPoint: "",
+        reorderPoint: "20",
+        supplierName: "",
+        supplierSku: "",
+        leadTimeDays: "7",
+        notes: "",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/products/watchlist"] });
       queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
@@ -73,7 +81,7 @@ export function PromoteToInventoryModal({ isOpen, onClose, product }: PromoteToI
     if (!formData.sku || !formData.currentStock || !formData.costPrice || !formData.sellingPrice) {
       toast({
         title: "Missing required fields",
-        description: "Please fill in all required fields.",
+        description: "Please fill in SKU, Initial Stock, Cost Price, and Selling Price.",
         variant: "destructive",
       });
       return;
@@ -85,6 +93,7 @@ export function PromoteToInventoryModal({ isOpen, onClose, product }: PromoteToI
       reorderPoint: parseInt(formData.reorderPoint),
       costPrice: parseFloat(formData.costPrice),
       sellingPrice: parseFloat(formData.sellingPrice),
+      leadTimeDays: parseInt(formData.leadTimeDays),
     });
   };
 
@@ -101,6 +110,15 @@ export function PromoteToInventoryModal({ isOpen, onClose, product }: PromoteToI
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Pre-filled Product Info */}
+          <div className="bg-slate-100 dark:bg-slate-800/50 rounded-lg p-4 mb-4">
+            <h4 className="font-medium text-black dark:text-white mb-2">Product Information</h4>
+            <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 dark:text-gray-400">
+              <p><span className="font-medium">Name:</span> {product?.name}</p>
+              <p><span className="font-medium">Category:</span> {product?.category}</p>
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="sku" className="text-black dark:text-white">SKU *</Label>
@@ -108,7 +126,7 @@ export function PromoteToInventoryModal({ isOpen, onClose, product }: PromoteToI
                 id="sku"
                 value={formData.sku}
                 onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                placeholder="Enter SKU"
+                placeholder="Enter unique SKU"
                 className="bg-gray-50 dark:bg-slate-800 border-gray-300 dark:border-slate-600 text-black dark:text-white"
                 required
               />
@@ -121,7 +139,7 @@ export function PromoteToInventoryModal({ isOpen, onClose, product }: PromoteToI
                 min="0"
                 value={formData.currentStock}
                 onChange={(e) => setFormData({ ...formData, currentStock: e.target.value })}
-                placeholder="Units"
+                placeholder="100"
                 className="bg-gray-50 dark:bg-slate-800 border-gray-300 dark:border-slate-600 text-black dark:text-white"
                 required
               />
@@ -138,7 +156,7 @@ export function PromoteToInventoryModal({ isOpen, onClose, product }: PromoteToI
                 min="0"
                 value={formData.costPrice}
                 onChange={(e) => setFormData({ ...formData, costPrice: e.target.value })}
-                placeholder="$0.00"
+                placeholder="9.25"
                 className="bg-gray-50 dark:bg-slate-800 border-gray-300 dark:border-slate-600 text-black dark:text-white"
                 required
               />
@@ -152,22 +170,70 @@ export function PromoteToInventoryModal({ isOpen, onClose, product }: PromoteToI
                 min="0"
                 value={formData.sellingPrice}
                 onChange={(e) => setFormData({ ...formData, sellingPrice: e.target.value })}
-                placeholder="$0.00"
+                placeholder="24.99"
                 className="bg-gray-50 dark:bg-slate-800 border-gray-300 dark:border-slate-600 text-black dark:text-white"
                 required
               />
             </div>
           </div>
 
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="reorderPoint" className="text-black dark:text-white">Reorder Point</Label>
+              <Input
+                id="reorderPoint"
+                type="number"
+                min="0"
+                value={formData.reorderPoint}
+                onChange={(e) => setFormData({ ...formData, reorderPoint: e.target.value })}
+                placeholder="20"
+                className="bg-gray-50 dark:bg-slate-800 border-gray-300 dark:border-slate-600 text-black dark:text-white"
+              />
+            </div>
+            <div>
+              <Label htmlFor="leadTimeDays" className="text-black dark:text-white">Lead Time (Days)</Label>
+              <Input
+                id="leadTimeDays"
+                type="number"
+                min="1"
+                value={formData.leadTimeDays}
+                onChange={(e) => setFormData({ ...formData, leadTimeDays: e.target.value })}
+                placeholder="7"
+                className="bg-gray-50 dark:bg-slate-800 border-gray-300 dark:border-slate-600 text-black dark:text-white"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="supplierName" className="text-black dark:text-white">Supplier Name</Label>
+              <Input
+                id="supplierName"
+                value={formData.supplierName}
+                onChange={(e) => setFormData({ ...formData, supplierName: e.target.value })}
+                placeholder="SolarTech Ltd."
+                className="bg-gray-50 dark:bg-slate-800 border-gray-300 dark:border-slate-600 text-black dark:text-white"
+              />
+            </div>
+            <div>
+              <Label htmlFor="supplierSku" className="text-black dark:text-white">Supplier SKU</Label>
+              <Input
+                id="supplierSku"
+                value={formData.supplierSku}
+                onChange={(e) => setFormData({ ...formData, supplierSku: e.target.value })}
+                placeholder="ST-GLW-6PK"
+                className="bg-gray-50 dark:bg-slate-800 border-gray-300 dark:border-slate-600 text-black dark:text-white"
+              />
+            </div>
+          </div>
+
           <div>
-            <Label htmlFor="reorderPoint" className="text-black dark:text-white">Reorder Point</Label>
+            <Label htmlFor="notes" className="text-black dark:text-white">Notes</Label>
             <Input
-              id="reorderPoint"
-              type="number"
-              min="0"
-              value={formData.reorderPoint}
-              onChange={(e) => setFormData({ ...formData, reorderPoint: e.target.value })}
-              placeholder="Minimum stock level (optional)"
+              id="notes"
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              placeholder="Additional notes..."
               className="bg-gray-50 dark:bg-slate-800 border-gray-300 dark:border-slate-600 text-black dark:text-white"
             />
           </div>
@@ -176,7 +242,7 @@ export function PromoteToInventoryModal({ isOpen, onClose, product }: PromoteToI
             <Button
               type="button"
               variant="outline"
-              onClick={() => setOpen(false)}
+              onClick={onClose}
               className="border-gray-300 dark:border-slate-600 text-black dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700"
             >
               Cancel
