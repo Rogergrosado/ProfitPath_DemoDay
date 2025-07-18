@@ -35,6 +35,12 @@ export default function Products() {
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [activeView, setActiveView] = useState("watchlist");
 
+  // Fetch user profile for personalization
+  const { data: userProfile } = useQuery({
+    queryKey: ["/api/user/profile"],
+    enabled: !!user,
+  });
+
   const { data: watchlistProducts = [] } = useQuery({
     queryKey: ["/api/products/watchlist"],
     enabled: !!user,
@@ -69,8 +75,15 @@ export default function Products() {
           <div className="mb-8">
             <div className="flex justify-between items-center">
               <div>
-                <h1 className="text-3xl font-bold mb-2">Product Workshop</h1>
-                <p className="text-gray-600 dark:text-slate-400">Research, validate, and track products before launching to inventory</p>
+                <h1 className="text-3xl font-bold mb-2">
+                  {userProfile?.businessName ? `${userProfile.businessName} Product Workshop` : 'Product Workshop'}
+                </h1>
+                <p className="text-gray-600 dark:text-slate-400">
+                  {userProfile?.businessName 
+                    ? `Research, validate, and track ${userProfile.businessName} products before launching to inventory`
+                    : "Research, validate, and track products before launching to inventory"
+                  }
+                </p>
               </div>
               <div className="flex space-x-2">
                 <AddProductModal>

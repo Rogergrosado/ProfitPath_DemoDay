@@ -17,6 +17,12 @@ export default function Dashboard() {
   const { user, loading } = useAuth();
   const [, setLocation] = useLocation();
   
+  // Fetch user profile for personalization
+  const { data: userProfile } = useQuery({
+    queryKey: ["/api/user/profile"],
+    enabled: !!user,
+  });
+
   // Fetch real performance metrics data
   const { data: performanceMetrics } = useQuery({
     queryKey: ["/api/performance/metrics", "30d"],
@@ -103,9 +109,14 @@ export default function Dashboard() {
         <div className="fade-in">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2 text-foreground">Dashboard Overview</h1>
+            <h1 className="text-3xl font-bold mb-2 text-foreground">
+              Welcome back, {userProfile?.displayName?.split(' ')[0] || user?.displayName?.split(' ')[0] || 'User'}
+            </h1>
             <p className="text-muted-foreground">
-              Welcome back, {user.displayName}! Monitor your Amazon FBA business performance
+              {userProfile?.businessName 
+                ? `${userProfile.businessName} business overview - Monitor your Amazon FBA performance` 
+                : "Monitor your Amazon FBA business performance"
+              }
             </p>
           </div>
 

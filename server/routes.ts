@@ -57,7 +57,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/users/profile", requireAuth, async (req, res) => {
+  app.patch("/api/user/profile", requireAuth, async (req, res) => {
     try {
       const authReq = req as AuthenticatedRequest;
       const updateData = insertUserSchema.partial().parse(req.body);
@@ -65,6 +65,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(user);
     } catch (error: any) {
       res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/user/profile", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const user = await storage.getUser(authReq.userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json(user);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/user/stats", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const stats = await storage.getUserStats(authReq.userId);
+      res.json(stats);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/user/settings", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const user = await storage.getUser(authReq.userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json(user);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.patch("/api/user/settings", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const updateData = insertUserSchema.partial().parse(req.body);
+      const user = await storage.updateUser(authReq.userId, updateData);
+      res.json(user);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/user/test-notification", requireAuth, async (req, res) => {
+    try {
+      // Mock test notification
+      res.json({ message: "Test notification sent successfully" });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
     }
   });
 

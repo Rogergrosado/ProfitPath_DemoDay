@@ -72,6 +72,12 @@ export default function Inventory() {
     }
   };
 
+  // Fetch user profile for personalization
+  const { data: userProfile } = useQuery({
+    queryKey: ["/api/user/profile"],
+    enabled: !!user,
+  });
+
   const { data: inventory = [], isLoading } = useQuery({
     queryKey: ["/api/inventory"],
     enabled: !!user,
@@ -139,8 +145,15 @@ export default function Inventory() {
           <div className="mb-8">
             <div className="flex justify-between items-center">
               <div>
-                <h1 className="text-3xl font-bold mb-2">Inventory Management</h1>
-                <p className="text-gray-600 dark:text-slate-400">Central hub for managing launched, stocked, and sell-ready products</p>
+                <h1 className="text-3xl font-bold mb-2">
+                  {userProfile?.businessName ? `${userProfile.businessName} Inventory` : 'Inventory Management'}
+                </h1>
+                <p className="text-gray-600 dark:text-slate-400">
+                  {userProfile?.businessName 
+                    ? `Central hub for managing ${userProfile.businessName} launched, stocked, and sell-ready products`
+                    : "Central hub for managing launched, stocked, and sell-ready products"
+                  }
+                </p>
               </div>
               <div className="flex space-x-2">
                 <Button 

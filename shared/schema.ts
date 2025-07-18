@@ -11,10 +11,21 @@ export const users = pgTable("users", {
   firebaseUid: text("firebase_uid").notNull().unique(),
   businessName: text("business_name"),
   phone: text("phone"),
+  industryType: text("industry_type"),
+  fbaYears: integer("fba_years"),
+  avgDailySales: decimal("avg_daily_sales", { precision: 10, scale: 2 }),
+  defaultLeadTime: integer("default_lead_time").default(14),
   currency: text("currency").default("USD"),
   timezone: text("timezone").default("UTC"),
   theme: text("theme").default("dark"),
+  emailNotifications: boolean("email_notifications").default(true),
+  inventoryAlerts: boolean("inventory_alerts").default(true),
+  goalAlerts: boolean("goal_alerts").default(true),
+  lowStockThreshold: integer("low_stock_threshold").default(10),
+  autoSync: boolean("auto_sync").default(false),
+  exportFormat: text("export_format").default("CSV"),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const products = pgTable("products", {

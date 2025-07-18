@@ -1,317 +1,426 @@
 import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
-import { useLocation } from "wouter";
-import { Sidebar } from "@/components/Navigation/Sidebar";
-import { ThemeToggle } from "@/components/Navigation/ThemeToggle";
-import { ProfileSettings } from "@/components/Settings/ProfileSettings";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import { 
-  User, 
-  Building, 
-  Plug, 
+  Settings as SettingsIcon, 
   Bell, 
+  Mail, 
+  Download, 
+  Globe, 
+  Shield, 
+  Zap,
   CreditCard,
-  Settings as SettingsIcon,
+  AlertTriangle,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+
+interface UserSettings {
+  id: number;
+  email: string;
+  displayName: string;
+  currency: string;
+  timezone: string;
+  theme: string;
+  emailNotifications: boolean;
+  inventoryAlerts: boolean;
+  goalAlerts: boolean;
+  lowStockThreshold: number;
+  autoSync: boolean;
+  exportFormat: string;
+}
 
 export default function Settings() {
-  const { user, loading } = useAuth();
-  const [, setLocation] = useLocation();
-  const [activeSection, setActiveSection] = useState("profile");
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  if (loading) {
+  const { data: settings, isLoading } = useQuery<UserSettings>({
+    queryKey: ["/api/user/settings"],
+    enabled: !!user,
+  });
+
+  const updateSettingsMutation = useMutation({
+    mutationFn: (data: Partial<UserSettings>) =>
+      apiRequest("/api/user/settings", {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/user/settings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user/profile"] });
+      toast({
+        title: "Settings Updated",
+        description: "Your settings have been successfully saved.",
+      });
+    },
+  });
+
+  const testNotificationMutation = useMutation({
+    mutationFn: () => apiRequest("/api/user/test-notification", { method: "POST" }),
+    onSuccess: () => {
+      toast({
+        title: "Test Alert Sent",
+        description: "Check your email for the test notification.",
+      });
+    },
+  });
+
+  const handleSettingChange = (key: keyof UserSettings, value: any) => {
+    if (settings) {
+      const updatedSettings = { ...settings, [key]: value };
+      updateSettingsMutation.mutate({ [key]: value });
+    }
+  };
+
+  const handleTestAlert = () => {
+    testNotificationMutation.mutate();
+  };
+
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-white dark:bg-[#0d0f13] flex items-center justify-center">
-        <div className="text-black dark:text-white">Loading...</div>
+      <div className="min-h-screen bg-white dark:bg-black text-black dark:text-white p-8 pl-64">
+        <div className="max-w-5xl mx-auto">
+          <div className="animate-pulse space-y-6">
+            <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded w-1/4"></div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="h-64 bg-slate-200 dark:bg-slate-700 rounded"></div>
+              <div className="h-64 bg-slate-200 dark:bg-slate-700 rounded"></div>
+              <div className="h-64 bg-slate-200 dark:bg-slate-700 rounded"></div>
+              <div className="h-64 bg-slate-200 dark:bg-slate-700 rounded"></div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
-  if (!user) {
-    setLocation("/auth");
-    return null;
-  }
-
-  const settingsNavigation = [
-    { id: "profile", name: "Profile", icon: User },
-    { id: "business", name: "Business Info", icon: Building },
-    { id: "integrations", name: "Integrations", icon: Plug },
-    { id: "notifications", name: "Notifications", icon: Bell },
-    { id: "billing", name: "Billing", icon: CreditCard },
-  ];
-
-  const connectedServices = [
-    {
-      name: "Amazon MWS",
-      status: "connected",
-      lastSync: "2 hours ago",
-      icon: "🛒",
-      color: "bg-orange-500",
-    },
-    {
-      name: "FedEx Shipping",
-      status: "connected", 
-      lastSync: "1 day ago",
-      icon: "📦",
-      color: "bg-blue-500",
-    },
-    {
-      name: "Google Analytics",
-      status: "disconnected",
-      lastSync: null,
-      icon: "📊",
-      color: "bg-purple-500",
-    },
-  ];
-
-  const renderContent = () => {
-    switch (activeSection) {
-      case "profile":
-        return <ProfileSettings />;
-      case "business":
-        return (
-          <Card className="bg-[var(--charcoal)] border-[var(--slate-custom)]">
-            <CardContent className="p-6">
-              <h3 className="text-lg font-semibold mb-6 text-white">Business Information</h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-white">Business Name</label>
-                  <input
-                    type="text"
-                    className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-white focus:ring-[var(--orange-primary)] focus:border-[var(--orange-primary)]"
-                    placeholder="Enter business name"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-white">Tax ID</label>
-                  <input
-                    type="text"
-                    className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-white focus:ring-[var(--orange-primary)] focus:border-[var(--orange-primary)]"
-                    placeholder="Enter tax ID"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-white">Business Address</label>
-                  <textarea
-                    rows={3}
-                    className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-white focus:ring-[var(--orange-primary)] focus:border-[var(--orange-primary)]"
-                    placeholder="Enter business address"
-                  />
-                </div>
-                <div className="flex justify-end">
-                  <Button className="bg-[var(--orange-primary)] hover:bg-[var(--orange-light)] text-white">
-                    Save Changes
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      case "integrations":
-        return (
-          <Card className="bg-[var(--charcoal)] border-[var(--slate-custom)]">
-            <CardContent className="p-6">
-              <h3 className="text-lg font-semibold mb-6 text-white">Connected Services</h3>
-              <div className="space-y-4">
-                {connectedServices.map((service, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 bg-slate-800 rounded-lg">
-                    <div className="flex items-center space-x-4">
-                      <div className={`w-10 h-10 ${service.color} rounded-lg flex items-center justify-center text-white text-lg`}>
-                        {service.icon}
-                      </div>
-                      <div>
-                        <div className="font-medium text-white">{service.name}</div>
-                        <div className="text-sm text-slate-400">
-                          {service.status === "connected" 
-                            ? `Connected • Last sync: ${service.lastSync}`
-                            : "Not connected"
-                          }
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Badge className={
-                        service.status === "connected"
-                          ? "bg-green-500/20 text-green-400"
-                          : "bg-slate-500/20 text-slate-400"
-                      }>
-                        {service.status === "connected" ? "Active" : "Inactive"}
-                      </Badge>
-                      <Button
-                        size="sm"
-                        variant={service.status === "connected" ? "outline" : "default"}
-                        className={
-                          service.status === "connected"
-                            ? "text-slate-400 hover:text-white border-slate-600"
-                            : "bg-[var(--orange-primary)] hover:bg-[var(--orange-light)] text-white"
-                        }
-                      >
-                        {service.status === "connected" ? (
-                          <SettingsIcon className="h-4 w-4" />
-                        ) : (
-                          "Connect"
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        );
-      case "notifications":
-        return (
-          <Card className="bg-[var(--charcoal)] border-[var(--slate-custom)]">
-            <CardContent className="p-6">
-              <h3 className="text-lg font-semibold mb-6 text-white">Notification Preferences</h3>
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium text-white">Email Notifications</div>
-                    <div className="text-sm text-slate-400">Receive updates via email</div>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="bg-[var(--orange-primary)] border-[var(--orange-primary)] text-white"
-                  >
-                    Enabled
-                  </Button>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium text-white">Low Stock Alerts</div>
-                    <div className="text-sm text-slate-400">Get notified when inventory is low</div>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="bg-[var(--orange-primary)] border-[var(--orange-primary)] text-white"
-                  >
-                    Enabled
-                  </Button>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium text-white">Weekly Reports</div>
-                    <div className="text-sm text-slate-400">Receive weekly performance summaries</div>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-slate-600 text-slate-400"
-                  >
-                    Disabled
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      case "billing":
-        return (
-          <Card className="bg-[var(--charcoal)] border-[var(--slate-custom)]">
-            <CardContent className="p-6">
-              <h3 className="text-lg font-semibold mb-6 text-white">Billing & Subscription</h3>
-              <div className="space-y-6">
-                <div className="p-4 bg-[var(--orange-primary)]/10 border border-[var(--orange-primary)]/20 rounded-lg">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <div className="font-medium text-white">Pro Plan</div>
-                      <div className="text-sm text-slate-400">$49/month • Billed monthly</div>
-                    </div>
-                    <Badge className="bg-[var(--orange-primary)]/20 text-[var(--orange-primary)]">
-                      Active
-                    </Badge>
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm font-medium mb-2 text-white">Payment Method</div>
-                  <div className="flex items-center space-x-3 p-3 bg-slate-800 rounded-lg">
-                    <div className="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white text-xs font-bold">
-                      VISA
-                    </div>
-                    <div>
-                      <div className="text-white">•••• •••• •••• 4242</div>
-                      <div className="text-xs text-slate-400">Expires 12/25</div>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex space-x-3">
-                  <Button 
-                    variant="outline"
-                    className="border-slate-600 text-white hover:bg-slate-700"
-                  >
-                    Update Payment
-                  </Button>
-                  <Button 
-                    variant="outline"
-                    className="border-slate-600 text-white hover:bg-slate-700"
-                  >
-                    Download Invoice
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      default:
-        return <ProfileSettings />;
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-white dark:bg-[#0d0f13] text-black dark:text-white flex">
-      <Sidebar />
-      <ThemeToggle />
-      
-      <main className="flex-1 ml-64 p-6">
-        <div className="fade-in">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">Settings</h1>
-            <p className="text-slate-400">Manage your account and preferences</p>
+    <div className="min-h-screen bg-white dark:bg-black text-black dark:text-white p-8 pl-64">
+      <div className="max-w-5xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Settings</h1>
+            <p className="text-slate-600 dark:text-slate-400 mt-1">
+              System-wide controls and preferences
+            </p>
           </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Settings Navigation */}
-            <div className="lg:col-span-1">
-              <Card className="bg-[var(--charcoal)] border-[var(--slate-custom)]">
-                <CardContent className="p-6">
-                  <nav className="space-y-2">
-                    {settingsNavigation.map((item) => (
-                      <button
-                        key={item.id}
-                        onClick={() => setActiveSection(item.id)}
-                        className={cn(
-                          "w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 text-left",
-                          activeSection === item.id
-                            ? "bg-[var(--orange-primary)]/10 border-r-2 border-[var(--orange-primary)] text-white"
-                            : "text-slate-400 hover:bg-slate-700 hover:text-white"
-                        )}
-                      >
-                        <item.icon className={cn(
-                          "h-4 w-4",
-                          activeSection === item.id ? "text-[var(--orange-primary)]" : ""
-                        )} />
-                        <span>{item.name}</span>
-                      </button>
-                    ))}
-                  </nav>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Settings Content */}
-            <div className="lg:col-span-2">
-              {renderContent()}
-            </div>
+          <div className="flex items-center gap-3">
+            <Badge variant="outline" className="bg-[var(--orange-primary)]/10 text-[var(--orange-primary)] border-[var(--orange-primary)]/20">
+              Free Plan
+            </Badge>
+            <Button variant="outline" size="sm">
+              <CreditCard className="h-4 w-4 mr-2" />
+              Upgrade
+            </Button>
           </div>
         </div>
-      </main>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Notifications */}
+          <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Bell className="h-5 w-5 text-[var(--orange-primary)]" />
+                Notifications & Alerts
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="email-notifications">Email Notifications</Label>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Receive updates via email</p>
+                </div>
+                <Switch
+                  id="email-notifications"
+                  checked={settings?.emailNotifications || false}
+                  onCheckedChange={(checked) => handleSettingChange("emailNotifications", checked)}
+                />
+              </div>
+
+              <Separator className="bg-slate-200 dark:bg-slate-700" />
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="inventory-alerts">Inventory Alerts</Label>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Low stock and reorder notifications</p>
+                </div>
+                <Switch
+                  id="inventory-alerts"
+                  checked={settings?.inventoryAlerts || false}
+                  onCheckedChange={(checked) => handleSettingChange("inventoryAlerts", checked)}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="goal-alerts">Goal Progress Alerts</Label>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Updates on goal achievements</p>
+                </div>
+                <Switch
+                  id="goal-alerts"
+                  checked={settings?.goalAlerts || false}
+                  onCheckedChange={(checked) => handleSettingChange("goalAlerts", checked)}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="low-stock-threshold">Low Stock Threshold</Label>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Alert when stock falls below</p>
+                </div>
+                <div className="w-20">
+                  <Input
+                    type="number"
+                    min="1"
+                    max="100"
+                    value={settings?.lowStockThreshold || 10}
+                    onChange={(e) => handleSettingChange("lowStockThreshold", parseInt(e.target.value) || 10)}
+                    className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleTestAlert}
+                  disabled={testNotificationMutation.isPending}
+                >
+                  {testNotificationMutation.isPending ? "Sending..." : "Test Alert"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Regional Settings */}
+          <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Globe className="h-5 w-5 text-[var(--orange-primary)]" />
+                Regional Settings
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="currency">Currency</Label>
+                <Select 
+                  value={settings?.currency || "USD"} 
+                  onValueChange={(value) => handleSettingChange("currency", value)}
+                >
+                  <SelectTrigger className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="USD">USD - US Dollar</SelectItem>
+                    <SelectItem value="EUR">EUR - Euro</SelectItem>
+                    <SelectItem value="GBP">GBP - British Pound</SelectItem>
+                    <SelectItem value="CAD">CAD - Canadian Dollar</SelectItem>
+                    <SelectItem value="JPY">JPY - Japanese Yen</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="timezone">Timezone</Label>
+                <Select 
+                  value={settings?.timezone || "UTC"} 
+                  onValueChange={(value) => handleSettingChange("timezone", value)}
+                >
+                  <SelectTrigger className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="UTC">UTC</SelectItem>
+                    <SelectItem value="America/New_York">Eastern Time</SelectItem>
+                    <SelectItem value="America/Chicago">Central Time</SelectItem>
+                    <SelectItem value="America/Denver">Mountain Time</SelectItem>
+                    <SelectItem value="America/Los_Angeles">Pacific Time</SelectItem>
+                    <SelectItem value="Europe/London">London</SelectItem>
+                    <SelectItem value="Europe/Paris">Paris</SelectItem>
+                    <SelectItem value="Asia/Tokyo">Tokyo</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="theme">Theme</Label>
+                <Select 
+                  value={settings?.theme || "dark"} 
+                  onValueChange={(value) => handleSettingChange("theme", value)}
+                >
+                  <SelectTrigger className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="light">Light Mode</SelectItem>
+                    <SelectItem value="dark">Dark Mode</SelectItem>
+                    <SelectItem value="system">System Default</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Export & Data */}
+          <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Download className="h-5 w-5 text-[var(--orange-primary)]" />
+                Export & Data
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="export-format">Default Export Format</Label>
+                <Select 
+                  value={settings?.exportFormat || "CSV"} 
+                  onValueChange={(value) => handleSettingChange("exportFormat", value)}
+                >
+                  <SelectTrigger className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="CSV">CSV</SelectItem>
+                    <SelectItem value="PDF">PDF</SelectItem>
+                    <SelectItem value="XLSX">Excel</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="auto-sync">Auto-Sync Data</Label>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Automatically sync with Amazon MWS</p>
+                </div>
+                <Switch
+                  id="auto-sync"
+                  checked={settings?.autoSync || false}
+                  onCheckedChange={(checked) => handleSettingChange("autoSync", checked)}
+                />
+              </div>
+
+              <Separator className="bg-slate-200 dark:bg-slate-700" />
+
+              <div className="space-y-2">
+                <Button variant="outline" className="w-full">
+                  Export All Data
+                </Button>
+                <Button variant="outline" className="w-full">
+                  Download Report Templates
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Security & Account */}
+          <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5 text-[var(--orange-primary)]" />
+                Security & Account
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Button variant="outline" className="w-full justify-start">
+                  <Mail className="h-4 w-4 mr-2" />
+                  Change Email
+                </Button>
+                <Button variant="outline" className="w-full justify-start">
+                  <Shield className="h-4 w-4 mr-2" />
+                  Change Password
+                </Button>
+                <Button variant="outline" className="w-full justify-start">
+                  <Globe className="h-4 w-4 mr-2" />
+                  Manage Connected Accounts
+                </Button>
+              </div>
+
+              <Separator className="bg-slate-200 dark:bg-slate-700" />
+
+              <div className="space-y-2">
+                <h4 className="font-medium">Recent Activity</h4>
+                <div className="text-sm text-slate-600 dark:text-slate-400 space-y-1">
+                  <p>• Last login: Today at 2:30 PM</p>
+                  <p>• Data export: Yesterday</p>
+                  <p>• Settings updated: Just now</p>
+                </div>
+              </div>
+
+              <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-red-800 dark:text-red-300">Danger Zone</p>
+                    <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                      Permanently delete your account and all data
+                    </p>
+                    <Button 
+                      variant="destructive" 
+                      size="sm" 
+                      className="mt-2"
+                      onClick={() => toast({
+                        title: "Account Deletion",
+                        description: "Please contact support to delete your account.",
+                        variant: "destructive",
+                      })}
+                    >
+                      Delete Account
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Beta Features */}
+          <Card className="lg:col-span-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Zap className="h-5 w-5 text-[var(--orange-primary)]" />
+                Beta Features & Experiments
+                <Badge variant="secondary">Coming Soon</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="p-4 border border-dashed border-slate-300 dark:border-slate-600 rounded-lg">
+                  <h4 className="font-medium mb-2">AI Forecast Engine</h4>
+                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
+                    Predictive analytics for inventory planning
+                  </p>
+                  <Switch disabled />
+                </div>
+                <div className="p-4 border border-dashed border-slate-300 dark:border-slate-600 rounded-lg">
+                  <h4 className="font-medium mb-2">Scenario Simulator</h4>
+                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
+                    What-if analysis for business decisions
+                  </p>
+                  <Switch disabled />
+                </div>
+                <div className="p-4 border border-dashed border-slate-300 dark:border-slate-600 rounded-lg">
+                  <h4 className="font-medium mb-2">Advanced Integrations</h4>
+                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
+                    Connect with Shopify, eBay, and more
+                  </p>
+                  <Switch disabled />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }

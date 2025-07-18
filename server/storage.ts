@@ -27,6 +27,14 @@ export interface IStorage {
   getUserByFirebaseUid(firebaseUid: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, user: Partial<InsertUser>): Promise<User>;
+  getUserStats(userId: number): Promise<{
+    inventoryItems: number;
+    salesEntries: number;
+    goalProgress: number;
+    reportsExported: number;
+    totalRevenue: number;
+    totalProfit: number;
+  }>;
 
   // Products
   getProducts(userId: number): Promise<Product[]>;
@@ -94,10 +102,63 @@ export class DatabaseStorage implements IStorage {
   async updateUser(id: number, updateData: Partial<InsertUser>): Promise<User> {
     const [user] = await db
       .update(users)
-      .set(updateData)
+      .set({ ...updateData, updatedAt: new Date() })
       .where(eq(users.id, id))
       .returning();
     return user;
+  }
+
+  async getUserStats(userId: number): Promise<{
+    inventoryItems: number;
+    salesEntries: number;
+    goalProgress: number;
+    reportsExported: number;
+    totalRevenue: number;
+    totalProfit: number;
+  }> {
+    const [inventoryCount] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(inventory)
+      .where(eq(inventory.userId, userId));
+
+    const [salesCount] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(sales)
+      .where(eq(sales.userId, userId));
+
+    const [reportsCount] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(reports)
+      .where(eq(reports.userId, userId));
+
+    const [salesMetrics] = await db
+      .select({
+        totalRevenue: sql<number>`COALESCE(SUM(${sales.totalRevenue}), 0)`,
+        totalProfit: sql<number>`COALESCE(SUM(${sales.profit}), 0)`,
+      })
+      .from(sales)
+      .where(eq(sales.userId, userId));
+
+    const [goalStats] = await db
+      .select({
+        completedGoals: sql<number>`COUNT(CASE WHEN ${goals.status} = 'completed' THEN 1 END)`,
+        totalGoals: sql<number>`COUNT(*)`
+      })
+      .from(goals)
+      .where(eq(goals.userId, userId));
+
+    const goalProgress = goalStats.totalGoals > 0 
+      ? Math.round((goalStats.completedGoals / goalStats.totalGoals) * 100)
+      : 0;
+
+    return {
+      inventoryItems: Number(inventoryCount.count),
+      salesEntries: Number(salesCount.count),
+      goalProgress,
+      reportsExported: Number(reportsCount.count),
+      totalRevenue: Number(salesMetrics.totalRevenue),
+      totalProfit: Number(salesMetrics.totalProfit),
+    };
   }
 
   // Products

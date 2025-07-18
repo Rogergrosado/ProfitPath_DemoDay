@@ -16,6 +16,7 @@ import SimpleAnalytics from "@/pages/simple-analytics";
 import Reports from "@/pages/reports";
 import Goals from "@/pages/goals";
 import Settings from "@/pages/settings";
+import Profile from "@/pages/profile";
 import TestPage from "@/pages/test-page";
 
 function Router() {
@@ -30,6 +31,7 @@ function Router() {
       <Route path="/reports" component={Reports} />
       <Route path="/goals" component={Goals} />
       <Route path="/settings" component={Settings} />
+      <Route path="/profile" component={Profile} />
       <Route path="/test" component={TestPage} />
       <Route component={NotFound} />
     </Switch>

@@ -43,6 +43,12 @@ export default function Goals() {
   const [selectedGoal, setSelectedGoal] = useState<any>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
 
+  // Fetch user profile for personalization
+  const { data: userProfile } = useQuery({
+    queryKey: ["/api/user/profile"],
+    enabled: !!user,
+  });
+
   const { data: goals = [] } = useQuery({
     queryKey: ["/api/goals"],
     enabled: !!user,
@@ -220,8 +226,15 @@ export default function Goals() {
           <div className="mb-8">
             <div className="flex justify-between items-center">
               <div>
-                <h1 className="text-3xl font-bold mb-2">Goals & Targets</h1>
-                <p className="text-gray-600 dark:text-slate-400">Set, track, and achieve your business objectives</p>
+                <h1 className="text-3xl font-bold mb-2">
+                  {userProfile?.businessName ? `${userProfile.businessName} Goals & Targets` : 'Goals & Targets'}
+                </h1>
+                <p className="text-gray-600 dark:text-slate-400">
+                  {userProfile?.businessName 
+                    ? `Set, track, and achieve ${userProfile.businessName} business objectives`
+                    : "Set, track, and achieve your business objectives"
+                  }
+                </p>
               </div>
               <Button 
                 onClick={() => setShowCreateModal(true)}
