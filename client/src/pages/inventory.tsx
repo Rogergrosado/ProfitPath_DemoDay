@@ -417,7 +417,7 @@ function InventoryAnalytics({ items }: { items: any[] }) {
         </CardContent>
       </Card>
 
-      <PerformanceSyncModal isOpen={isSyncing} />
+
     </div>
   );
 }
