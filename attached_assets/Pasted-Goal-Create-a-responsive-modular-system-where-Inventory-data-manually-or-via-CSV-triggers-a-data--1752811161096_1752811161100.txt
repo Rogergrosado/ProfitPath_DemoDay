@@ -1,0 +1,147 @@
+Goal
+Create a responsive, modular system where:
+
+Inventory data manually or via CSV triggers a data sync.
+
+During this sync, a Performance Sync Modal appears.
+
+Once sync is complete, the Performance page (or its metrics) updates automatically.
+
+Handle cases where Performance fails gracefully (e.g., fallback UI or retry).
+
+⚙️ Tech Strategy
+1. 🔁 Establish Backend Link Between Inventory & Performance
+Use server-side or API logic to recompute performance metrics based on InventoryItem and SalesEntry when changes occur.
+
+You already have endpoints like:
+
+GET /api/performance/metrics
+
+POST /api/sales-entry
+
+etc.
+
+Ensure POST /api/inventory and PUT /api/inventory/:id trigger side effects like:
+
+Updating or syncing performance metrics
+
+Triggering a flag like isSyncing: true on the backend or in cache
+
+2. 📦 Inventory → Performance Data Sync Function
+In Inventory.tsx, when user submits a change or uploads CSV:
+
+tsx
+Copiar código
+// pseudo-code
+const handleInventorySubmit = async (formData) => {
+  setShowPerformanceSync(true); // toggle popup/modal
+  await axios.post('/api/inventory', formData);
+
+  // Trigger re-computation or invalidate SWR cache
+  await axios.post('/api/performance/recalculate');
+  
+  setShowPerformanceSync(false); // close popup
+};
+3. 🧩 Create <PerformanceSyncModal />
+A reusable popup component that says something like:
+
+tsx
+Copiar código
+// PerformanceSyncModal.tsx
+export default function PerformanceSyncModal({ isOpen }) {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 z-50">
+      <div className="p-6 bg-[#222831] rounded-2xl text-white shadow-2xl w-[300px] text-center">
+        <h2 className="text-xl font-bold mb-2">Updating Performance</h2>
+        <p className="text-sm">Syncing inventory changes to analytics...</p>
+        <div className="mt-4 animate-spin border-4 border-orange-500 border-t-transparent rounded-full w-6 h-6 mx-auto" />
+      </div>
+    </div>
+  );
+}
+4. 🔍 Performance Page Pulls Fresh Data
+In PerformanceAnalytics.tsx:
+
+tsx
+Copiar código
+const { data: metrics, isLoading, mutate } = useSWR(
+  `/api/performance/metrics?range=30d`,
+  fetcher
+);
+
+// Optionally refetch when sync is done
+useEffect(() => {
+  if (!isSyncing) mutate();
+}, [isSyncing]);
+You can pass isSyncing from global context or prop-drill if needed.
+
+🧠 Optional Enhancements
+Feature	Description
+📅 Schedule Recalculations	Recalculate performance once per day if no change
+⚠️ Error Modal	Show fallback if /performance/metrics fails
+🧪 Testing Modal	Build a testing flag (e.g., ?debugSync=true)
+🧵 Hook into Zustand/Context	Track isSyncing across pages/app
+
+📤 Replit-Ready Prompt
+Paste the following into your Replit React frontend:
+
+bash
+Copiar código
+# Frontend Setup
+
+1. In `components/modals/PerformanceSyncModal.tsx`, create the modal:
+# Paste component above
+
+2. In `pages/inventory.tsx`, update submit/upload functions:
+```tsx
+import PerformanceSyncModal from '@/components/modals/PerformanceSyncModal';
+
+const [isSyncing, setIsSyncing] = useState(false);
+
+const handleInventorySubmit = async (formData) => {
+  try {
+    setIsSyncing(true);
+    await axios.post('/api/inventory', formData);
+    await axios.post('/api/performance/recalculate');
+  } catch (err) {
+    console.error('Sync error:', err);
+  } finally {
+    setIsSyncing(false);
+  }
+};
+
+return (
+  <>
+    <PerformanceSyncModal isOpen={isSyncing} />
+    {/* Your inventory form/table */}
+  </>
+);
+In pages/performance.tsx, use SWR or data fetching hook to refetch when data changes.
+
+Backend Setup
+Add /api/performance/recalculate.ts endpoint:
+
+ts
+Copiar código
+// Recalculate metrics (mocked logic)
+export default async function handler(req, res) {
+  try {
+    const sales = await getSalesData(); // From DB
+    const inventory = await getInventoryData(); // From DB
+
+    const metrics = calculatePerformance(sales, inventory); // Custom logic
+    await saveToCacheOrDB(metrics); // Save or update in backend
+
+    res.status(200).json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Recalculation failed' });
+  }
+}
+🧩 Summary of Solution
+Module	Role
+PerformanceSyncModal.tsx	User feedback on syncing
+Inventory.tsx	Triggers data + shows modal
+/api/performance/recalculate	Ensures clean backend sync
+PerformanceAnalytics.tsx	Refetches metrics when ready
+

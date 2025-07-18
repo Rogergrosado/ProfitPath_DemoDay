@@ -328,6 +328,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Recalculate performance metrics
+  app.post("/api/performance/recalculate", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      
+      // Get fresh data from database
+      const sales = await storage.getSales(authReq.userId);
+      const inventoryItems = await storage.getInventoryItems(authReq.userId);
+      
+      // Calculate fresh metrics
+      const totalRevenue = sales.reduce((sum: number, sale: any) => sum + parseFloat(sale.totalRevenue), 0);
+      const totalProfit = sales.reduce((sum: number, sale: any) => sum + parseFloat(sale.profit || 0), 0);
+      const totalUnits = sales.reduce((sum: number, sale: any) => sum + sale.quantity, 0);
+      const conversionRate = 2.4; // Mock for now
+      
+      const metrics = {
+        totalRevenue,
+        totalProfit,
+        totalUnits,
+        conversionRate,
+        lastUpdated: new Date().toISOString()
+      };
+      
+      res.json({ success: true, metrics });
+    } catch (error) {
+      console.error('Performance recalculation error:', error);
+      res.status(500).json({ error: "Recalculation failed" });
+    }
+  });
+
   // Reports
   app.get("/api/reports", requireAuth, async (req, res) => {
     try {

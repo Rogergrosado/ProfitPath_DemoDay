@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 import { Sidebar } from "@/components/Navigation/Sidebar";
 import { ThemeToggle } from "@/components/Navigation/ThemeToggle";
 import { InventoryTable } from "@/components/Inventory/InventoryTable";
@@ -10,6 +11,7 @@ import { SalesEntryModal } from "@/components/Inventory/SalesEntryModal";
 import { InventoryImport } from "@/components/Inventory/InventoryImport";
 import { ReorderCalendar } from "@/components/Inventory/ReorderCalendar";
 import { AddInventoryModal } from "@/components/Inventory/AddInventoryModal";
+import PerformanceSyncModal from "@/components/modals/PerformanceSyncModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -49,6 +51,26 @@ export default function Inventory() {
   const [showSalesModal, setShowSalesModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  // Sync function for inventory changes
+  const handleInventorySync = async () => {
+    try {
+      setIsSyncing(true);
+      const response = await fetch('/api/performance/recalculate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (response.ok) {
+        // Invalidate performance cache to trigger refetch
+        queryClient.invalidateQueries({ queryKey: ["/api/performance/metrics"] });
+        setTimeout(() => setIsSyncing(false), 1500);
+      }
+    } catch (error) {
+      console.error('Sync error:', error);
+      setIsSyncing(false);
+    }
+  };
 
   const { data: inventory = [], isLoading } = useQuery({
     queryKey: ["/api/inventory"],
@@ -128,6 +150,15 @@ export default function Inventory() {
                 >
                   <Upload className="h-4 w-4 mr-2" />
                   Import CSV
+                </Button>
+                <Button 
+                  onClick={handleInventorySync}
+                  disabled={isSyncing}
+                  variant="outline"
+                  className="border-[#fd7014] text-[#fd7014] hover:bg-[#fd7014]/10"
+                >
+                  <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+                  {isSyncing ? 'Syncing...' : 'Sync Performance'}
                 </Button>
                 <Button 
                   onClick={() => setShowAddModal(true)}
@@ -347,6 +378,8 @@ function InventoryAnalytics({ items }: { items: any[] }) {
           </div>
         </CardContent>
       </Card>
+
+      <PerformanceSyncModal isOpen={isSyncing} />
     </div>
   );
 }
