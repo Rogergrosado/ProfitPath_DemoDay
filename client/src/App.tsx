@@ -16,6 +16,7 @@ import Analytics from "@/pages/analytics";
 import Reports from "@/pages/reports";
 import Goals from "@/pages/goals";
 import Settings from "@/pages/settings";
+import TestPage from "@/pages/test-page";
 
 function Router() {
   return (
@@ -29,6 +30,7 @@ function Router() {
       <Route path="/reports" component={Reports} />
       <Route path="/goals" component={Goals} />
       <Route path="/settings" component={Settings} />
+      <Route path="/test" component={TestPage} />
       <Route component={NotFound} />
     </Switch>
   );
