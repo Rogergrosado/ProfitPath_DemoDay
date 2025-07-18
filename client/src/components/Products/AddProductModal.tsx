@@ -94,9 +94,12 @@ export function AddProductModal({ children }: AddProductModalProps) {
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="bg-[hsl(240,10%,13%)] border-[hsl(240,3.7%,15.9%)] text-white">
+      <DialogContent className="bg-[hsl(240,10%,13%)] border-[hsl(240,3.7%,15.9%)] text-white" aria-describedby="add-product-description">
         <DialogHeader>
           <DialogTitle>Add Product to Watchlist</DialogTitle>
+          <p id="add-product-description" className="text-sm text-gray-400">
+            Add a new product to your watchlist for research and validation
+          </p>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
