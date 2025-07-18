@@ -31,11 +31,25 @@
 ```
 
 ### 2. Vercel Deployment
+
+**Option A: Static Frontend Only (Current vercel.json)**
 ```bash
 # Install Vercel CLI
 npm i -g vercel
 
-# Deploy
+# Deploy static frontend
+vercel --prod
+
+# Note: API routes won't work with this option
+```
+
+**Option B: Full-Stack Application (Recommended)**
+```bash
+# Rename configuration file
+mv vercel.json vercel-static.json
+mv vercel-fullstack.json vercel.json
+
+# Deploy full application
 vercel --prod
 
 # Set environment variables in Vercel dashboard
