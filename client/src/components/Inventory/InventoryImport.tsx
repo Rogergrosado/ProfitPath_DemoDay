@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -10,54 +10,104 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Upload, Download, FileText, AlertCircle, CheckCircle } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Upload, Download, FileText, CheckCircle, AlertCircle, X, Info, FileSpreadsheet } from "lucide-react";
 
 interface InventoryImportProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
+interface PreviewItem {
+  name: string;
+  sku: string;
+  category: string;
+  currentStock: number;
+  costPrice: number;
+  sellingPrice: number;
+  errors?: string[];
+}
+
 export function InventoryImport({ open, onOpenChange }: InventoryImportProps) {
+  const [dragActive, setDragActive] = useState(false);
   const [file, setFile] = useState<File | null>(null);
-  const [importPreview, setImportPreview] = useState<any[]>([]);
-  const [step, setStep] = useState<"upload" | "preview" | "complete">("upload");
-  const [importResults, setImportResults] = useState<any>(null);
+  const [previewData, setPreviewData] = useState<PreviewItem[]>([]);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [currentStep, setCurrentStep] = useState<"upload" | "preview" | "complete">("upload");
   
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const importMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("/api/inventory/import", {
+    mutationFn: (data: PreviewItem[]) => apiRequest("/api/inventory/import", {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify({ items: data }),
     }),
-    onSuccess: (results) => {
-      setImportResults(results);
-      setStep("complete");
-      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+    onSuccess: (response) => {
+      setCurrentStep("complete");
       toast({
-        title: "Import completed",
-        description: `${results.successful} items imported successfully.`,
+        title: "Import successful",
+        description: `Successfully imported ${response.imported} items. ${response.skipped} items were skipped.`,
       });
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
     },
     onError: (error: any) => {
       toast({
         title: "Import failed",
-        description: error.message || "Please check your file format and try again.",
+        description: error.message || "Please check your CSV format and try again.",
         variant: "destructive",
       });
     },
   });
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (!selectedFile) return;
+  const requiredColumns = [
+    { key: "name", label: "Product Name", required: true },
+    { key: "sku", label: "SKU", required: true },
+    { key: "category", label: "Category", required: true },
+    { key: "currentStock", label: "Current Stock", required: false },
+    { key: "costPrice", label: "Cost Price", required: false },
+    { key: "sellingPrice", label: "Selling Price", required: false },
+    { key: "reorderPoint", label: "Reorder Point", required: false },
+    { key: "supplierName", label: "Supplier Name", required: false },
+    { key: "supplierSKU", label: "Supplier SKU", required: false },
+    { key: "leadTimeDays", label: "Lead Time (Days)", required: false },
+    { key: "notes", label: "Notes", required: false },
+  ];
 
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      handleFile(e.target.files[0]);
+    }
+  };
+
+  const handleFile = async (selectedFile: File) => {
     if (!selectedFile.name.endsWith('.csv')) {
       toast({
-        title: "Invalid file format",
+        title: "Invalid file type",
         description: "Please select a CSV file.",
         variant: "destructive",
       });
@@ -66,256 +116,396 @@ export function InventoryImport({ open, onOpenChange }: InventoryImportProps) {
 
     setFile(selectedFile);
     
-    // Parse CSV preview
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const text = event.target?.result as string;
+    try {
+      const text = await selectedFile.text();
       const lines = text.split('\n').filter(line => line.trim());
+      const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
       
-      if (lines.length < 2) {
-        toast({
-          title: "Empty file",
-          description: "The CSV file appears to be empty or missing data.",
-          variant: "destructive",
-        });
+      // Validate headers
+      const missingRequired = requiredColumns
+        .filter(col => col.required && !headers.includes(col.key.toLowerCase()))
+        .map(col => col.label);
+      
+      if (missingRequired.length > 0) {
+        setValidationErrors([`Missing required columns: ${missingRequired.join(', ')}`]);
         return;
       }
 
-      const headers = lines[0].split(',').map(h => h.trim());
-      const preview = lines.slice(1, 6).map(line => {
-        const values = line.split(',').map(v => v.trim());
-        const item: any = {};
-        headers.forEach((header, index) => {
-          item[header] = values[index] || '';
-        });
-        return item;
-      });
-
-      setImportPreview(preview);
-      setStep("preview");
-    };
-    
-    reader.readAsText(selectedFile);
-  };
-
-  const handleImport = () => {
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const text = event.target?.result as string;
-      const lines = text.split('\n').filter(line => line.trim());
-      const headers = lines[0].split(',').map(h => h.trim());
+      // Parse data
+      const data: PreviewItem[] = [];
+      const errors: string[] = [];
       
-      const items = lines.slice(1).map(line => {
-        const values = line.split(',').map(v => v.trim());
+      for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(',').map(v => v.trim());
         const item: any = {};
+        const itemErrors: string[] = [];
+        
         headers.forEach((header, index) => {
-          item[header] = values[index] || '';
+          const value = values[index] || '';
+          
+          switch (header) {
+            case 'name':
+            case 'sku':
+            case 'category':
+            case 'suppliername':
+            case 'suppliersku':
+            case 'notes':
+              item[header] = value;
+              break;
+            case 'currentstock':
+            case 'reorderpoint':
+            case 'leadtimedays':
+              item[header.replace('timedays', 'TimeDays')] = parseInt(value) || 0;
+              break;
+            case 'costprice':
+            case 'sellingprice':
+              item[header.replace('price', 'Price')] = parseFloat(value) || 0;
+              break;
+            default:
+              item[header] = value;
+          }
         });
-        return item;
-      });
 
-      importMutation.mutate({ items });
-    };
-    
-    reader.readAsText(file);
+        // Validation
+        if (!item.name) itemErrors.push("Missing product name");
+        if (!item.sku) itemErrors.push("Missing SKU");
+        if (!item.category) itemErrors.push("Missing category");
+        
+        if (itemErrors.length > 0) {
+          item.errors = itemErrors;
+          errors.push(`Row ${i + 1}: ${itemErrors.join(', ')}`);
+        }
+        
+        data.push(item);
+      }
+      
+      setPreviewData(data);
+      setValidationErrors(errors);
+      setCurrentStep("preview");
+      
+    } catch (error) {
+      toast({
+        title: "Failed to parse CSV",
+        description: "Please check your file format and try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const downloadTemplate = () => {
-    const template = `name,sku,category,currentStock,reorderPoint,costPrice,sellingPrice,supplierName,supplierSKU,leadTimeDays
-Example Product,EX-001,Electronics,100,20,15.00,29.99,Supplier Inc,SUP-001,7
-Another Item,AN-002,Home & Garden,50,10,8.50,19.99,Garden Co,GC-002,14`;
+    const headers = requiredColumns.map(col => col.key).join(',');
+    const sampleData = [
+      'Wireless Earbuds,WE-2024-001,electronics,100,25.99,49.99,20,TechSupplier,SUP-WE-001,14,High-quality wireless earbuds',
+      'Gaming Mouse,GM-2024-002,electronics,50,15.50,39.99,10,GamerCorp,GC-GM-789,7,RGB gaming mouse with high DPI'
+    ];
     
-    const blob = new Blob([template], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'inventory_template.csv';
-    a.click();
-    window.URL.revokeObjectURL(url);
+    const csvContent = [headers, ...sampleData].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'inventory_import_template.csv';
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
-  const resetModal = () => {
-    setFile(null);
-    setImportPreview([]);
-    setStep("upload");
-    setImportResults(null);
+  const handleImport = () => {
+    const validItems = previewData.filter(item => !item.errors || item.errors.length === 0);
+    if (validItems.length === 0) {
+      toast({
+        title: "No valid items to import",
+        description: "Please fix the validation errors before importing.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    importMutation.mutate(validItems);
   };
+
+  const resetImport = () => {
+    setFile(null);
+    setPreviewData([]);
+    setValidationErrors([]);
+    setCurrentStep("upload");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const validItemsCount = previewData.filter(item => !item.errors || item.errors.length === 0).length;
+  const invalidItemsCount = previewData.length - validItemsCount;
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => {
-      if (!isOpen) resetModal();
-      onOpenChange(isOpen);
-    }}>
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto bg-white dark:bg-[#222831] border-gray-200 dark:border-slate-700">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-hidden bg-white dark:bg-[#222831] border-gray-200 dark:border-slate-700">
         <DialogHeader>
           <DialogTitle className="flex items-center text-black dark:text-white">
-            <Upload className="h-5 w-5 mr-2 text-[#fd7014]" />
-            Import Inventory
+            <FileSpreadsheet className="h-5 w-5 mr-2 text-[#fd7014]" />
+            Import Inventory from CSV
           </DialogTitle>
           <DialogDescription className="text-gray-600 dark:text-gray-400">
-            Upload a CSV file to bulk import or update inventory items.
+            {currentStep === "upload" && "Upload your CSV file to import inventory items in bulk"}
+            {currentStep === "preview" && "Review your data before importing"}
+            {currentStep === "complete" && "Import completed successfully"}
           </DialogDescription>
         </DialogHeader>
 
-        {step === "upload" && (
-          <div className="space-y-6">
-            {/* Template Download */}
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 rounded-lg">
-              <div className="flex items-start space-x-3">
-                <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
-                <div className="flex-1">
-                  <h3 className="font-medium text-blue-800 dark:text-blue-200">Need a template?</h3>
-                  <p className="text-sm text-blue-600 dark:text-blue-300 mb-3">
-                    Download our CSV template with the correct format and example data.
-                  </p>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={downloadTemplate}
-                    className="border-blue-300 dark:border-blue-600 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-800"
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Download Template
-                  </Button>
-                </div>
-              </div>
-            </div>
+        <div className="space-y-6">
+          {currentStep === "upload" && (
+            <>
+              {/* Instructions */}
+              <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+                <CardHeader>
+                  <CardTitle className="flex items-center text-blue-800 dark:text-blue-300">
+                    <Info className="h-5 w-5 mr-2" />
+                    CSV Format Instructions
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <h4 className="font-semibold text-blue-800 dark:text-blue-300 mb-2">Required Columns:</h4>
+                    <div className="grid grid-cols-3 gap-2">
+                      {requiredColumns.filter(col => col.required).map(col => (
+                        <Badge key={col.key} variant="secondary" className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200">
+                          {col.label}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-semibold text-blue-800 dark:text-blue-300 mb-2">Optional Columns:</h4>
+                    <div className="grid grid-cols-3 gap-2">
+                      {requiredColumns.filter(col => !col.required).map(col => (
+                        <Badge key={col.key} variant="outline" className="border-blue-300 dark:border-blue-600 text-blue-700 dark:text-blue-300">
+                          {col.label}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
 
-            {/* File Upload */}
-            <div>
-              <Label htmlFor="file-upload" className="text-black dark:text-white">Upload CSV File</Label>
-              <div className="mt-2 border-2 border-dashed border-gray-300 dark:border-slate-600 rounded-lg p-6 text-center">
-                <Upload className="h-12 w-12 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
-                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  <div className="text-sm text-blue-700 dark:text-blue-300">
+                    <p className="mb-2"><strong>Important Guidelines:</strong></p>
+                    <ul className="list-disc list-inside space-y-1">
+                      <li>Use column headers exactly as shown above (case-insensitive)</li>
+                      <li>SKU must be unique for each product</li>
+                      <li>Categories: electronics, home-garden, sports-outdoors, health-beauty, toys-games, clothing, automotive, books</li>
+                      <li>Prices should be decimal numbers (e.g., 25.99)</li>
+                      <li>Stock quantities should be whole numbers</li>
+                      <li>Lead time should be in days</li>
+                    </ul>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Template Download */}
+              <div className="flex justify-center">
+                <Button 
+                  variant="outline" 
+                  onClick={downloadTemplate}
+                  className="border-gray-300 dark:border-slate-600 text-black dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download Template CSV
+                </Button>
+              </div>
+
+              {/* Drag and Drop Area */}
+              <Card 
+                className={`border-2 border-dashed transition-colors ${
+                  dragActive 
+                    ? "border-[#fd7014] bg-orange-50 dark:bg-orange-900/20" 
+                    : "border-gray-300 dark:border-slate-600 bg-gray-50 dark:bg-slate-800"
+                }`}
+                onDragEnter={handleDrag}
+                onDragLeave={handleDrag}
+                onDragOver={handleDrag}
+                onDrop={handleDrop}
+              >
+                <CardContent className="p-12 text-center">
+                  <Upload className={`h-16 w-16 mx-auto mb-4 ${
+                    dragActive ? "text-[#fd7014]" : "text-gray-400 dark:text-gray-600"
+                  }`} />
+                  <h3 className="text-lg font-semibold text-black dark:text-white mb-2">
+                    Drop your CSV file here
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">
+                    or click to browse and select a file
+                  </p>
                   <input
-                    id="file-upload"
+                    ref={fileInputRef}
                     type="file"
                     accept=".csv"
-                    onChange={handleFileUpload}
-                    className="sr-only"
+                    onChange={handleFileInput}
+                    className="hidden"
                   />
-                  <label htmlFor="file-upload" className="cursor-pointer">
-                    <span className="text-[#fd7014] hover:text-[#e5640f]">Upload a file</span> or drag and drop
-                  </label>
-                  <p className="text-xs">CSV files only</p>
-                </div>
+                  <Button 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="bg-[#fd7014] hover:bg-[#e5640f] text-white"
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    Choose CSV File
+                  </Button>
+                </CardContent>
+              </Card>
+            </>
+          )}
+
+          {currentStep === "preview" && (
+            <>
+              {/* Preview Summary */}
+              <div className="grid grid-cols-3 gap-4">
+                <Card className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+                  <CardContent className="p-4 text-center">
+                    <CheckCircle className="h-8 w-8 text-green-600 mx-auto mb-2" />
+                    <div className="text-2xl font-bold text-green-600">{validItemsCount}</div>
+                    <div className="text-sm text-green-700 dark:text-green-300">Valid Items</div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800">
+                  <CardContent className="p-4 text-center">
+                    <AlertCircle className="h-8 w-8 text-red-600 mx-auto mb-2" />
+                    <div className="text-2xl font-bold text-red-600">{invalidItemsCount}</div>
+                    <div className="text-sm text-red-700 dark:text-red-300">Invalid Items</div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+                  <CardContent className="p-4 text-center">
+                    <FileText className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+                    <div className="text-2xl font-bold text-blue-600">{previewData.length}</div>
+                    <div className="text-sm text-blue-700 dark:text-blue-300">Total Items</div>
+                  </CardContent>
+                </Card>
               </div>
-            </div>
 
-            {/* Required Fields */}
-            <div>
-              <h3 className="font-medium text-black dark:text-white mb-3">Required CSV Columns</h3>
-              <div className="grid grid-cols-2 gap-2">
-                {['name', 'sku', 'category', 'currentStock', 'costPrice', 'sellingPrice'].map(field => (
-                  <Badge key={field} variant="outline" className="justify-start text-black dark:text-white border-gray-300 dark:border-slate-600">
-                    {field}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
+              {/* Validation Errors */}
+              {validationErrors.length > 0 && (
+                <Card className="bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800">
+                  <CardHeader>
+                    <CardTitle className="text-red-800 dark:text-red-300">Validation Errors</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ScrollArea className="h-32">
+                      <ul className="space-y-1">
+                        {validationErrors.map((error, index) => (
+                          <li key={index} className="text-sm text-red-700 dark:text-red-300">
+                            • {error}
+                          </li>
+                        ))}
+                      </ul>
+                    </ScrollArea>
+                  </CardContent>
+                </Card>
+              )}
 
-        {step === "preview" && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="font-medium text-black dark:text-white">Preview Import Data</h3>
-              <Badge className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
-                {importPreview.length} items (showing first 5)
-              </Badge>
-            </div>
+              {/* Preview Data */}
+              <Card className="bg-gray-50 dark:bg-slate-800 border-gray-200 dark:border-slate-600">
+                <CardHeader>
+                  <CardTitle className="text-black dark:text-white">Preview Data</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-64">
+                    <div className="space-y-2">
+                      {previewData.slice(0, 10).map((item, index) => (
+                        <div 
+                          key={index} 
+                          className={`p-3 rounded-lg border ${
+                            item.errors && item.errors.length > 0
+                              ? "border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20"
+                              : "border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="font-medium text-black dark:text-white">{item.name}</div>
+                              <div className="text-sm text-gray-600 dark:text-gray-400">
+                                SKU: {item.sku} | Category: {item.category} | Stock: {item.currentStock}
+                              </div>
+                            </div>
+                            {item.errors && item.errors.length > 0 ? (
+                              <AlertCircle className="h-5 w-5 text-red-500" />
+                            ) : (
+                              <CheckCircle className="h-5 w-5 text-green-500" />
+                            )}
+                          </div>
+                          {item.errors && item.errors.length > 0 && (
+                            <div className="mt-2 text-sm text-red-600 dark:text-red-400">
+                              {item.errors.join(', ')}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      {previewData.length > 10 && (
+                        <div className="text-center text-sm text-gray-500 dark:text-gray-400 py-2">
+                          ... and {previewData.length - 10} more items
+                        </div>
+                      )}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </>
+          )}
 
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-200 dark:border-slate-600">
-                    <th className="px-3 py-2 text-left text-gray-600 dark:text-gray-400">Name</th>
-                    <th className="px-3 py-2 text-left text-gray-600 dark:text-gray-400">SKU</th>
-                    <th className="px-3 py-2 text-left text-gray-600 dark:text-gray-400">Stock</th>
-                    <th className="px-3 py-2 text-left text-gray-600 dark:text-gray-400">Price</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-slate-600">
-                  {importPreview.map((item, index) => (
-                    <tr key={index}>
-                      <td className="px-3 py-2 text-black dark:text-white">{item.name || 'N/A'}</td>
-                      <td className="px-3 py-2 text-black dark:text-white">{item.sku || 'N/A'}</td>
-                      <td className="px-3 py-2 text-black dark:text-white">{item.currentStock || '0'}</td>
-                      <td className="px-3 py-2 text-black dark:text-white">${item.sellingPrice || '0.00'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          {currentStep === "complete" && (
+            <Card className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+              <CardContent className="p-8 text-center">
+                <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-green-800 dark:text-green-300 mb-2">
+                  Import Completed Successfully!
+                </h3>
+                <p className="text-green-700 dark:text-green-400">
+                  Your inventory items have been imported and are now available in your system.
+                </p>
+              </CardContent>
+            </Card>
+          )}
 
-            <div className="flex justify-end space-x-2">
+          {/* Action Buttons */}
+          <div className="flex justify-end space-x-2">
+            {currentStep === "upload" && (
               <Button
                 variant="outline"
-                onClick={() => setStep("upload")}
+                onClick={() => onOpenChange(false)}
                 className="border-gray-300 dark:border-slate-600 text-black dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700"
               >
-                Back
+                Cancel
               </Button>
-              <Button
-                onClick={handleImport}
-                disabled={importMutation.isPending}
-                className="bg-[#fd7014] hover:bg-[#e5640f] text-white"
-              >
-                {importMutation.isPending ? "Importing..." : "Import Data"}
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {step === "complete" && importResults && (
-          <div className="space-y-6">
-            <div className="text-center">
-              <CheckCircle className="h-12 w-12 text-green-600 dark:text-green-400 mx-auto mb-4" />
-              <h3 className="font-medium text-black dark:text-white mb-2">Import Complete</h3>
-              <p className="text-gray-600 dark:text-gray-400">Your inventory data has been imported successfully.</p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg text-center">
-                <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                  {importResults.successful || 0}
-                </div>
-                <div className="text-sm text-green-700 dark:text-green-300">Items Imported</div>
-              </div>
-              <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg text-center">
-                <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-                  {importResults.failed || 0}
-                </div>
-                <div className="text-sm text-red-700 dark:text-red-300">Failed Items</div>
-              </div>
-            </div>
-
-            {importResults.errors && importResults.errors.length > 0 && (
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4 rounded-lg">
-                <h4 className="font-medium text-red-800 dark:text-red-200 mb-2">Import Errors</h4>
-                <ul className="text-sm text-red-600 dark:text-red-300 space-y-1">
-                  {importResults.errors.slice(0, 5).map((error: string, index: number) => (
-                    <li key={index}>• {error}</li>
-                  ))}
-                  {importResults.errors.length > 5 && (
-                    <li>• ... and {importResults.errors.length - 5} more errors</li>
-                  )}
-                </ul>
-              </div>
             )}
-
-            <div className="flex justify-end">
+            
+            {currentStep === "preview" && (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={resetImport}
+                  className="border-gray-300 dark:border-slate-600 text-black dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700"
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Start Over
+                </Button>
+                <Button
+                  onClick={handleImport}
+                  disabled={validItemsCount === 0 || importMutation.isPending}
+                  className="bg-[#fd7014] hover:bg-[#e5640f] text-white"
+                >
+                  {importMutation.isPending ? "Importing..." : `Import ${validItemsCount} Items`}
+                </Button>
+              </>
+            )}
+            
+            {currentStep === "complete" && (
               <Button
                 onClick={() => onOpenChange(false)}
                 className="bg-[#fd7014] hover:bg-[#e5640f] text-white"
               >
                 Close
               </Button>
-            </div>
+            )}
           </div>
-        )}
+        </div>
       </DialogContent>
     </Dialog>
   );

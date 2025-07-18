@@ -244,8 +244,17 @@ export class DatabaseStorage implements IStorage {
     return goal;
   }
 
-  async deleteGoal(id: number): Promise<void> {
-    await db.delete(goals).where(eq(goals.id, id));
+  async deleteGoal(id: number, userId: number): Promise<boolean> {
+    const result = await db.delete(goals).where(and(eq(goals.id, id), eq(goals.userId, userId)));
+    return result.rowCount > 0;
+  }
+
+  async updateGoal(id: number, userId: number, updates: Partial<Goal>): Promise<Goal | null> {
+    const [goal] = await db.update(goals)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(and(eq(goals.id, id), eq(goals.userId, userId)))
+      .returning();
+    return goal || null;
   }
 
   // Reports

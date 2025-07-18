@@ -9,6 +9,7 @@ import { InventoryDetailModal } from "@/components/Inventory/InventoryDetailModa
 import { SalesEntryModal } from "@/components/Inventory/SalesEntryModal";
 import { InventoryImport } from "@/components/Inventory/InventoryImport";
 import { ReorderCalendar } from "@/components/Inventory/ReorderCalendar";
+import { AddInventoryModal } from "@/components/Inventory/AddInventoryModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -47,6 +48,7 @@ export default function Inventory() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showSalesModal, setShowSalesModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const { data: inventory = [], isLoading } = useQuery({
     queryKey: ["/api/inventory"],
@@ -127,7 +129,10 @@ export default function Inventory() {
                   <Upload className="h-4 w-4 mr-2" />
                   Import CSV
                 </Button>
-                <Button className="bg-[#fd7014] hover:bg-[#e5640f] text-white">
+                <Button 
+                  onClick={() => setShowAddModal(true)}
+                  className="bg-[#fd7014] hover:bg-[#e5640f] text-white"
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Add Manual Entry
                 </Button>
@@ -292,6 +297,13 @@ export default function Inventory() {
             <InventoryImport
               open={showImportModal}
               onOpenChange={setShowImportModal}
+            />
+          )}
+
+          {showAddModal && (
+            <AddInventoryModal
+              open={showAddModal}
+              onOpenChange={setShowAddModal}
             />
           )}
         </div>

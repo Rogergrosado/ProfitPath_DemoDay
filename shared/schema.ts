@@ -67,16 +67,16 @@ export const sales = pgTable("sales", {
 export const goals = pgTable("goals", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
-  category: text("category").notNull(), // "revenue", "growth", "efficiency", "customer"
-  description: text("description").notNull(),
+  metric: text("metric").notNull(), // "revenue" | "unitsSold" | "profit" | "profitMargin"
   targetValue: decimal("target_value", { precision: 15, scale: 2 }).notNull(),
-  currentValue: decimal("current_value", { precision: 15, scale: 2 }).default("0"),
-  unit: text("unit").notNull(), // "dollars", "percentage", "units", "count"
-  period: text("period").notNull(), // "monthly", "quarterly", "yearly", "custom"
-  startDate: timestamp("start_date").notNull(),
-  endDate: timestamp("end_date").notNull(),
-  status: text("status").default("active"), // "active", "completed", "paused", "cancelled"
+  scope: text("scope").notNull(), // "global", "sku", "category"
+  targetCategory: text("target_category"), // for category scope
+  targetSKU: text("target_sku"), // for sku scope
+  period: text("period").notNull(), // "7d", "30d", "90d", etc.
+  description: text("description"), // optional description
+  isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const reports = pgTable("reports", {
@@ -169,6 +169,7 @@ export const insertSaleSchema = createInsertSchema(sales).omit({
 export const insertGoalSchema = createInsertSchema(goals).omit({
   id: true,
   createdAt: true,
+  updatedAt: true,
 });
 
 export const insertReportSchema = createInsertSchema(reports).omit({

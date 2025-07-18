@@ -31,18 +31,12 @@ import {
 export default function Products() {
   const { user, loading } = useAuth();
   const [, setLocation] = useLocation();
-  const [activeView, setActiveView] = useState<"watchlist" | "inventory">("watchlist");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
 
   const { data: watchlistProducts = [] } = useQuery({
     queryKey: ["/api/products/watchlist"],
-    enabled: !!user && activeView === "watchlist",
-  });
-
-  const { data: inventoryItems = [] } = useQuery({
-    queryKey: ["/api/inventory"],
-    enabled: !!user && activeView === "inventory",
+    enabled: !!user,
   });
 
   if (loading) {
@@ -69,72 +63,31 @@ export default function Products() {
           <div className="mb-8">
             <div className="flex justify-between items-center">
               <div>
-                <h1 className="text-3xl font-bold mb-2">
-                  {activeView === "watchlist" ? "Product Watchlist" : "Inventory Management"}
-                </h1>
-                <p className="text-gray-600 dark:text-slate-400">
-                  {activeView === "watchlist" 
-                    ? "Research and validate potential products" 
-                    : "Track and manage your active inventory"
-                  }
-                </p>
+                <h1 className="text-3xl font-bold mb-2">Product Watchlist</h1>
+                <p className="text-gray-600 dark:text-slate-400">Research, validate, and track products before launching to inventory</p>
               </div>
-              {activeView === "watchlist" && (
+              <div className="flex space-x-2">
                 <AddProductModal>
                   <Button className="bg-[#fd7014] hover:bg-[#e5640f] text-white">
                     <Plus className="h-4 w-4 mr-2" />
                     Add Product
                   </Button>
                 </AddProductModal>
-              )}
+              </div>
             </div>
           </div>
 
-          {/* View Toggle */}
-          <div className="mb-6">
-            <div className="flex space-x-1 bg-gray-100 dark:bg-[#222831] p-1 rounded-lg w-fit">
-              <button 
-                onClick={() => setActiveView("watchlist")}
-                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                  activeView === "watchlist" 
-                    ? "bg-[#fd7014] text-white" 
-                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                }`}
-              >
-                Watchlist Products
-              </button>
-              <button 
-                onClick={() => setActiveView("inventory")}
-                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                  activeView === "inventory" 
-                    ? "bg-[#fd7014] text-white" 
-                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                }`}
-              >
-                Active Inventory
-              </button>
-            </div>
-          </div>
-
-          {/* Stats Cards */}
+          {/* Watchlist Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
             <Card className="bg-gray-50 dark:bg-[#222831] border-gray-200 dark:border-slate-700">
               <CardContent className="p-6">
                 <div className="flex items-center">
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-600 dark:text-slate-400">
-                      {activeView === "watchlist" ? "Products Tracked" : "SKUs in Stock"}
-                    </p>
-                    <p className="text-2xl font-bold text-black dark:text-white">
-                      {activeView === "watchlist" ? watchlistProducts.length : inventoryItems.length}
-                    </p>
+                    <p className="text-sm font-medium text-gray-600 dark:text-slate-400">Products Tracked</p>
+                    <p className="text-2xl font-bold text-black dark:text-white">{watchlistProducts.length}</p>
                   </div>
                   <div className="w-12 h-12 bg-blue-500/10 dark:bg-blue-500/20 rounded-lg flex items-center justify-center">
-                    {activeView === "watchlist" ? (
-                      <Eye className="h-6 w-6 text-blue-500" />
-                    ) : (
-                      <Package className="h-6 w-6 text-blue-500" />
-                    )}
+                    <Eye className="h-6 w-6 text-blue-500" />
                   </div>
                 </div>
               </CardContent>
@@ -144,22 +97,13 @@ export default function Products() {
               <CardContent className="p-6">
                 <div className="flex items-center">
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-600 dark:text-slate-400">
-                      {activeView === "watchlist" ? "Ready to Launch" : "Low Stock"}
-                    </p>
+                    <p className="text-sm font-medium text-gray-600 dark:text-slate-400">Ready to Launch</p>
                     <p className="text-2xl font-bold text-black dark:text-white">
-                      {activeView === "watchlist" 
-                        ? watchlistProducts.filter((p: any) => p.status === "ready_to_launch").length
-                        : inventoryItems.filter((i: any) => (i.currentStock || 0) <= (i.reorderPoint || 0)).length
-                      }
+                      {watchlistProducts.filter((p: any) => p.status === "ready_to_launch").length}
                     </p>
                   </div>
                   <div className="w-12 h-12 bg-green-500/10 dark:bg-green-500/20 rounded-lg flex items-center justify-center">
-                    {activeView === "watchlist" ? (
-                      <CheckCircle className="h-6 w-6 text-green-500" />
-                    ) : (
-                      <AlertTriangle className="h-6 w-6 text-yellow-500" />
-                    )}
+                    <CheckCircle className="h-6 w-6 text-green-500" />
                   </div>
                 </div>
               </CardContent>
@@ -169,14 +113,9 @@ export default function Products() {
               <CardContent className="p-6">
                 <div className="flex items-center">
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-600 dark:text-slate-400">
-                      {activeView === "watchlist" ? "Avg. Est. Price" : "Total Stock Value"}
-                    </p>
+                    <p className="text-sm font-medium text-gray-600 dark:text-slate-400">Avg. Est. Price</p>
                     <p className="text-2xl font-bold text-black dark:text-white">
-                      {activeView === "watchlist" 
-                        ? `$${Math.round(watchlistProducts.reduce((sum: number, p: any) => sum + (parseFloat(p.estimatedPrice || 0)), 0) / (watchlistProducts.length || 1))}`
-                        : `$${Math.round(inventoryItems.reduce((sum: number, i: any) => sum + ((i.currentStock || 0) * parseFloat(i.sellingPrice || 0)), 0)).toLocaleString()}`
-                      }
+                      ${Math.round(watchlistProducts.reduce((sum: number, p: any) => sum + (parseFloat(p.estimatedPrice || 0)), 0) / (watchlistProducts.length || 1))}
                     </p>
                   </div>
                   <div className="w-12 h-12 bg-purple-500/10 dark:bg-purple-500/20 rounded-lg flex items-center justify-center">
@@ -190,14 +129,9 @@ export default function Products() {
               <CardContent className="p-6">
                 <div className="flex items-center">
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-600 dark:text-slate-400">
-                      {activeView === "watchlist" ? "In Research" : "Categories"}
-                    </p>
+                    <p className="text-sm font-medium text-gray-600 dark:text-slate-400">In Research</p>
                     <p className="text-2xl font-bold text-black dark:text-white">
-                      {activeView === "watchlist" 
-                        ? watchlistProducts.filter((p: any) => p.status === "researching").length
-                        : new Set(inventoryItems.map((i: any) => i.category)).size
-                      }
+                      {watchlistProducts.filter((p: any) => p.status === "researching").length}
                     </p>
                   </div>
                   <div className="w-12 h-12 bg-orange-500/10 dark:bg-orange-500/20 rounded-lg flex items-center justify-center">
