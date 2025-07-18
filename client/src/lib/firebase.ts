@@ -12,12 +12,12 @@ import {
 } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyC9w8AjplHXxv6HBJ_0J1ckB1T4paEsB-k",
-  authDomain: `${import.meta.env.VITE_FIREBASE_PROJECT_ID || "profithpath-demoday"}.firebaseapp.com`,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "profithpath-demoday",
-  storageBucket: `${import.meta.env.VITE_FIREBASE_PROJECT_ID || "profithpath-demoday"}.firebasestorage.app`,
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebasestorage.app`,
   messagingSenderId: "482793563032",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:482793563032:web:124683965e640c27ee41ed",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
   measurementId: "G-F4H2E1W683"
 };
 
@@ -27,7 +27,12 @@ if (import.meta.env.DEV) {
     apiKey: import.meta.env.VITE_FIREBASE_API_KEY ? "✓ Set" : "✗ Missing",
     projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID ? "✓ Set" : "✗ Missing", 
     appId: import.meta.env.VITE_FIREBASE_APP_ID ? "✓ Set" : "✗ Missing",
-    authDomain: firebaseConfig.authDomain
+    authDomain: firebaseConfig.authDomain,
+    configValues: {
+      apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+      projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+      appId: import.meta.env.VITE_FIREBASE_APP_ID
+    }
   });
 }
 
