@@ -59,7 +59,8 @@ export function Sidebar() {
         <img 
           src="/logo-white.png" 
           alt="ProfitPath Logo" 
-          className="h-10 w-auto"
+          className="w-48 h-auto"
+          style={{ maxWidth: '192px' }}
         />
       </div>
 

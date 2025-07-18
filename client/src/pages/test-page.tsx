@@ -10,12 +10,14 @@ export default function TestPage() {
           <img 
             src="/logo-black.png" 
             alt="ProfitPath Logo" 
-            className="h-12 w-auto dark:hidden"
+            className="w-72 h-auto dark:hidden"
+            style={{ maxWidth: '288px' }}
           />
           <img 
             src="/logo-white.png" 
             alt="ProfitPath Logo" 
-            className="h-12 w-auto hidden dark:block"
+            className="w-72 h-auto hidden dark:block"
+            style={{ maxWidth: '288px' }}
           />
           <h2 className="text-2xl font-bold text-black dark:text-white mt-4">Test Page</h2>
         </div>

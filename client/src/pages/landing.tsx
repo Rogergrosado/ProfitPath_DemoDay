@@ -60,7 +60,8 @@ export default function Landing() {
               <img 
                 src="/logo-white.png" 
                 alt="ProfitPath Logo" 
-                className="h-32 w-auto"
+                className="w-96 h-auto"
+                style={{ maxWidth: '400px' }}
               />
             </div>
             
@@ -270,7 +271,8 @@ export default function Landing() {
               <img 
                 src="/logo-white.png" 
                 alt="ProfitPath Logo" 
-                className="h-10 w-auto"
+                className="w-64 h-auto"
+                style={{ maxWidth: '256px' }}
               />
             </div>
             

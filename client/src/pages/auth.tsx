@@ -144,12 +144,14 @@ export default function Auth() {
             <img 
               src="/logo-black.png" 
               alt="ProfitPath Logo" 
-              className="h-24 w-auto dark:hidden"
+              className="w-80 h-auto dark:hidden"
+              style={{ maxWidth: '320px' }}
             />
             <img 
               src="/logo-white.png" 
               alt="ProfitPath Logo" 
-              className="h-24 w-auto hidden dark:block"
+              className="w-80 h-auto hidden dark:block"
+              style={{ maxWidth: '320px' }}
             />
           </div>
           <p className="text-muted-foreground">Welcome back to your FBA dashboard</p>
