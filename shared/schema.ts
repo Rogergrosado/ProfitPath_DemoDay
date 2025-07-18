@@ -187,6 +187,18 @@ export const insertInventorySchema = createInsertSchema(inventory).omit({
 export const insertSaleSchema = createInsertSchema(sales).omit({
   id: true,
   createdAt: true,
+}).extend({
+  saleDate: z.union([z.date(), z.string()]).transform((val) => 
+    typeof val === 'string' ? new Date(val) : val
+  ),
+  unitPrice: z.union([z.string(), z.number()]).transform((val) => val.toString()),
+  totalRevenue: z.union([z.string(), z.number()]).transform((val) => val.toString()),
+  totalCost: z.union([z.string(), z.number()]).optional().transform((val) => 
+    val ? val.toString() : undefined
+  ),
+  profit: z.union([z.string(), z.number()]).optional().transform((val) => 
+    val ? val.toString() : undefined
+  ),
 });
 
 export const insertGoalSchema = createInsertSchema(goals).omit({
