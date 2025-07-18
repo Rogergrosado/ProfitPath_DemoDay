@@ -112,9 +112,14 @@ export function AddInventoryModal({ open, onOpenChange }: AddInventoryModalProps
       sku: formData.sku,
       category: formData.category || null,
       currentStock: formData.currentStock || 0,
+      reservedStock: 0,
       reorderPoint: formData.reorderPoint || 0,
-      costPrice: formData.costPrice ? parseFloat(formData.costPrice).toFixed(2) : null,
-      sellingPrice: formData.sellingPrice ? parseFloat(formData.sellingPrice).toFixed(2) : null,
+      costPrice: formData.costPrice ? parseFloat(formData.costPrice).toString() : null,
+      sellingPrice: formData.sellingPrice ? parseFloat(formData.sellingPrice).toString() : null,
+      supplierName: formData.supplierName || null,
+      supplierSKU: formData.supplierSKU || null,
+      leadTimeDays: formData.leadTimeDays || 7,
+      notes: formData.notes || null,
     };
 
     createMutation.mutate(submissionData);

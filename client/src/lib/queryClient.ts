@@ -8,14 +8,39 @@ async function throwIfResNotOk(res: Response) {
 }
 
 export async function apiRequest(
-  method: string,
   url: string,
-  data?: unknown | undefined,
+  options?: {
+    method?: string;
+    body?: string;
+    headers?: Record<string, string>;
+    userId?: number;
+  }
 ): Promise<Response> {
+  const { method = "GET", body, headers = {}, userId } = options || {};
+  
+  // Get user ID from auth context or storage
+  let userIdToSend = userId;
+  if (!userIdToSend) {
+    // Try to get from localStorage or sessionStorage
+    const storedUser = localStorage.getItem('current-user');
+    if (storedUser) {
+      try {
+        const user = JSON.parse(storedUser);
+        userIdToSend = user.id;
+      } catch (e) {
+        console.warn('Failed to parse stored user data');
+      }
+    }
+  }
+  
   const res = await fetch(url, {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
-    body: data ? JSON.stringify(data) : undefined,
+    headers: {
+      ...(body ? { "Content-Type": "application/json" } : {}),
+      ...(userIdToSend ? { "x-user-id": userIdToSend.toString() } : {}),
+      ...headers,
+    },
+    body,
     credentials: "include",
   });
 

@@ -42,6 +42,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (response.ok) {
             const userData = await response.json();
             setUser(userData);
+            // Store user data for API requests
+            localStorage.setItem('current-user', JSON.stringify(userData));
           } else if (response.status === 404) {
             // Create new user
             const newUserData = {
@@ -60,6 +62,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (createResponse.ok) {
               const userData = await createResponse.json();
               setUser(userData);
+              // Store user data for API requests
+              localStorage.setItem('current-user', JSON.stringify(userData));
             } else {
               console.error("Failed to create user in database");
             }
@@ -71,6 +75,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } else {
         setUser(null);
+        // Clear stored user data
+        localStorage.removeItem('current-user');
       }
       
       setLoading(false);
