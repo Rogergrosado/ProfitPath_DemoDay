@@ -62,10 +62,10 @@ export function SalesEntryModal({ children }: SalesEntryModalProps) {
       const requestBody = {
         sku: data.sku,
         quantity: data.quantity,
-        unitPrice: data.unitPrice,
-        totalRevenue,
-        totalCost: data.totalCost || 0,
-        profit,
+        unitPrice: data.unitPrice.toFixed(2),
+        totalRevenue: totalRevenue.toFixed(2),
+        totalCost: (data.totalCost || 0).toFixed(2),
+        profit: profit.toFixed(2),
         saleDate: new Date(data.saleDate),
         productName: data.sku, // Using SKU as product name fallback
         category: "manual-entry",
