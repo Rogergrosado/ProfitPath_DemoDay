@@ -24,6 +24,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { SalesEntryModal } from "@/components/Inventory/SalesEntryModal";
+import { SalesImportModal } from "@/components/Performance/SalesImportModal";
 import {
   BarChart,
   Bar,
@@ -50,6 +51,8 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Minus,
+  Upload,
+  FileSpreadsheet,
 } from "lucide-react";
 
 const COLORS = ['#fd7014', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
@@ -59,6 +62,7 @@ export default function Analytics() {
   const [, setLocation] = useLocation();
   const [dateRange, setDateRange] = useState("30d");
   const [salesEntryModalOpen, setSalesEntryModalOpen] = useState(false);
+  const [salesImportModalOpen, setSalesImportModalOpen] = useState(false);
 
   const { data: performanceMetrics } = useQuery({
     queryKey: ["/api/performance/metrics", dateRange],
@@ -178,13 +182,23 @@ export default function Analytics() {
                     <SelectItem value="1y">Last year</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button 
-                  onClick={() => setSalesEntryModalOpen(true)}
-                  className="bg-[#fd7014] hover:bg-[#e5640f] text-white"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Sale
-                </Button>
+                <div className="flex space-x-2">
+                  <Button 
+                    onClick={() => setSalesImportModalOpen(true)}
+                    variant="outline"
+                    className="border-[#fd7014] text-[#fd7014] hover:bg-[#fd7014]/10"
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Import Sales Data
+                  </Button>
+                  <Button 
+                    onClick={() => setSalesEntryModalOpen(true)}
+                    className="bg-[#fd7014] hover:bg-[#e5640f] text-white"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Sale
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
@@ -425,6 +439,11 @@ export default function Analytics() {
       <SalesEntryModal
         open={salesEntryModalOpen}
         onOpenChange={setSalesEntryModalOpen}
+      />
+      
+      <SalesImportModal 
+        open={salesImportModalOpen} 
+        onClose={() => setSalesImportModalOpen(false)} 
       />
     </div>
   );

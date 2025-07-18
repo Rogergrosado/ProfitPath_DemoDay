@@ -55,12 +55,17 @@ export const sales = pgTable("sales", {
   userId: integer("user_id").notNull().references(() => users.id),
   inventoryId: integer("inventory_id").references(() => inventory.id),
   sku: text("sku").notNull(),
+  productName: text("product_name"),
+  category: text("category"),
   quantity: integer("quantity").notNull(),
   unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
   totalRevenue: decimal("total_revenue", { precision: 10, scale: 2 }).notNull(),
   totalCost: decimal("total_cost", { precision: 10, scale: 2 }),
   profit: decimal("profit", { precision: 10, scale: 2 }),
   saleDate: timestamp("sale_date").notNull(),
+  marketplace: text("marketplace").default("amazon"), // amazon, ebay, etc.
+  region: text("region").default("US"),
+  importBatch: text("import_batch"), // For tracking CSV imports
   createdAt: timestamp("created_at").defaultNow(),
 });
 

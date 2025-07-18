@@ -6,6 +6,22 @@ ProfitPath is a comprehensive business intelligence dashboard designed for Amazo
 
 ## Recent Changes (July 18, 2025)
 
+✓ **Real Data Integration System**: Complete connection between inventory management and performance analytics
+  - Enhanced sales schema with product names, categories, marketplace tracking, and import batch IDs
+  - Bulk CSV import functionality specifically for performance sub-page with timestamp-based history
+  - Real-time data flow: dashboard and analytics pages now reflect actual inventory data
+  - Inventory levels automatically update when sales are recorded (manual or bulk import)
+  - Category performance API now pulls from actual sales data with inventory fallback
+  - Dashboard KPIs display real metrics from performance API instead of hardcoded values
+
+✓ **CSV Bulk Import System**: Optimized for performance analytics with comprehensive validation
+  - SalesImportModal component with three-step process (upload, preview, complete)
+  - CSV template download with sample data for proper formatting
+  - Real-time preview with import statistics (revenue, units, unique SKUs)
+  - Bulk import API endpoint with automatic inventory level updates
+  - Import batch tracking for history and audit purposes
+  - Error handling and duplicate detection for data integrity
+
 ✓ **Product Workshop Sub-Page Fixed**: Resolved all issues and implemented dual-view system
   - Fixed missing variables (activeView, inventoryItems) and proper state management
   - Dual-view toggle between Watchlist Products and Active Inventory

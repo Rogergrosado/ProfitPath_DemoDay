@@ -218,6 +218,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Bulk sales import for Performance Analytics
+  app.post("/api/sales/bulk-import", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const { salesData } = req.body;
+      
+      if (!Array.isArray(salesData) || salesData.length === 0) {
+        return res.status(400).json({ message: "Invalid sales data format" });
+      }
+      
+      const batchId = `batch_${Date.now()}_${authReq.userId}`;
+      
+      const importedSales = await storage.bulkImportSales(authReq.userId, salesData, batchId);
+      
+      // Update inventory levels for each sale
+      for (const sale of importedSales) {
+        try {
+          await storage.updateInventoryFromSales(authReq.userId, sale.sku, sale.quantity);
+        } catch (error) {
+          console.warn(`Failed to update inventory for SKU ${sale.sku}:`, error);
+        }
+      }
+      
+      res.json({ 
+        message: `Successfully imported ${importedSales.length} sales records`,
+        batchId,
+        importedCount: importedSales.length,
+        data: importedSales
+      });
+    } catch (error: any) {
+      console.error("Error importing sales:", error);
+      res.status(500).json({ message: "Failed to import sales data", error: error.message });
+    }
+  });
+
   app.get("/api/performance/metrics", requireAuth, async (req, res) => {
     try {
       const authReq = req as AuthenticatedRequest;

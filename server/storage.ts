@@ -201,6 +201,37 @@ export class DatabaseStorage implements IStorage {
     return newSale;
   }
 
+  async bulkImportSales(userId: number, salesData: any[], batchId: string): Promise<Sale[]> {
+    const importData = salesData.map(sale => ({
+      userId,
+      sku: sale.sku,
+      productName: sale.productName || sale.product_name || sale.name,
+      category: sale.category,
+      quantity: parseInt(sale.quantity),
+      unitPrice: sale.unitPrice || sale.unit_price,
+      totalRevenue: sale.totalRevenue || sale.total_revenue || (parseFloat(sale.unitPrice || sale.unit_price) * parseInt(sale.quantity)),
+      totalCost: sale.totalCost || sale.total_cost,
+      profit: sale.profit || ((sale.totalRevenue || (parseFloat(sale.unitPrice || sale.unit_price) * parseInt(sale.quantity))) - (sale.totalCost || sale.total_cost || 0)),
+      saleDate: new Date(sale.saleDate || sale.sale_date),
+      marketplace: sale.marketplace || 'amazon',
+      region: sale.region || 'US',
+      importBatch: batchId,
+    }));
+
+    return db.insert(sales).values(importData).returning();
+  }
+
+  async updateInventoryFromSales(userId: number, sku: string, quantitySold: number): Promise<void> {
+    // Update inventory levels when sales are recorded
+    await db
+      .update(inventory)
+      .set({
+        currentStock: sql`${inventory.currentStock} - ${quantitySold}`,
+        lastUpdated: new Date(),
+      })
+      .where(and(eq(inventory.userId, userId), eq(inventory.sku, sku)));
+  }
+
   async getSalesMetrics(userId: number, dateRange?: string): Promise<{
     totalRevenue: number;
     totalProfit: number;
@@ -232,21 +263,49 @@ export class DatabaseStorage implements IStorage {
 
   async getCategoryPerformance(userId: number, dateRange?: string): Promise<any[]> {
     try {
-      // Since sales doesn't have category directly, we need to join with inventory/products
-      // For now, let's return sample data and add category support later
-      return [
-        { category: 'Electronics', revenue: 850, units: 45 },
-        { category: 'Home & Garden', revenue: 650, units: 32 },
-        { category: 'Sports', revenue: 480, units: 28 },
-        { category: 'Health & Beauty', revenue: 320, units: 18 },
-      ];
+      let dateFilter = sql`1=1`;
+      if (dateRange) {
+        const days = dateRange === '7d' ? 7 : dateRange === '30d' ? 30 : dateRange === '90d' ? 90 : 365;
+        dateFilter = sql`${sales.saleDate} >= NOW() - INTERVAL '${sql.raw(days.toString())} days'`;
+      }
+
+      const result = await db
+        .select({
+          category: sales.category,
+          totalRevenue: sql<number>`COALESCE(SUM(${sales.totalRevenue}), 0)`,
+          totalUnits: sql<number>`COALESCE(SUM(${sales.quantity}), 0)`,
+        })
+        .from(sales)
+        .where(and(eq(sales.userId, userId), dateFilter))
+        .groupBy(sales.category);
+
+      if (result.length === 0) {
+        // Return calculated data from actual inventory categories if no sales data
+        const inventoryCategories = await db
+          .select({
+            category: inventory.category,
+            totalValue: sql<number>`COALESCE(SUM(${inventory.currentStock} * ${inventory.sellingPrice}), 0)`,
+            totalUnits: sql<number>`COALESCE(SUM(${inventory.currentStock}), 0)`,
+          })
+          .from(inventory)
+          .where(eq(inventory.userId, userId))
+          .groupBy(inventory.category);
+
+        return inventoryCategories.map(item => ({
+          category: item.category || 'Uncategorized',
+          revenue: Number(item.totalValue || 0),
+          units: Number(item.totalUnits || 0),
+        }));
+      }
+
+      return result.map(item => ({
+        category: item.category || 'Uncategorized',
+        revenue: Number(item.totalRevenue || 0),
+        units: Number(item.totalUnits || 0),
+      }));
     } catch (error) {
       console.error('Error in getCategoryPerformance:', error);
-      return [
-        { category: 'Electronics', revenue: 850, units: 45 },
-        { category: 'Home & Garden', revenue: 650, units: 32 },
-        { category: 'Sports', revenue: 480, units: 28 },
-      ];
+      return [];
     }
   }
 
