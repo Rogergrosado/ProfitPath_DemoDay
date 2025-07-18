@@ -49,7 +49,7 @@ export default function Landing() {
   ];
 
   return (
-    <div className="min-h-screen bg-[var(--navy)] text-white">
+    <div className="min-h-screen bg-white dark:bg-[var(--navy)] text-black dark:text-white">
       <ThemeToggle />
       
       {/* Hero Section */}
@@ -58,9 +58,15 @@ export default function Landing() {
           <div className="text-center">
             <div className="flex items-center justify-center mb-12">
               <img 
+                src="/logo-black.png" 
+                alt="ProfitPath Logo" 
+                className="w-96 h-auto dark:hidden"
+                style={{ maxWidth: '400px' }}
+              />
+              <img 
                 src="/logo-white.png" 
                 alt="ProfitPath Logo" 
-                className="w-96 h-auto"
+                className="w-96 h-auto hidden dark:block"
                 style={{ maxWidth: '400px' }}
               />
             </div>
@@ -70,7 +76,7 @@ export default function Landing() {
               <span className="gradient-text block">Intelligence Dashboard</span>
             </h2>
             
-            <p className="text-xl text-slate-400 mb-8 max-w-3xl mx-auto">
+            <p className="text-xl text-slate-600 dark:text-slate-400 mb-8 max-w-3xl mx-auto">
               Make data-driven decisions, optimize your inventory, and scale your Amazon FBA business 
               with our comprehensive analytics and management platform.
             </p>
@@ -88,7 +94,7 @@ export default function Landing() {
                 <Button 
                   size="lg" 
                   variant="outline" 
-                  className="border-slate-600 text-white hover:bg-slate-800 px-8 py-3 text-lg"
+                  className="border-slate-300 dark:border-slate-600 text-black dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800 px-8 py-3 text-lg"
                 >
                   Sign In
                 </Button>
@@ -107,13 +113,13 @@ export default function Landing() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {features.map((feature, index) => (
-              <Card key={index} className="bg-[var(--charcoal)] border-[var(--slate-custom)] hover:border-[var(--orange-primary)] transition-all duration-300">
+              <Card key={index} className="bg-white dark:bg-[var(--charcoal)] border-slate-200 dark:border-[var(--slate-custom)] hover:border-[var(--orange-primary)] transition-all duration-300">
                 <CardContent className="p-6 text-center">
                   <div className="w-12 h-12 bg-[var(--orange-primary)]/20 rounded-lg flex items-center justify-center mx-auto mb-4">
                     <feature.icon className="h-6 w-6 text-[var(--orange-primary)]" />
                   </div>
-                  <h4 className="text-lg font-semibold mb-2 text-white">{feature.title}</h4>
-                  <p className="text-slate-400 text-sm">{feature.description}</p>
+                  <h4 className="text-lg font-semibold mb-2 text-black dark:text-white">{feature.title}</h4>
+                  <p className="text-slate-600 dark:text-slate-400 text-sm">{feature.description}</p>
                 </CardContent>
               </Card>
             ))}
@@ -122,21 +128,21 @@ export default function Landing() {
       </section>
 
       {/* Profit Calculator */}
-      <section className="px-6 lg:px-8 py-24 bg-[var(--charcoal)]">
+      <section className="px-6 lg:px-8 py-24 bg-slate-50 dark:bg-[var(--charcoal)]">
         <div className="mx-auto max-w-4xl">
           <div className="text-center mb-12">
             <h3 className="text-3xl font-bold mb-4">FBA Profit Calculator</h3>
-            <p className="text-slate-400">
+            <p className="text-slate-600 dark:text-slate-400">
               See how much you could be earning with better data and optimization
             </p>
           </div>
           
-          <Card className="bg-slate-800 border-slate-600">
+          <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600">
             <CardContent className="p-8">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div className="space-y-6">
                   <div>
-                    <label className="block text-sm font-medium mb-3 text-white">
+                    <label className="block text-sm font-medium mb-3 text-black dark:text-white">
                       Monthly Revenue: ${monthlyRevenue[0].toLocaleString()}
                     </label>
                     <Slider
@@ -150,7 +156,7 @@ export default function Landing() {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium mb-3 text-white">
+                    <label className="block text-sm font-medium mb-3 text-black dark:text-white">
                       Profit Margin: {profitMargin[0]}%
                     </label>
                     <Slider
@@ -164,7 +170,7 @@ export default function Landing() {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium mb-3 text-white">
+                    <label className="block text-sm font-medium mb-3 text-black dark:text-white">
                       Units Sold: {unitsSold[0].toLocaleString()}
                     </label>
                     <Slider
@@ -178,23 +184,23 @@ export default function Landing() {
                   </div>
                 </div>
                 
-                <div className="bg-slate-900 rounded-lg p-6">
-                  <h4 className="text-lg font-semibold mb-4 text-white">Projected Results</h4>
+                <div className="bg-slate-100 dark:bg-slate-900 rounded-lg p-6">
+                  <h4 className="text-lg font-semibold mb-4 text-black dark:text-white">Projected Results</h4>
                   <div className="space-y-4">
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Monthly Profit:</span>
+                      <span className="text-slate-600 dark:text-slate-400">Monthly Profit:</span>
                       <span className="text-[var(--orange-primary)] font-semibold">
                         ${calculatedProfit.toLocaleString()}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Profit per Unit:</span>
+                      <span className="text-slate-600 dark:text-slate-400">Profit per Unit:</span>
                       <span className="text-[var(--orange-primary)] font-semibold">
                         ${profitPerUnit.toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Annual Profit:</span>
+                      <span className="text-slate-600 dark:text-slate-400">Annual Profit:</span>
                       <span className="text-[var(--orange-primary)] font-semibold">
                         ${(calculatedProfit * 12).toLocaleString()}
                       </span>
@@ -220,31 +226,31 @@ export default function Landing() {
         <div className="mx-auto max-w-7xl">
           <div className="text-center mb-12">
             <h3 className="text-3xl font-bold mb-4">Trusted by Amazon FBA Sellers</h3>
-            <p className="text-slate-400">Join thousands of sellers optimizing their business</p>
+            <p className="text-slate-600 dark:text-slate-400">Join thousands of sellers optimizing their business</p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="text-center">
               <div className="text-4xl font-bold text-[var(--orange-primary)] mb-2">2,500+</div>
-              <div className="text-slate-400">Active Sellers</div>
+              <div className="text-slate-600 dark:text-slate-400">Active Sellers</div>
             </div>
             <div className="text-center">
               <div className="text-4xl font-bold text-[var(--orange-primary)] mb-2">$50M+</div>
-              <div className="text-slate-400">Revenue Tracked</div>
+              <div className="text-slate-600 dark:text-slate-400">Revenue Tracked</div>
             </div>
             <div className="text-center">
               <div className="text-4xl font-bold text-[var(--orange-primary)] mb-2">25%</div>
-              <div className="text-slate-400">Avg. Profit Increase</div>
+              <div className="text-slate-600 dark:text-slate-400">Avg. Profit Increase</div>
             </div>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="px-6 lg:px-8 py-24 bg-[var(--charcoal)]">
+      <section className="px-6 lg:px-8 py-24 bg-slate-50 dark:bg-[var(--charcoal)]">
         <div className="mx-auto max-w-4xl text-center">
           <h3 className="text-3xl font-bold mb-4">Ready to scale your Amazon FBA business?</h3>
-          <p className="text-slate-400 mb-8 text-lg">
+          <p className="text-slate-600 dark:text-slate-400 mb-8 text-lg">
             Start your free trial today and see the difference data-driven decisions can make.
           </p>
           
@@ -257,26 +263,32 @@ export default function Landing() {
             </Button>
           </Link>
           
-          <p className="text-sm text-slate-500 mt-4">
+          <p className="text-sm text-slate-500 dark:text-slate-500 mt-4">
             No credit card required • 14-day free trial • Cancel anytime
           </p>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="px-6 lg:px-8 py-12 border-t border-slate-800">
+      <footer className="px-6 lg:px-8 py-12 border-t border-slate-200 dark:border-slate-800">
         <div className="mx-auto max-w-7xl">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
               <img 
+                src="/logo-black.png" 
+                alt="ProfitPath Logo" 
+                className="w-64 h-auto dark:hidden"
+                style={{ maxWidth: '256px' }}
+              />
+              <img 
                 src="/logo-white.png" 
                 alt="ProfitPath Logo" 
-                className="w-64 h-auto"
+                className="w-64 h-auto hidden dark:block"
                 style={{ maxWidth: '256px' }}
               />
             </div>
             
-            <div className="text-slate-400 text-sm">
+            <div className="text-slate-600 dark:text-slate-400 text-sm">
               © 2024 All rights reserved.
             </div>
           </div>
