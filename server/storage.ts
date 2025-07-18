@@ -75,6 +75,7 @@ export interface IStorage {
   createGoal(goal: InsertGoal): Promise<Goal>;
   updateGoal(id: number, goal: Partial<InsertGoal>): Promise<Goal>;
   deleteGoal(id: number): Promise<void>;
+  getGoalsWithProgress(userId: number): Promise<any[]>;
 
   // Reports
   getReports(userId: number): Promise<Report[]>;
@@ -421,6 +422,108 @@ export class DatabaseStorage implements IStorage {
 
   async deleteGoal(id: number): Promise<void> {
     await db.delete(goals).where(eq(goals.id, id));
+  }
+
+  async getGoalsWithProgress(userId: number): Promise<any[]> {
+    const userGoals = await this.getGoals(userId);
+    const goalsWithProgress = [];
+
+    for (const goal of userGoals) {
+      let currentValue = 0;
+      const now = new Date();
+      const periodDays = this.getPeriodDays(goal.period);
+      const startDate = new Date(now.getTime() - (periodDays * 24 * 60 * 60 * 1000));
+
+      // Calculate current progress based on metric type
+      if (goal.metric === 'revenue') {
+        const [result] = await db
+          .select({ total: sql<number>`COALESCE(SUM(${sales.totalRevenue}), 0)` })
+          .from(sales)
+          .where(
+            and(
+              eq(sales.userId, userId),
+              gte(sales.saleDate, startDate),
+              lte(sales.saleDate, now)
+            )
+          );
+        currentValue = Number(result.total);
+      } else if (goal.metric === 'unitsSold') {
+        const [result] = await db
+          .select({ total: sql<number>`COALESCE(SUM(${sales.quantity}), 0)` })
+          .from(sales)
+          .where(
+            and(
+              eq(sales.userId, userId),
+              gte(sales.saleDate, startDate),
+              lte(sales.saleDate, now)
+            )
+          );
+        currentValue = Number(result.total);
+      } else if (goal.metric === 'profit') {
+        const [result] = await db
+          .select({ total: sql<number>`COALESCE(SUM(${sales.profit}), 0)` })
+          .from(sales)
+          .where(
+            and(
+              eq(sales.userId, userId),
+              gte(sales.saleDate, startDate),
+              lte(sales.saleDate, now)
+            )
+          );
+        currentValue = Number(result.total);
+      } else if (goal.metric === 'profitMargin') {
+        const [revenueResult] = await db
+          .select({ 
+            revenue: sql<number>`COALESCE(SUM(${sales.totalRevenue}), 0)`,
+            profit: sql<number>`COALESCE(SUM(${sales.profit}), 0)`
+          })
+          .from(sales)
+          .where(
+            and(
+              eq(sales.userId, userId),
+              gte(sales.saleDate, startDate),
+              lte(sales.saleDate, now)
+            )
+          );
+        
+        const revenue = Number(revenueResult.revenue);
+        const profit = Number(revenueResult.profit);
+        currentValue = revenue > 0 ? (profit / revenue) * 100 : 0;
+      }
+
+      // Calculate status
+      const targetValue = Number(goal.targetValue);
+      const progressPercentage = targetValue > 0 ? (currentValue / targetValue) * 100 : 0;
+      
+      let status = 'on_track';
+      if (progressPercentage >= 100) {
+        status = 'met';
+      } else if (progressPercentage < 50) {
+        status = 'off_track';
+      } else if (progressPercentage < 80) {
+        status = 'at_risk';
+      }
+
+      goalsWithProgress.push({
+        ...goal,
+        currentValue,
+        targetValue,
+        progressPercentage,
+        status
+      });
+    }
+
+    return goalsWithProgress;
+  }
+
+  private getPeriodDays(period: string): number {
+    switch (period) {
+      case '7d': return 7;
+      case '30d': return 30;
+      case '90d': return 90;
+      case '1y': return 365;
+      default: return 30;
+    }
   }
 
   // Reports

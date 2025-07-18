@@ -362,7 +362,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/goals", requireAuth, async (req, res) => {
     try {
       const authReq = req as AuthenticatedRequest;
-      const goals = await storage.getGoals(authReq.userId);
+      const goals = await storage.getGoalsWithProgress(authReq.userId);
       res.json(goals);
     } catch (error: any) {
       res.status(500).json({ message: error.message });

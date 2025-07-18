@@ -102,17 +102,20 @@ export function GoalDetailModal({ goal, open, onOpenChange }: GoalDetailModalPro
     return <Badge className={config.className}>{config.label}</Badge>;
   };
 
-  const formatMetricValue = (metric: string, value: number) => {
+  const formatMetricValue = (metric: string, value: string | number) => {
+    const numValue = typeof value === 'string' ? parseFloat(value) : value;
+    if (isNaN(numValue)) return '0';
+    
     switch (metric) {
       case 'revenue':
       case 'profit':
-        return `$${Math.round(value).toLocaleString()}`;
+        return `$${Math.round(numValue).toLocaleString()}`;
       case 'unitsSold':
-        return Math.round(value).toLocaleString();
+        return Math.round(numValue).toLocaleString();
       case 'profitMargin':
-        return `${value.toFixed(1)}%`;
+        return `${numValue.toFixed(1)}%`;
       default:
-        return value.toLocaleString();
+        return numValue.toLocaleString();
     }
   };
 
