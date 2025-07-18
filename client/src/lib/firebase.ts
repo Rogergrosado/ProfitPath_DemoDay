@@ -11,27 +11,38 @@ import {
   updateProfile
 } from "firebase/auth";
 
+// Helper function to clean environment variables of extra quotes
+const cleanEnvVar = (value: string | undefined): string => {
+  if (!value) return '';
+  return value.replace(/^["'](.*)["']$/, '$1');
+};
+
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebasestorage.app`,
+  apiKey: cleanEnvVar(import.meta.env.VITE_FIREBASE_API_KEY),
+  authDomain: `${cleanEnvVar(import.meta.env.VITE_FIREBASE_PROJECT_ID)}.firebaseapp.com`,
+  projectId: cleanEnvVar(import.meta.env.VITE_FIREBASE_PROJECT_ID),
+  storageBucket: `${cleanEnvVar(import.meta.env.VITE_FIREBASE_PROJECT_ID)}.firebasestorage.app`,
   messagingSenderId: "482793563032",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  appId: cleanEnvVar(import.meta.env.VITE_FIREBASE_APP_ID),
   measurementId: "G-F4H2E1W683"
 };
 
 // Debug: Log config in development
 if (import.meta.env.DEV) {
   console.log("Firebase Config Debug:", {
-    apiKey: import.meta.env.VITE_FIREBASE_API_KEY ? "✓ Set" : "✗ Missing",
-    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID ? "✓ Set" : "✗ Missing", 
-    appId: import.meta.env.VITE_FIREBASE_APP_ID ? "✓ Set" : "✗ Missing",
+    apiKey: firebaseConfig.apiKey ? "✓ Set" : "✗ Missing",
+    projectId: firebaseConfig.projectId ? "✓ Set" : "✗ Missing", 
+    appId: firebaseConfig.appId ? "✓ Set" : "✗ Missing",
     authDomain: firebaseConfig.authDomain,
-    configValues: {
+    rawValues: {
       apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
       projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
       appId: import.meta.env.VITE_FIREBASE_APP_ID
+    },
+    cleanedValues: {
+      apiKey: firebaseConfig.apiKey,
+      projectId: firebaseConfig.projectId,
+      appId: firebaseConfig.appId
     }
   });
 }
