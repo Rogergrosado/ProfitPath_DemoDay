@@ -44,6 +44,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUser(userData);
             // Store user data for API requests
             localStorage.setItem('current-user', JSON.stringify(userData));
+            console.log("Existing user loaded:", userData);
           } else if (response.status === 404) {
             // Create new user
             const newUserData = {
@@ -64,6 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               setUser(userData);
               // Store user data for API requests
               localStorage.setItem('current-user', JSON.stringify(userData));
+              console.log("User created and stored:", userData);
             } else {
               console.error("Failed to create user in database");
             }

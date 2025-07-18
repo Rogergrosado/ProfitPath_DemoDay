@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -28,11 +28,13 @@ export default function Auth() {
   const [showSignUpPassword, setShowSignUpPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Redirect if already authenticated
-  if (user && !loading) {
-    setLocation("/dashboard");
-    return null;
-  }
+  // Handle redirect after authentication
+  useEffect(() => {
+    if (user && !loading) {
+      console.log("User authenticated, redirecting to dashboard:", user);
+      setLocation("/dashboard");
+    }
+  }, [user, loading, setLocation]);
 
   const handleGoogleSignIn = () => {
     try {
@@ -70,10 +72,7 @@ export default function Auth() {
         description: "Welcome back to ProfitPath.",
       });
       
-      // Wait a moment then redirect
-      setTimeout(() => {
-        setLocation("/dashboard");
-      }, 1000);
+      // The useEffect will handle the redirect when user state updates
       
     } catch (error: any) {
       toast({
@@ -125,10 +124,7 @@ export default function Auth() {
         description: "Welcome to ProfitPath. Redirecting to dashboard...",
       });
       
-      // Wait a moment then redirect
-      setTimeout(() => {
-        setLocation("/dashboard");
-      }, 1500);
+      // The useEffect will handle the redirect when user state updates
       
     } catch (error: any) {
       console.error("Sign up error:", error);
