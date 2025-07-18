@@ -16,33 +16,38 @@ import { Label } from "@/components/ui/label";
 import { ArrowRight } from "lucide-react";
 
 interface PromoteToInventoryModalProps {
-  productId: number;
-  children: React.ReactNode;
+  isOpen: boolean;
+  onClose: () => void;
+  product: any;
 }
 
-export function PromoteToInventoryModal({ productId, children }: PromoteToInventoryModalProps) {
-  const [open, setOpen] = useState(false);
+export function PromoteToInventoryModal({ isOpen, onClose, product }: PromoteToInventoryModalProps) {
   const [formData, setFormData] = useState({
-    sku: "",
+    sku: product?.sku || "",
     currentStock: "",
     costPrice: "",
-    sellingPrice: "",
-    reorderPoint: "",
+    sellingPrice: product?.estimatedPrice || "",
+    reorderPoint: "10",
   });
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const promoteMutation = useMutation({
-    mutationFn: (data: any) => apiRequest(`/api/products/${productId}/promote`, {
+    mutationFn: (data: any) => apiRequest("/api/inventory", {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        ...data,
+        name: product.name,
+        category: product.category,
+        productId: product.id,
+      }),
     }),
     onSuccess: () => {
       toast({
         title: "Product promoted successfully",
         description: "Product has been added to your active inventory.",
       });
-      setOpen(false);
+      onClose();
       setFormData({
         sku: "",
         currentStock: "",
@@ -75,26 +80,23 @@ export function PromoteToInventoryModal({ productId, children }: PromoteToInvent
     }
 
     promoteMutation.mutate({
-      sku: formData.sku,
+      ...formData,
       currentStock: parseInt(formData.currentStock),
+      reorderPoint: parseInt(formData.reorderPoint),
       costPrice: parseFloat(formData.costPrice),
       sellingPrice: parseFloat(formData.sellingPrice),
-      reorderPoint: parseInt(formData.reorderPoint) || 0,
     });
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {children}
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px] bg-white dark:bg-[#222831] border-gray-200 dark:border-slate-700">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[525px] bg-white dark:bg-[#222831] border-gray-200 dark:border-slate-700" aria-describedby="promote-product-description">
         <DialogHeader>
           <DialogTitle className="flex items-center text-black dark:text-white">
             <ArrowRight className="h-5 w-5 mr-2 text-[#fd7014]" />
-            Promote to Inventory
+            Promote "{product?.name}" to Inventory
           </DialogTitle>
-          <DialogDescription className="text-gray-600 dark:text-gray-400">
+          <DialogDescription id="promote-product-description" className="text-gray-600 dark:text-gray-400">
             Add inventory details to move this product to your active inventory.
           </DialogDescription>
         </DialogHeader>

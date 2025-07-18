@@ -7,6 +7,8 @@ import { ThemeToggle } from "@/components/Navigation/ThemeToggle";
 import { ProductTable } from "@/components/Products/ProductTable";
 import { AddProductModal } from "@/components/Products/AddProductModal";
 import { PromoteToInventoryModal } from "@/components/Products/PromoteToInventoryModal";
+import { EditProductModal } from "@/components/Products/EditProductModal";
+import { DeleteProductModal } from "@/components/Products/DeleteProductModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +27,9 @@ import {
   AlertTriangle,
   CheckCircle,
   Clock,
-  ArrowRight
+  ArrowRight,
+  Edit,
+  Trash2
 } from "lucide-react";
 
 export default function Products() {
@@ -34,6 +38,9 @@ export default function Products() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [activeView, setActiveView] = useState("watchlist");
+  const [promoteProduct, setPromoteProduct] = useState(null);
+  const [editProduct, setEditProduct] = useState(null);
+  const [deleteProduct, setDeleteProduct] = useState(null);
 
   // Fetch user profile for personalization
   const { data: userProfile } = useQuery({
@@ -333,6 +340,31 @@ export default function Products() {
             />
           )}
         </div>
+
+        {/* Modals */}
+        {promoteProduct && (
+          <PromoteToInventoryModal 
+            isOpen={!!promoteProduct}
+            onClose={() => setPromoteProduct(null)}
+            product={promoteProduct}
+          />
+        )}
+        
+        {editProduct && (
+          <EditProductModal 
+            isOpen={!!editProduct}
+            onClose={() => setEditProduct(null)}
+            product={editProduct}
+          />
+        )}
+        
+        {deleteProduct && (
+          <DeleteProductModal 
+            isOpen={!!deleteProduct}
+            onClose={() => setDeleteProduct(null)}
+            product={deleteProduct}
+          />
+        )}
       </main>
     </div>
   );
@@ -426,16 +458,32 @@ function WatchlistProductsView({
                     </div>
                   </div>
                   <div className="flex space-x-2 ml-4">
-                    {product.status === "ready_to_launch" && (
-                      <PromoteToInventoryModal productId={product.id}>
-                        <Button size="sm" className="bg-[#fd7014] hover:bg-[#e5640f] text-white">
-                          <ArrowRight className="h-4 w-4 mr-1" />
-                          Promote
-                        </Button>
-                      </PromoteToInventoryModal>
-                    )}
-                    <Button variant="outline" size="sm" className="border-gray-300 dark:border-slate-600 text-black dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700">
-                      Edit
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => setPromoteProduct(product)}
+                      className="border-blue-300 dark:border-blue-600 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                      title="Promote to Inventory"
+                    >
+                      <TrendingUp className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => setEditProduct(product)}
+                      className="border-gray-300 dark:border-slate-600 text-black dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700"
+                      title="Edit Product"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => setDeleteProduct(product)}
+                      className="border-red-300 dark:border-red-600 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                      title="Delete Product"
+                    >
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
