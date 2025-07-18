@@ -1,0 +1,85 @@
+What Is the Performance Sub-Page?
+The Performance Sub-Page is the central analytics engine of ProfitPath. It provides users with insightful metrics, trend tracking, and profit analysis derived from real sales data—both manual entries and (eventually) Amazon MWS/API sources.
+
+Where the Dashboard gives you a quick overview, the Performance page is where users go to analyze trends, track progress, and explore their business performance in depth.
+
+📋 What Does It Display?
+Section	Purpose
+KPI Cards	Shows key stats: Revenue, Profit, Units Sold, Conversion Rate
+Product Breakdown	Performance by product: SKU, title, revenue, margin, etc.
+Category Trends	Breakdown by category: sales volume, profitability, units
+Manual Sales Entries	Table of user-added sales (for when Amazon data isn’t yet connected)
+Goal Progress Summary	Shows progress toward active sales or profit goals
+
+🔌 Data Sources and Dependencies
+Data	Backend Source
+Revenue, Units Sold, Profit	SalesEntry table
+Margin per SKU	InventoryItem price & cost fields
+Category Stats	From InventoryItem.category via joined sales
+Conversion Rate	Custom calculation (visits vs units sold — may be mock for now)
+Date Filtering	7d, 30d, 90d, 1y options supported in endpoints
+
+🔗 How It Connects to Other Sub-Pages
+Connected Sub-Page	How It’s Connected
+📦 Inventory	Sales are tied to SKUs from inventory. Performance calculates revenue/profit using price/cost from InventoryItem.
+📊 Dashboard	Dashboard pulls performance KPIs from here in summarized form.
+🎯 Goals	Goals use SalesEntry data to evaluate whether a revenue or units target is being met.
+📋 Reports	Many reports pull historical data from performance: revenue over time, top products, trends.
+📝 SalesEntryModal	Used to input sales manually. These power the charts and metrics here.
+
+💡 Performance Page Use Cases
+User Intent	Example
+“How did my business do last month?”	Revenue, profit, and units sold for the last 30 days
+“Which products are top sellers?”	Breakdown by product SKU with units and profit
+“Are Electronics more profitable than Health products?”	Category revenue/profit comparison
+“Did I meet my sales goal?”	Goal progress shown inline
+“Need to enter last week’s sales”	Manual entry system with editing & notes
+
+🧠 Analytics Structure (Behind the Scenes)
+Performance is powered by:
+
+The SalesEntry model → every sale is tracked with SKU, quantity, date, and price.
+
+InventoryItem → for matching cost data to compute profit and margin.
+
+Custom aggregations → used to build /api/performance/metrics, /categories, and /sales-entry.
+
+Example revenue calc:
+
+ts
+Copiar código
+revenue = sum(SalesEntry.unitsSold × InventoryItem.price)
+profit = revenue - (unitsSold × InventoryItem.cost)
+🛠️ Related Endpoints
+Endpoint	Used For
+GET /api/performance/metrics?range=30d	Fetch main KPI cards and product breakdown
+GET /api/performance/categories?range=30d	Fetch category-level revenue/profit/unit breakdown
+GET /api/sales-entry?range=30d	Fetch manual sales records
+POST /api/sales-entry	Create manual sales entry
+PUT /api/sales-entry/:id	Update a sales entry
+DELETE /api/sales-entry/:id	Remove an entry
+
+🎨 Components on the Performance Page
+Component	Role
+PerformanceAnalytics.tsx	Main layout wrapper and renderer
+KPIGrid.tsx	Grid of Revenue, Profit, Units, Conversion Rate
+ProductPerformanceTable.tsx	Breakdown of sales by product
+CategoryPerformance.tsx	Pie chart or bar graph of categories
+GoalProgressPanel.tsx	Visualizes progress on active goals
+SalesEntryModal.tsx	Form to add/edit manual sales
+
+🔄 How It Updates
+Every time a user:
+
+Adds a sale via modal or CSV
+
+Updates inventory cost/price
+
+Changes a goal target
+
+...the performance page reflects those changes automatically based on fresh backend API data.
+
+📣 Summary
+The Performance Sub-Page is the “analytics cockpit” of ProfitPath.
+
+It offers a deep look at what's working and what's not, empowers users to track outcomes, and forms the bridge between raw inventory data and business insight. Every decision—from restocking to ad spend—can be traced to trends seen here.

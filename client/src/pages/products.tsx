@@ -33,9 +33,15 @@ export default function Products() {
   const [, setLocation] = useLocation();
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
+  const [activeView, setActiveView] = useState("watchlist");
 
   const { data: watchlistProducts = [] } = useQuery({
     queryKey: ["/api/products/watchlist"],
+    enabled: !!user,
+  });
+
+  const { data: inventoryItems = [] } = useQuery({
+    queryKey: ["/api/inventory"],
     enabled: !!user,
   });
 
@@ -63,7 +69,7 @@ export default function Products() {
           <div className="mb-8">
             <div className="flex justify-between items-center">
               <div>
-                <h1 className="text-3xl font-bold mb-2">Product Watchlist</h1>
+                <h1 className="text-3xl font-bold mb-2">Product Workshop</h1>
                 <p className="text-gray-600 dark:text-slate-400">Research, validate, and track products before launching to inventory</p>
               </div>
               <div className="flex space-x-2">
@@ -77,69 +83,159 @@ export default function Products() {
             </div>
           </div>
 
-          {/* Watchlist Stats */}
+          {/* View Toggle */}
+          <div className="mb-6">
+            <div className="flex bg-gray-100 dark:bg-slate-800 rounded-lg p-1">
+              <button
+                onClick={() => setActiveView("watchlist")}
+                className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  activeView === "watchlist"
+                    ? "bg-white dark:bg-slate-700 text-black dark:text-white shadow-sm"
+                    : "text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white"
+                }`}
+              >
+                <Eye className="h-4 w-4 inline mr-2" />
+                Watchlist Products
+              </button>
+              <button
+                onClick={() => setActiveView("inventory")}
+                className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  activeView === "inventory"
+                    ? "bg-white dark:bg-slate-700 text-black dark:text-white shadow-sm"
+                    : "text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white"
+                }`}
+              >
+                <Package className="h-4 w-4 inline mr-2" />
+                Active Inventory
+              </button>
+            </div>
+          </div>
+
+          {/* Dynamic Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-            <Card className="bg-gray-50 dark:bg-[#222831] border-gray-200 dark:border-slate-700">
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-600 dark:text-slate-400">Products Tracked</p>
-                    <p className="text-2xl font-bold text-black dark:text-white">{watchlistProducts.length}</p>
-                  </div>
-                  <div className="w-12 h-12 bg-blue-500/10 dark:bg-blue-500/20 rounded-lg flex items-center justify-center">
-                    <Eye className="h-6 w-6 text-blue-500" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gray-50 dark:bg-[#222831] border-gray-200 dark:border-slate-700">
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-600 dark:text-slate-400">Ready to Launch</p>
-                    <p className="text-2xl font-bold text-black dark:text-white">
-                      {watchlistProducts.filter((p: any) => p.status === "ready_to_launch").length}
-                    </p>
-                  </div>
-                  <div className="w-12 h-12 bg-green-500/10 dark:bg-green-500/20 rounded-lg flex items-center justify-center">
-                    <CheckCircle className="h-6 w-6 text-green-500" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gray-50 dark:bg-[#222831] border-gray-200 dark:border-slate-700">
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-600 dark:text-slate-400">Avg. Est. Price</p>
-                    <p className="text-2xl font-bold text-black dark:text-white">
-                      ${Math.round(watchlistProducts.reduce((sum: number, p: any) => sum + (parseFloat(p.estimatedPrice || 0)), 0) / (watchlistProducts.length || 1))}
-                    </p>
-                  </div>
-                  <div className="w-12 h-12 bg-purple-500/10 dark:bg-purple-500/20 rounded-lg flex items-center justify-center">
-                    <TrendingUp className="h-6 w-6 text-purple-500" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gray-50 dark:bg-[#222831] border-gray-200 dark:border-slate-700">
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-600 dark:text-slate-400">In Research</p>
-                    <p className="text-2xl font-bold text-black dark:text-white">
-                      {watchlistProducts.filter((p: any) => p.status === "researching").length}
-                    </p>
-                  </div>
-                  <div className="w-12 h-12 bg-orange-500/10 dark:bg-orange-500/20 rounded-lg flex items-center justify-center">
-                    <Clock className="h-6 w-6 text-orange-500" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            {activeView === "watchlist" ? (
+              <>
+                <Card className="bg-gray-50 dark:bg-[#222831] border-gray-200 dark:border-slate-700">
+                  <CardContent className="p-6">
+                    <div className="flex items-center">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-600 dark:text-slate-400">Products Tracked</p>
+                        <p className="text-2xl font-bold text-black dark:text-white">{watchlistProducts.length}</p>
+                      </div>
+                      <div className="w-12 h-12 bg-blue-500/10 dark:bg-blue-500/20 rounded-lg flex items-center justify-center">
+                        <Eye className="h-6 w-6 text-blue-500" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="bg-gray-50 dark:bg-[#222831] border-gray-200 dark:border-slate-700">
+                  <CardContent className="p-6">
+                    <div className="flex items-center">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-600 dark:text-slate-400">Ready to Launch</p>
+                        <p className="text-2xl font-bold text-black dark:text-white">
+                          {watchlistProducts.filter((p: any) => p.status === "ready_to_launch").length}
+                        </p>
+                      </div>
+                      <div className="w-12 h-12 bg-green-500/10 dark:bg-green-500/20 rounded-lg flex items-center justify-center">
+                        <CheckCircle className="h-6 w-6 text-green-500" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="bg-gray-50 dark:bg-[#222831] border-gray-200 dark:border-slate-700">
+                  <CardContent className="p-6">
+                    <div className="flex items-center">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-600 dark:text-slate-400">Avg. Est. Price</p>
+                        <p className="text-2xl font-bold text-black dark:text-white">
+                          ${Math.round(watchlistProducts.reduce((sum: number, p: any) => sum + (parseFloat(p.estimatedPrice || 0)), 0) / (watchlistProducts.length || 1))}
+                        </p>
+                      </div>
+                      <div className="w-12 h-12 bg-purple-500/10 dark:bg-purple-500/20 rounded-lg flex items-center justify-center">
+                        <TrendingUp className="h-6 w-6 text-purple-500" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="bg-gray-50 dark:bg-[#222831] border-gray-200 dark:border-slate-700">
+                  <CardContent className="p-6">
+                    <div className="flex items-center">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-600 dark:text-slate-400">In Research</p>
+                        <p className="text-2xl font-bold text-black dark:text-white">
+                          {watchlistProducts.filter((p: any) => p.status === "researching").length}
+                        </p>
+                      </div>
+                      <div className="w-12 h-12 bg-orange-500/10 dark:bg-orange-500/20 rounded-lg flex items-center justify-center">
+                        <Clock className="h-6 w-6 text-orange-500" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            ) : (
+              <>
+                <Card className="bg-gray-50 dark:bg-[#222831] border-gray-200 dark:border-slate-700">
+                  <CardContent className="p-6">
+                    <div className="flex items-center">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-600 dark:text-slate-400">Total SKUs</p>
+                        <p className="text-2xl font-bold text-black dark:text-white">{inventoryItems.length}</p>
+                      </div>
+                      <div className="w-12 h-12 bg-blue-500/10 dark:bg-blue-500/20 rounded-lg flex items-center justify-center">
+                        <Package className="h-6 w-6 text-blue-500" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="bg-gray-50 dark:bg-[#222831] border-gray-200 dark:border-slate-700">
+                  <CardContent className="p-6">
+                    <div className="flex items-center">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-600 dark:text-slate-400">Total Value</p>
+                        <p className="text-2xl font-bold text-black dark:text-white">
+                          ${Math.round(inventoryItems.reduce((sum: number, item: any) => sum + ((item.currentStock || 0) * parseFloat(item.sellingPrice || 0)), 0))}
+                        </p>
+                      </div>
+                      <div className="w-12 h-12 bg-green-500/10 dark:bg-green-500/20 rounded-lg flex items-center justify-center">
+                        <TrendingUp className="h-6 w-6 text-green-500" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="bg-gray-50 dark:bg-[#222831] border-gray-200 dark:border-slate-700">
+                  <CardContent className="p-6">
+                    <div className="flex items-center">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-600 dark:text-slate-400">Low Stock</p>
+                        <p className="text-2xl font-bold text-black dark:text-white">
+                          {inventoryItems.filter((item: any) => (item.currentStock || 0) <= (item.reorderPoint || 0)).length}
+                        </p>
+                      </div>
+                      <div className="w-12 h-12 bg-yellow-500/10 dark:bg-yellow-500/20 rounded-lg flex items-center justify-center">
+                        <AlertTriangle className="h-6 w-6 text-yellow-500" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="bg-gray-50 dark:bg-[#222831] border-gray-200 dark:border-slate-700">
+                  <CardContent className="p-6">
+                    <div className="flex items-center">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-600 dark:text-slate-400">Out of Stock</p>
+                        <p className="text-2xl font-bold text-black dark:text-white">
+                          {inventoryItems.filter((item: any) => (item.currentStock || 0) === 0).length}
+                        </p>
+                      </div>
+                      <div className="w-12 h-12 bg-red-500/10 dark:bg-red-500/20 rounded-lg flex items-center justify-center">
+                        <AlertTriangle className="h-6 w-6 text-red-500" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            )}
           </div>
 
           {/* Filters */}

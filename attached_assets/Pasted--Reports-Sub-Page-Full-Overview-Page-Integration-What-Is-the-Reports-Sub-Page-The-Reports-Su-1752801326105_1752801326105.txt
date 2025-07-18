@@ -1,0 +1,109 @@
+ Reports Sub-Page – Full Overview & Page Integration
+🧠 What Is the Reports Sub-Page?
+The Reports Sub-Page is the custom business intelligence builder in ProfitPath. It gives users the ability to:
+
+📊 Create dynamic reports from their inventory, sales, goals, and performance data
+
+📁 Use pre-built templates (like Profit Margin by Category or Reorder Schedule)
+
+🧩 Drag and drop components (charts, tables, metrics) into a report layout
+
+🧾 Export reports to CSV or PDF
+
+🕒 Review historical reports and optionally schedule new ones
+
+It’s where data storytelling meets decision-making.
+
+🧱 Core Features
+Feature	Description
+ReportBuilder.tsx	The main drag-and-drop interface for assembling custom reports
+ReportComponentsPanel.tsx	Sidebar with widgets like “Top Products,” “Low Stock Items,” “Revenue Over Time,” etc.
+PrebuiltTemplates.tsx	Ready-to-go reports: “Inventory Snapshot,” “Sales Performance,” “Goal Tracker”
+RecentReports.tsx	History of reports created or exported
+ExportDelivery.tsx	PDF/CSV export and scheduling logic
+
+🔌 How It Connects to Other Sub-Pages
+Sub-Page	Connection to Reports
+📦 Inventory	Pulls live inventory status (stock, value, reorder thresholds)
+📊 Dashboard	Reports can replicate dashboard KPIs in downloadable form
+📈 Performance	Draws from sales data, margins, units sold, category performance
+🎯 Goals	Track progress toward active goals in time-based reports
+📝 Manual Sales Entry	Sales entered manually can be included in trend reports
+
+📁 All of these sources are unified under the /api/reports/... system. Each widget pulls from a designated API hook, and report layouts can mix multiple types.
+
+💼 Business Use Cases
+Scenario	Example Report
+📌 Quarterly Review	“Q2 Performance & Inventory Overview” (sales, profit, low stock)
+📤 Sharing with stakeholders	“Top Products by Margin” PDF to email investors
+📦 Supply planning	“Next Month Reorder Plan” (low stock + supplier + ETA)
+📈 Goal review	“Monthly Goal Tracker” showing target vs actual
+📁 Record keeping	“Daily Sales CSV” export for accountant or tax filing
+
+🛠️ Technical Overview – What It Actually Does
+Each report is a composition of:
+
+📦 Components (KPI blocks, tables, charts)
+
+📐 Layout (grid config stored as JSON)
+
+🎯 Filters (date range, category, product, etc.)
+
+💾 Metadata (title, description, timestamps)
+
+💻 Export Options (CSV, PDF, scheduled email)
+
+Under the hood, Report is a model in your Prisma schema, storing all layout/filter/export settings.
+
+🔌 API Endpoints Used
+Endpoint	Purpose
+GET /api/reports/components	Fetch list of draggable widgets
+GET /api/reports/templates	Fetch pre-built reports
+GET /api/reports	Fetch history of saved/exported reports
+POST /api/reports	Create a new report
+PUT /api/reports/:id	Update layout, filters, etc.
+POST /api/reports/export	Trigger PDF or CSV export
+GET /api/performance/metrics, categories, sales-entry	Used by embedded widgets
+GET /api/inventory/summary, categories-stats	Used in inventory-based widgets
+GET /api/goals/status	Used in goal tracker reports
+
+🧠 Types of Report Components Available
+Widget	Pulls From
+📊 Revenue Trend Chart	/api/performance/metrics
+📦 Low Stock Table	/api/inventory
+🧮 KPI Block (Profit, Units Sold)	/api/performance/metrics
+🎯 Goal Progress Widget	/api/goals/status
+📈 Sales by Category	/api/performance/categories
+📦 Inventory Snapshot	/api/inventory/summary
+📝 Recent Manual Sales	/api/sales-entry
+
+🎨 UX & Report Builder UI
+The report page uses a grid layout builder with:
+
+Drag-to-place widgets
+
+Filter configuration modal
+
+Live preview
+
+Save draft / export options
+
+Option to duplicate reports and adjust filters
+
+🔄 Workflow Examples
+Create Report from Scratch
+
+Drag components, apply filters (last 30 days, only "Electronics"), export CSV
+
+Use Prebuilt Template
+
+Select “Profit Overview,” choose 90d range, export PDF for exec meeting
+
+Schedule Recurring
+
+“Low Stock Weekly Report” emailed every Friday
+
+📣 Summary
+The Reports Sub-Page is the custom business analytics center for FBA sellers.
+
+It gives users a powerful way to visualize, combine, and export insights from every part of the ProfitPath system. It turns raw data from performance, inventory, and goals into presentable, actionable insights.
