@@ -332,6 +332,9 @@ export default function Products() {
               products={watchlistProducts}
               selectedCategory={selectedCategory}
               selectedStatus={selectedStatus}
+              setPromoteProduct={setPromoteProduct}
+              setEditProduct={setEditProduct}
+              setDeleteProduct={setDeleteProduct}
             />
           ) : (
             <InventoryItemsView 
@@ -374,11 +377,17 @@ export default function Products() {
 function WatchlistProductsView({ 
   products, 
   selectedCategory, 
-  selectedStatus 
+  selectedStatus,
+  setPromoteProduct,
+  setEditProduct,
+  setDeleteProduct
 }: { 
   products: any[], 
   selectedCategory: string, 
-  selectedStatus: string 
+  selectedStatus: string,
+  setPromoteProduct: (product: any) => void,
+  setEditProduct: (product: any) => void,
+  setDeleteProduct: (product: any) => void
 }) {
   const filteredProducts = products.filter((product: any) => {
     const categoryMatch = selectedCategory === "all" || product.category === selectedCategory;

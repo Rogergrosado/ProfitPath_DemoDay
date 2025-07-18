@@ -1,0 +1,60 @@
+[LaunchDarkly] LaunchDarkly client initialized
+ProfitPathSuite:1 Banner not shown: beforeinstallpromptevent.preventDefault() called. The page must call beforeinstallpromptevent.prompt() to show the banner.
+76Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.Understand this error
+framework-bdc476335db7d733.js:1 Unrecognized feature: 'ambient-light-sensor'.
+_ @ framework-bdc476335db7d733.js:1Understand this warning
+framework-bdc476335db7d733.js:1 Unrecognized feature: 'battery'.
+_ @ framework-bdc476335db7d733.js:1Understand this warning
+framework-bdc476335db7d733.js:1 Unrecognized feature: 'execution-while-not-rendered'.
+_ @ framework-bdc476335db7d733.js:1Understand this warning
+framework-bdc476335db7d733.js:1 Unrecognized feature: 'execution-while-out-of-viewport'.
+_ @ framework-bdc476335db7d733.js:1Understand this warning
+framework-bdc476335db7d733.js:1 Unrecognized feature: 'layout-animations'.
+_ @ framework-bdc476335db7d733.js:1Understand this warning
+framework-bdc476335db7d733.js:1 Unrecognized feature: 'legacy-image-formats'.
+_ @ framework-bdc476335db7d733.js:1Understand this warning
+framework-bdc476335db7d733.js:1 Unrecognized feature: 'navigation-override'.
+_ @ framework-bdc476335db7d733.js:1Understand this warning
+framework-bdc476335db7d733.js:1 Unrecognized feature: 'oversized-images'.
+_ @ framework-bdc476335db7d733.js:1Understand this warning
+framework-bdc476335db7d733.js:1 Unrecognized feature: 'publickey-credentials'.
+_ @ framework-bdc476335db7d733.js:1Understand this warning
+framework-bdc476335db7d733.js:1 Unrecognized feature: 'speaker-selection'.
+_ @ framework-bdc476335db7d733.js:1Understand this warning
+framework-bdc476335db7d733.js:1 Unrecognized feature: 'unoptimized-images'.
+_ @ framework-bdc476335db7d733.js:1Understand this warning
+framework-bdc476335db7d733.js:1 Unrecognized feature: 'unsized-media'.
+_ @ framework-bdc476335db7d733.js:1Understand this warning
+framework-bdc476335db7d733.js:1 Unrecognized feature: 'pointer-lock'.
+_ @ framework-bdc476335db7d733.js:1Understand this warning
+framework-bdc476335db7d733.js:1 Allow attribute will take precedence over 'allowfullscreen'.
+_ @ framework-bdc476335db7d733.js:1Understand this warning
+framework-bdc476335db7d733.js:1 Allow attribute will take precedence over 'allowpaymentrequest'.
+_ @ framework-bdc476335db7d733.js:1Understand this warning
+8ProfitPathSuite:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+10ProfitPathSuite#clie…c/lib/firebase.ts:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+10ProfitPathSuite:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+12_app-eb4dd674134155da.js:38 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ _app-eb4dd674134155da.js:38Understand this warning
+16ProfitPathSuite:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+_app-eb4dd674134155da.js:38 WARN: A component changed from uncontrolled to controlled.
+(anonymous) @ _app-eb4dd674134155da.js:38Understand this warning
+67ProfitPathSuite:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+102-c27835cc905285d1.js:1 WebSocket connection to 'wss://eval.kirk.platform.replit.com/wsv2/v2.public.Q2dZSXdPdmx3d1lTQmdqZmgrYkRCaUlFYTJseWF6QUFPczBCQ2lReE1UazJPV1kyWkMwNE1ERXdMVFJpTnpRdFlXUmxZeTA1TlRBNVpHWTVZelZsWkRnU0EyNXBlQm9XY21Wd2JHbDBMWEpsY0d3dFptbHNaWE10YTJseWF5SVBVSEp2Wm1sMFVHRjBhRk4xYVhSbEtnbHlaM0p2YzJGa2J6RkNUZ29YY21Wd2JHbDBMWEpsY0d3dFlteHZZMnR6TFd0cGNtc1NGWEpsY0d4cGRDMXlaWEJzTFcxbGRHRXRhMmx5YXhvY2NtVndiR2wwTFcxaGNtZGhjbWx1WlMxaWJHOWphM010YTJseWEwb0hDT3E3eFJVUUFWQUFXZzlwYm5SbGJuUmZjR1Z5YzI5dVlXeDRBRklqQ0FFUWdJQ0FnQ0FaQUFBQUFBQUFFRUFoQUFBQUFBQUFF...kdVME5NT1hobGNuUjNhM3BaYkVad1NuQnNlWHB1VlhaemVrUk5WelUwVDFBbE1rSnRSbGhWT0cxNGFXNTBlQ1V5UmxJMk1VTTJaSHAyY1RORFRpVXlRa00yVW14MGFGWjBibkpFYXlVeVFqTndhRTVOZFVjNFkzZDFUbkZGZGpOcVJqaExVMjU2YmtWSFRXVjNSRlpCUW1OeWVrdFVOa0p3WkhZM1ZrTnpVMGxTTlZkdlUxUkxSRU5aWVhWSWVUbFJWelJSVUZWVFdHOUNTbG96V1VsUmFHRnNjbVV5VUZkWFpVaElObkVsTWtacVZuSTJZemMzVUd0RlUybHFSME01VUhwTUpUSkdOVkZIYjI1a2RFWlhjMFZuSlRORUpUTkV3NQLuM6GKCY2HrGnuzEIR9fDiGeGQ64r8fBJvad3gcvADTlJ0m5gzbwpgzqu8Ii3pAkQuHekigUfNccwYhPsG.Q2dad2NtOWtPak1pQ25KbGNHeHBkQzVqYjIwPQ' failed: 
+connect @ 102-c27835cc905285d1.js:1Understand this error
+api.sorryapp.com/v1/pages/27c7b5fc:1  Failed to load resource: net::ERR_SOCKET_NOT_CONNECTEDUnderstand this error
+5701-1e3042b70ff2f0c4.js:1 WebSocket connection to 'wss://eval.kirk.platform.replit.com/wsv2/v2.public.Q2dZSWtkdm13d1lTQmdpdzkrYkRCaUlFYTJseWF6QUFPczBCQ2lReE1UazJPV1kyWkMwNE1ERXdMVFJpTnpRdFlXUmxZeTA1TlRBNVpHWTVZelZsWkRnU0EyNXBlQm9XY21Wd2JHbDBMWEpsY0d3dFptbHNaWE10YTJseWF5SVBVSEp2Wm1sMFVHRjBhRk4xYVhSbEtnbHlaM0p2YzJGa2J6RkNUZ29YY21Wd2JHbDBMWEpsY0d3dFlteHZZMnR6TFd0cGNtc1NGWEpsY0d4cGRDMXlaWEJzTFcxbGRHRXRhMmx5YXhvY2NtVndiR2wwTFcxaGNtZGhjbWx1WlMxaWJHOWphM010YTJseWEwb0hDT3E3eFJVUUFWQUFXZzlwYm5SbGJuUmZjR1Z5YzI5dVlXeDRBRklqQ0FFUWdJQ0FnQ0FaQUFBQUFBQUFFRUFoQUFBQUFBQUFF...OVnlVeVFqQXlRVEZXWW5GSFdUZERWbE41VnlVeVJsUmlhbFU0ZDBKRGVFVmhTVlY1Y0RNMFRHOUtlRmxvY1dwWmJsaHJTa1pZYm5WbVIyUkxZVTFGTVdSSWIySmxTREZtYTJzMVduaE5jazFvYjFNbE1rSmtWRVpUZDFwM09UbHJUWEJIVjFsTWMyeFlha0kyY25NNVJHcHRPWHBXSlRKR0pUSkNOWGhFZFc5aE5scHNXRkpQYVhsUlRGZ3pWRGxaVEhkSU5qRjFRM0pSUkVKUFYwSXpVeko2V2tsa1prWkJXVWRzYUV4NlIxVlZOVXh3U2pkb1R6aDRaVTFSWkRoQ1JUaHlUbGhJVUd4dlNWWnJaVkZHVVNVelJDVXpSQT09BnPqhoT4IXS9muw0BKDWbcSBV7ekfehiUwoX_Eo2yxkqlpmrzVpG_FEEr-byj4CgiHRTRPqUrAmHr06dBGqaAw.Q2dad2NtOWtPak1pQ25KbGNHeHBkQzVqYjIwPQ' failed: 
+(anonymous) @ 5701-1e3042b70ff2f0c4.js:1Understand this error
+2240-421bdddb45e6028d.js:1 WebSocket connection to 'wss://production-chort.replit.com/api/river' failed: 
+(anonymous) @ 2240-421bdddb45e6028d.js:1Understand this error
+25ProfitPathSuite:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+/graphql:1  Failed to load resource: net::ERR_CONNECTION_CLOSEDUnderstand this error
+ProfitPathSuite:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+/graphql:1  Failed to load resource: net::ERR_CONNECTION_CLOSEDUnderstand this error
+6ProfitPathSuite:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+/graphql:1  Failed to load resource: net::ERR_CONNECTION_CLOSEDUnderstand this error
+25ProfitPathSuite:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+_app-eb4dd674134155da.js:38 onClick is deprecated, please use onPress
+(anonymous) @ _app-eb4dd674134155da.js:38Understand this warning
+7_app-eb4dd674134155da.js:38 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ _app-eb4dd674134155da.js:38Understand this warning
