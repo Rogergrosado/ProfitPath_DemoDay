@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
+import { useOnboarding } from "@/contexts/OnboardingContext";
 import {
   Home,
   Search,
@@ -12,17 +13,32 @@ import {
   User,
   LogOut,
   TrendingUp,
+  Lock,
 } from "lucide-react";
 
 interface SidebarLinkProps {
   icon: React.ElementType;
   label: string;
   path: string;
+  locked?: boolean;
+  lockReason?: string;
 }
 
-function SidebarLink({ icon: Icon, label, path }: SidebarLinkProps) {
+function SidebarLink({ icon: Icon, label, path, locked = false, lockReason = "" }: SidebarLinkProps) {
   const [location] = useLocation();
   const isActive = location === path;
+
+  if (locked) {
+    return (
+      <div
+        className="flex items-center gap-2 px-3 py-2 rounded-md opacity-50 cursor-not-allowed"
+        title={lockReason}
+      >
+        <Lock className="h-4 w-4 text-gray-500" />
+        <span className="text-sm text-gray-500">{label}</span>
+      </div>
+    );
+  }
 
   return (
     <Link href={path}>
@@ -43,6 +59,7 @@ function SidebarLink({ icon: Icon, label, path }: SidebarLinkProps) {
 
 export function Sidebar() {
   const { logout } = useAuth();
+  const { unlockAdvancedFeatures } = useOnboarding();
 
   const handleLogout = async () => {
     try {
@@ -51,6 +68,9 @@ export function Sidebar() {
       console.error("Logout failed:", error);
     }
   };
+
+  // Features are unlocked when user has sales data
+  const lockReason = "Add sales data first to unlock this feature";
 
   return (
     <aside className="w-60 h-screen bg-[#222831] flex flex-col justify-between fixed">
@@ -70,10 +90,22 @@ export function Sidebar() {
         <div>
           <p className="text-gray-400 uppercase text-xs px-2 mb-2">Main</p>
           <div className="space-y-1">
-            <SidebarLink icon={Home} label="Dashboard" path="/dashboard" />
+            <SidebarLink 
+              icon={Home} 
+              label="Dashboard" 
+              path="/dashboard" 
+              locked={!unlockAdvancedFeatures}
+              lockReason={lockReason}
+            />
             <SidebarLink icon={Search} label="Product Workspace" path="/products" />
             <SidebarLink icon={Package} label="Inventory" path="/inventory" />
-            <SidebarLink icon={Target} label="Goals" path="/goals" />
+            <SidebarLink 
+              icon={Target} 
+              label="Goals" 
+              path="/goals" 
+              locked={!unlockAdvancedFeatures}
+              lockReason={lockReason}
+            />
           </div>
         </div>
 
@@ -81,7 +113,20 @@ export function Sidebar() {
         <div>
           <p className="text-gray-400 uppercase text-xs px-2 mb-2">Analytics</p>
           <div className="space-y-1">
-            <SidebarLink icon={BarChart3} label="Performance" path="/analytics" />
+            <SidebarLink 
+              icon={BarChart3} 
+              label="Performance" 
+              path="/simple-analytics" 
+              locked={!unlockAdvancedFeatures}
+              lockReason={lockReason}
+            />
+            <SidebarLink 
+              icon={TrendingUp} 
+              label="Advanced Analytics" 
+              path="/analytics" 
+              locked={!unlockAdvancedFeatures}
+              lockReason={lockReason}
+            />
             <SidebarLink icon={FileText} label="Reports" path="/reports" />
           </div>
         </div>

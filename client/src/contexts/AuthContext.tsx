@@ -7,6 +7,8 @@ interface AuthContextType {
   user: User | null;
   firebaseUser: FirebaseUser | null;
   loading: boolean;
+  showWelcome: boolean;
+  setShowWelcome: (show: boolean) => void;
   signIn: () => void;
   signInWithEmailPassword: (email: string, password: string) => Promise<void>;
   signUpWithEmailPassword: (email: string, password: string, displayName: string) => Promise<void>;
@@ -19,6 +21,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showWelcome, setShowWelcome] = useState(false);
 
   useEffect(() => {
     // Handle redirect result on page load
@@ -66,6 +69,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               // Store user data for API requests
               localStorage.setItem('current-user', JSON.stringify(userData));
               console.log("User created and stored:", userData);
+              // Show welcome modal for new users
+              setShowWelcome(true);
             } else {
               console.error("Failed to create user in database");
             }
@@ -131,7 +136,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     <AuthContext.Provider value={{ 
       user, 
       firebaseUser, 
-      loading, 
+      loading,
+      showWelcome,
+      setShowWelcome,
       signIn, 
       signInWithEmailPassword,
       signUpWithEmailPassword,
