@@ -12,6 +12,7 @@ import { InventoryImport } from "@/components/Inventory/InventoryImport";
 import { ReorderCalendar } from "@/components/Inventory/ReorderCalendar";
 import { AddInventoryModal } from "@/components/Inventory/AddInventoryModal";
 import { RealTimeAlerts } from "@/components/Inventory/RealTimeAlerts";
+import { AnalyticsModal } from "@/components/Inventory/AnalyticsModal";
 import { AdvancedReorderCalendar } from "@/components/Inventory/AdvancedReorderCalendar";
 import PerformanceSyncModal from "@/components/modals/PerformanceSyncModal";
 import { Button } from "@/components/ui/button";
@@ -53,6 +54,7 @@ export default function Inventory() {
   const [showSalesModal, setShowSalesModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
 
   // Sync function for inventory changes
@@ -134,6 +136,11 @@ export default function Inventory() {
   const handleAddSale = (item: any) => {
     setSelectedInventory(item);
     setShowSalesModal(true);
+  };
+
+  const handleAnalytics = (item: any) => {
+    setSelectedInventory(item);
+    setShowAnalyticsModal(true);
   };
 
   return (
@@ -316,6 +323,7 @@ export default function Inventory() {
                 items={filteredItems}
                 onEdit={handleEditInventory}
                 onAddSale={handleAddSale}
+                onAnalytics={handleAnalytics}
               />
             </TabsContent>
 
@@ -373,6 +381,14 @@ export default function Inventory() {
             <AddInventoryModal
               open={showAddModal}
               onOpenChange={setShowAddModal}
+            />
+          )}
+
+          {showAnalyticsModal && selectedInventory && (
+            <AnalyticsModal
+              isOpen={showAnalyticsModal}
+              onClose={() => setShowAnalyticsModal(false)}
+              inventory={selectedInventory}
             />
           )}
         </div>

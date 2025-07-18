@@ -1,5 +1,6 @@
 import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
+import multer from "multer";
 import { storage } from "./storage";
 import { insertUserSchema, insertProductSchema, insertInventorySchema, insertSaleSchema, insertGoalSchema, insertReportSchema } from "@shared/schema";
 
@@ -9,6 +10,21 @@ interface AuthenticatedRequest extends Request {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Configure multer for file uploads
+  const upload = multer({ 
+    storage: multer.memoryStorage(),
+    limits: {
+      fileSize: 10 * 1024 * 1024, // 10MB limit
+    },
+    fileFilter: (req, file, cb) => {
+      if (file.mimetype === 'text/csv' || file.originalname.endsWith('.csv')) {
+        cb(null, true);
+      } else {
+        cb(new Error('Only CSV files are allowed'));
+      }
+    }
+  });
+
   // Auth middleware to get user from Firebase token (simplified for now)
   const requireAuth = (req: any, res: any, next: any) => {
     // In a real app, verify Firebase token here
@@ -298,6 +314,113 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(sale);
     } catch (error: any) {
       res.status(400).json({ message: error.message });
+    }
+  });
+
+  // CSV Import endpoint with intelligent parsing
+  app.post("/api/sales/csv-import", requireAuth, upload.single('csvFile'), async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      
+      // Handle multipart form data (CSV file upload)
+      if (!req.body.csvContent && !req.file) {
+        return res.status(400).json({ message: "No CSV content or file provided" });
+      }
+      
+      // Import CSV parser
+      const { parseCSV, validateCSVData } = await import('./csvParser');
+      
+      const csvContent = req.body.csvContent || req.file?.buffer?.toString('utf-8');
+      const mode = req.body.mode || 'sales'; // sales, products, mixed
+      
+      if (!csvContent) {
+        return res.status(400).json({ message: "Invalid CSV content" });
+      }
+      
+      const parseResult = parseCSV(csvContent);
+      
+      if (parseResult.errors.length > 0) {
+        return res.status(400).json({ 
+          message: "CSV parsing errors", 
+          errors: parseResult.errors 
+        });
+      }
+      
+      let importedSales: any[] = [];
+      let importedProducts: any[] = [];
+      
+      // Process sales data
+      if (parseResult.salesData.length > 0) {
+        const salesErrors = validateCSVData(parseResult.salesData, 'sales');
+        if (salesErrors.length > 0) {
+          return res.status(400).json({ message: "Sales data validation failed", errors: salesErrors });
+        }
+        
+        const batchId = `csv_${Date.now()}_${authReq.userId}`;
+        
+        for (const saleRecord of parseResult.salesData) {
+          const saleData = insertSaleSchema.parse({
+            ...saleRecord,
+            userId: authReq.userId,
+            importBatch: batchId
+          });
+          
+          const sale = await storage.createSale(saleData);
+          importedSales.push(sale);
+          
+          // Update inventory levels
+          try {
+            await storage.updateInventoryFromSales(authReq.userId, sale.sku, sale.quantity);
+          } catch (error) {
+            console.warn(`Failed to update inventory for SKU ${sale.sku}:`, error);
+          }
+        }
+      }
+      
+      // Process products data
+      if (parseResult.productsData.length > 0) {
+        const productErrors = validateCSVData(parseResult.productsData, 'products');
+        if (productErrors.length > 0) {
+          return res.status(400).json({ message: "Product data validation failed", errors: productErrors });
+        }
+        
+        for (const productRecord of parseResult.productsData) {
+          try {
+            // Check if inventory item with this SKU already exists
+            const existingItems = await storage.getInventoryItems(authReq.userId);
+            const existing = existingItems.find(item => item.sku === productRecord.sku);
+            
+            if (existing) {
+              // Update existing inventory item
+              const updatedItem = await storage.updateInventoryItem(existing.id, productRecord);
+              importedProducts.push(updatedItem);
+            } else {
+              // Create new inventory item
+              const inventoryData = insertInventorySchema.parse({
+                ...productRecord,
+                userId: authReq.userId
+              });
+              const newItem = await storage.createInventoryItem(inventoryData);
+              importedProducts.push(newItem);
+            }
+          } catch (error: any) {
+            console.warn(`Failed to process product ${productRecord.sku}:`, error);
+          }
+        }
+      }
+      
+      res.json({
+        message: `Successfully imported ${importedSales.length} sales and ${importedProducts.length} products`,
+        importedSales: importedSales.length,
+        importedProducts: importedProducts.length,
+        type: parseResult.type,
+        salesData: importedSales,
+        productsData: importedProducts
+      });
+      
+    } catch (error: any) {
+      console.error('CSV import error:', error);
+      res.status(500).json({ message: error.message });
     }
   });
 
