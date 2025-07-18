@@ -165,10 +165,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/inventory", requireAuth, async (req, res) => {
     try {
       const authReq = req as AuthenticatedRequest;
-      const itemData = insertInventorySchema.parse({ ...req.body, userId: authReq.userId });
+      console.log("Received inventory data:", req.body);
+      
+      // Manually validate and transform data (using current database schema)
+      const itemData = {
+        userId: authReq.userId,
+        name: req.body.name,
+        sku: req.body.sku,
+        category: req.body.category,
+        currentStock: parseInt(req.body.currentStock) || 0,
+        reservedStock: parseInt(req.body.reservedStock) || 0,
+        reorderPoint: parseInt(req.body.reorderPoint) || 0,
+        costPrice: req.body.costPrice ? req.body.costPrice.toString() : null,
+        sellingPrice: req.body.sellingPrice ? req.body.sellingPrice.toString() : null,
+        productId: req.body.productId || null,
+      };
+      
+      console.log("Transformed inventory data:", itemData);
       const item = await storage.createInventoryItem(itemData);
       res.json(item);
     } catch (error: any) {
+      console.error("Inventory creation error:", error);
       res.status(400).json({ message: error.message });
     }
   });

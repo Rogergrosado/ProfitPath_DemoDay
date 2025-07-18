@@ -106,7 +106,7 @@ export function AddInventoryModal({ open, onOpenChange }: AddInventoryModalProps
       return;
     }
 
-    // Prepare data according to database schema
+    // Prepare data according to current database schema
     const submissionData = {
       name: formData.name,
       sku: formData.sku,
@@ -116,10 +116,6 @@ export function AddInventoryModal({ open, onOpenChange }: AddInventoryModalProps
       reorderPoint: formData.reorderPoint || 0,
       costPrice: formData.costPrice ? parseFloat(formData.costPrice).toString() : null,
       sellingPrice: formData.sellingPrice ? parseFloat(formData.sellingPrice).toString() : null,
-      supplierName: formData.supplierName || null,
-      supplierSKU: formData.supplierSKU || null,
-      leadTimeDays: formData.leadTimeDays || 7,
-      notes: formData.notes || null,
     };
 
     createMutation.mutate(submissionData);
