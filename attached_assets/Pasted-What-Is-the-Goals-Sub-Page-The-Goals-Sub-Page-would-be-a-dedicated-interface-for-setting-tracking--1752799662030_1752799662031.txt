@@ -1,0 +1,104 @@
+What Is the Goals Sub-Page?
+The Goals Sub-Page would be a dedicated interface for setting, tracking, and analyzing progress toward business objectives—like hitting a monthly revenue target, selling X units, reducing stockouts, or increasing profit margin.
+
+Instead of passively watching your data, this page lets users actively define what success looks like, then auto-tracks their performance against those targets.
+
+📋 Main Features of a Goals Sub-Page
+Feature	Description
+Set New Goals	Define metrics (revenue, units, profit, etc.), timeframe (7d, 30d, 90d), category/SKU targeting
+Goal Status Summary	Quick view of active goals: Met ✅, On Track 📈, Off Track ⚠️, Unmet ❌
+Progress Visuals	Charts and progress bars comparing actual vs. target
+Historical Trends	Archive of past goals and outcomes
+Smart Suggestions (future)	Suggest goals based on trends in Sales or Inventory
+
+🔗 How It Connects to Other Sub-Pages
+Connected Sub-Page	How It's Linked to Goals
+📈 Performance	Uses real-time sales data (via SalesEntry) to track actual values toward each goal
+📦 Inventory	SKU-based goals (e.g. “Sell 500 units of BTS-2024-001”) require inventory connections to track availability and SKU info
+📊 Dashboard	A mini “Goal Progress” widget gives snapshot of active goal status
+📋 Reports	Goals can be exported into reports as KPI summaries or outcome reviews
+⚠️ Alerts	Off-track goals may trigger email/push alerts to prompt action
+📥 Manual Sales Entry	Manually entered sales (via SalesEntryModal.tsx) must affect goal progress too
+
+📐 Underlying Data Flow
+All goals revolve around actual values compared to targets.
+
+txt
+Copiar código
+Goal Target (e.g. Sell 300 units)
+          ↓
+SalesEntry logs → total actual units sold
+          ↓
+Compare actual vs. target
+          ↓
+Progress bar, percent complete, status
+🧩 Example Goal Record Structure
+json
+Copiar código
+{
+  "id": "goal_1",
+  "metric": "revenue",
+  "targetValue": 25000,
+  "current": 19500,
+  "status": "on_track",
+  "scope": "category",
+  "targetCategory": "Electronics",
+  "period": "30d",
+  "createdAt": "2025-07-01"
+}
+🛠️ Database Model Behind Goals
+Already in your Prisma schema:
+
+prisma
+Copiar código
+model Goal {
+  id          String   @id @default(uuid())
+  metric      String   // "revenue" | "unitsSold" | "profit" | ...
+  targetValue Float
+  scope       String   // "global", "sku", "category"
+  period      String   // "7d", "30d", etc.
+  isActive    Boolean  @default(true)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+✅ Example Use Cases
+➤ “I want to sell 1000 units of Wireless Earbuds this month”
+Metric: unitsSold
+
+Scope: SKU = "WE-2024-002"
+
+Data source: SalesEntry → filters by SKU → rolls up total units
+
+Progress bar: 410/1000 units → 41% → "On Track"
+
+➤ “Hit $15K in Electronics revenue this quarter”
+Metric: revenue
+
+Scope: Category = "Electronics"
+
+Source: Revenue from SalesEntry.inventory.category === Electronics
+
+➤ “Keep profit margin above 40%”
+Metric: profitMargin
+
+Scope: Global
+
+Source: Computed from all sales (price - cost / price)
+
+📍 Components for the Goals Sub-Page
+<GoalProgressPanel /> – Full-page version of progress bars and charts
+
+<CreateGoalForm /> – Form to create new metric-based goals
+
+<GoalCard /> – Individual goal view with progress
+
+<GoalStatusSummary /> – Top-level KPI widget for # of goals met, off-track
+
+<GoalHistoryTable /> – Past goals with results
+
+📣 Summary: Why a Dedicated Goals Page?
+While the dashboard gives you what is happening, the Goals Sub-Page defines what should be happening.
+
+It transforms raw performance into intentional growth strategy, making it a mission control panel for Amazon FBA businesses to drive toward real outcomes—not just observe data.
