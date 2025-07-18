@@ -56,11 +56,12 @@ export default function Landing() {
       <section className="relative px-6 lg:px-8 py-24">
         <div className="mx-auto max-w-7xl">
           <div className="text-center">
-            <div className="flex items-center justify-center space-x-3 mb-8">
-              <div className="w-12 h-12 bg-[var(--orange-primary)] rounded-lg flex items-center justify-center">
-                <TrendingUp className="h-6 w-6 text-white" />
-              </div>
-              <h1 className="text-4xl font-bold">ProfitPath</h1>
+            <div className="flex items-center justify-center mb-8">
+              <img 
+                src="/attached_assets/7a80751a-749e-4d0e-8b47-68bb62ac7a9d_1752855949355.png" 
+                alt="ProfitPath" 
+                className="h-20 w-auto"
+              />
             </div>
             
             <h2 className="text-6xl font-bold tracking-tight mb-6">
@@ -265,15 +266,16 @@ export default function Landing() {
       <footer className="px-6 lg:px-8 py-12 border-t border-slate-800">
         <div className="mx-auto max-w-7xl">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-[var(--orange-primary)] rounded-lg flex items-center justify-center">
-                <TrendingUp className="h-4 w-4 text-white" />
-              </div>
-              <span className="text-xl font-bold">ProfitPath</span>
+            <div className="flex items-center">
+              <img 
+                src="/attached_assets/7a80751a-749e-4d0e-8b47-68bb62ac7a9d_1752855949355.png" 
+                alt="ProfitPath" 
+                className="h-8 w-auto"
+              />
             </div>
             
             <div className="text-slate-400 text-sm">
-              © 2024 ProfitPath. All rights reserved.
+              © 2024 All rights reserved.
             </div>
           </div>
         </div>

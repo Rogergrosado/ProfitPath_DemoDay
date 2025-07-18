@@ -6,9 +6,19 @@ export default function TestPage() {
   return (
     <div className="min-h-screen bg-white dark:bg-black p-8">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-black dark:text-white mb-8">
-          ProfitPath Test Page
-        </h1>
+        <div className="mb-8">
+          <img 
+            src="/attached_assets/5f5c0872-e843-4d1f-a19d-d653d0fa8983_1752855956517.png" 
+            alt="ProfitPath" 
+            className="h-12 w-auto dark:hidden"
+          />
+          <img 
+            src="/attached_assets/7a80751a-749e-4d0e-8b47-68bb62ac7a9d_1752855949355.png" 
+            alt="ProfitPath" 
+            className="h-12 w-auto hidden dark:block"
+          />
+          <h2 className="text-2xl font-bold text-black dark:text-white mt-4">Test Page</h2>
+        </div>
         
         <div className="space-y-6">
           <div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg">
