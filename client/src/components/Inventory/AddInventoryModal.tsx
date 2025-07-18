@@ -57,7 +57,11 @@ export function AddInventoryModal({ open, onOpenChange }: AddInventoryModalProps
       });
       onOpenChange(false);
       resetForm();
+      // Force refresh inventory data
       queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+      queryClient.refetchQueries({ queryKey: ["/api/inventory"] });
+      // Also refresh any related queries
+      queryClient.invalidateQueries({ queryKey: ["/api"] });
     },
     onError: (error: any) => {
       toast({

@@ -54,8 +54,23 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
+    // Get user ID for authentication
+    let userIdToSend;
+    const storedUser = localStorage.getItem('current-user');
+    if (storedUser) {
+      try {
+        const user = JSON.parse(storedUser);
+        userIdToSend = user.id;
+      } catch (e) {
+        console.warn('Failed to parse stored user data');
+      }
+    }
+    
     const res = await fetch(queryKey.join("/") as string, {
       credentials: "include",
+      headers: {
+        ...(userIdToSend ? { "x-user-id": userIdToSend.toString() } : {}),
+      },
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
@@ -71,8 +86,8 @@ export const queryClient = new QueryClient({
     queries: {
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
-      refetchOnWindowFocus: false,
-      staleTime: Infinity,
+      refetchOnWindowFocus: true, // Enable refetch on window focus
+      staleTime: 0, // Always refetch to ensure fresh data
       retry: false,
     },
     mutations: {
