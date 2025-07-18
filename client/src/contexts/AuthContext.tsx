@@ -100,10 +100,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUpWithEmailPassword = async (email: string, password: string, displayName: string) => {
     try {
-      await signUpWithEmail(email, password, displayName);
+      const result = await signUpWithEmail(email, password, displayName);
+      console.log("Firebase signup successful:", result.user?.uid);
       // The onAuthStateChanged listener will handle the rest
+      return result;
     } catch (error: any) {
-      throw new Error(error.message || "Sign up failed");
+      console.error("Firebase signup error:", error);
+      let errorMessage = "Sign up failed";
+      
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = "This email is already registered. Please try signing in.";
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = "Password is too weak. Please choose a stronger password.";
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = "Please enter a valid email address.";
+      }
+      
+      throw new Error(errorMessage);
     }
   };
 

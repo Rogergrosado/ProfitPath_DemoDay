@@ -64,7 +64,17 @@ export default function Auth() {
     try {
       setIsLoading(true);
       await signInWithEmailPassword(signInForm.email, signInForm.password);
-      // The auth context will handle redirect
+      
+      toast({
+        title: "Signed in successfully!",
+        description: "Welcome back to ProfitPath.",
+      });
+      
+      // Wait a moment then redirect
+      setTimeout(() => {
+        setLocation("/dashboard");
+      }, 1000);
+      
     } catch (error: any) {
       toast({
         title: "Sign in failed",
@@ -109,7 +119,17 @@ export default function Auth() {
       setIsLoading(true);
       console.log("Attempting sign up with:", { email: signUpForm.email, name: signUpForm.name });
       await signUpWithEmailPassword(signUpForm.email, signUpForm.password, signUpForm.name);
-      // The auth context will handle redirect
+      
+      toast({
+        title: "Account created successfully!",
+        description: "Welcome to ProfitPath. Redirecting to dashboard...",
+      });
+      
+      // Wait a moment then redirect
+      setTimeout(() => {
+        setLocation("/dashboard");
+      }, 1500);
+      
     } catch (error: any) {
       console.error("Sign up error:", error);
       toast({
