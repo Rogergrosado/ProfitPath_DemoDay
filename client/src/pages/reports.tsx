@@ -116,10 +116,7 @@ export default function Reports() {
   });
 
   const createReportMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("/api/reports", {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
+    mutationFn: (data: any) => apiRequest("POST", "/api/reports", data),
     onSuccess: () => {
       toast({ title: "Report created successfully" });
       setCreateModalOpen(false);
@@ -133,9 +130,7 @@ export default function Reports() {
 
   const exportReportMutation = useMutation({
     mutationFn: ({ reportId, format }: { reportId: number; format: string }) =>
-      apiRequest(`/api/reports/${reportId}/export?format=${format}`, {
-        method: "POST",
-      }),
+      apiRequest("POST", `/api/reports/${reportId}/export?format=${format}`),
     onSuccess: (data, variables) => {
       // In a real app, this would trigger a download
       toast({ title: `Report exported as ${variables.format.toUpperCase()}` });
@@ -146,9 +141,7 @@ export default function Reports() {
   });
 
   const deleteReportMutation = useMutation({
-    mutationFn: (reportId: number) => apiRequest(`/api/reports/${reportId}`, {
-      method: "DELETE",
-    }),
+    mutationFn: (reportId: number) => apiRequest("DELETE", `/api/reports/${reportId}`),
     onSuccess: () => {
       toast({ title: "Report deleted successfully" });
       queryClient.invalidateQueries({ queryKey: ["/api/reports"] });

@@ -46,11 +46,19 @@ export interface IStorage {
   // Sales
   getSales(userId: number, startDate?: Date, endDate?: Date): Promise<Sale[]>;
   createSale(sale: InsertSale): Promise<Sale>;
-  getSalesMetrics(userId: number): Promise<{
+  getSalesMetrics(userId: number, dateRange?: string): Promise<{
     totalRevenue: number;
     totalProfit: number;
     totalUnits: number;
     averageOrderValue: number;
+    conversionRate: number;
+  }>;
+  getCategoryPerformance(userId: number, dateRange?: string): Promise<any[]>;
+  getInventorySummary(userId: number): Promise<{
+    totalItems: number;
+    totalValue: number;
+    lowStockItems: number;
+    outOfStockItems: number;
   }>;
 
   // Goals
@@ -193,11 +201,12 @@ export class DatabaseStorage implements IStorage {
     return newSale;
   }
 
-  async getSalesMetrics(userId: number): Promise<{
+  async getSalesMetrics(userId: number, dateRange?: string): Promise<{
     totalRevenue: number;
     totalProfit: number;
     totalUnits: number;
     averageOrderValue: number;
+    conversionRate: number;
   }> {
     const result = await db
       .select({
@@ -217,6 +226,50 @@ export class DatabaseStorage implements IStorage {
       totalProfit: Number(metrics.totalProfit),
       totalUnits: Number(metrics.totalUnits),
       averageOrderValue: Number(averageOrderValue),
+      conversionRate: 2.4, // Mock conversion rate for now
+    };
+  }
+
+  async getCategoryPerformance(userId: number, dateRange?: string): Promise<any[]> {
+    const result = await db
+      .select({
+        category: sales.category,
+        totalRevenue: sql<number>`COALESCE(SUM(${sales.totalRevenue}), 0)`,
+        totalUnits: sql<number>`COALESCE(SUM(${sales.quantity}), 0)`,
+      })
+      .from(sales)
+      .where(eq(sales.userId, userId))
+      .groupBy(sales.category);
+
+    return result.map(item => ({
+      category: item.category || 'Uncategorized',
+      revenue: Number(item.totalRevenue),
+      units: Number(item.totalUnits),
+    }));
+  }
+
+  async getInventorySummary(userId: number): Promise<{
+    totalItems: number;
+    totalValue: number;
+    lowStockItems: number;
+    outOfStockItems: number;
+  }> {
+    const result = await db
+      .select({
+        totalItems: sql<number>`COUNT(*)`,
+        totalValue: sql<number>`COALESCE(SUM(${inventory.currentStock} * ${inventory.sellingPrice}), 0)`,
+        lowStockItems: sql<number>`COUNT(CASE WHEN ${inventory.currentStock} <= ${inventory.reorderPoint} THEN 1 END)`,
+        outOfStockItems: sql<number>`COUNT(CASE WHEN ${inventory.currentStock} = 0 THEN 1 END)`,
+      })
+      .from(inventory)
+      .where(eq(inventory.userId, userId));
+
+    const summary = result[0];
+    return {
+      totalItems: Number(summary.totalItems),
+      totalValue: Number(summary.totalValue),
+      lowStockItems: Number(summary.lowStockItems),
+      outOfStockItems: Number(summary.outOfStockItems),
     };
   }
 
@@ -244,17 +297,8 @@ export class DatabaseStorage implements IStorage {
     return goal;
   }
 
-  async deleteGoal(id: number, userId: number): Promise<boolean> {
-    const result = await db.delete(goals).where(and(eq(goals.id, id), eq(goals.userId, userId)));
-    return result.rowCount > 0;
-  }
-
-  async updateGoal(id: number, userId: number, updates: Partial<Goal>): Promise<Goal | null> {
-    const [goal] = await db.update(goals)
-      .set({ ...updates, updatedAt: new Date() })
-      .where(and(eq(goals.id, id), eq(goals.userId, userId)))
-      .returning();
-    return goal || null;
+  async deleteGoal(id: number): Promise<void> {
+    await db.delete(goals).where(eq(goals.id, id));
   }
 
   // Reports

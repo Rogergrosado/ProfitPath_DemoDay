@@ -221,8 +221,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/performance/metrics", requireAuth, async (req, res) => {
     try {
       const authReq = req as AuthenticatedRequest;
-      const metrics = await storage.getSalesMetrics(authReq.userId);
+      const dateRange = req.query.dateRange as string || "30d";
+      const metrics = await storage.getSalesMetrics(authReq.userId, dateRange);
       res.json(metrics);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/performance/categories", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const dateRange = req.query.dateRange as string || "30d";
+      const categories = await storage.getCategoryPerformance(authReq.userId, dateRange);
+      res.json(categories);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/inventory/summary", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const summary = await storage.getInventorySummary(authReq.userId);
+      res.json(summary);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
@@ -284,7 +306,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/reports", requireAuth, async (req, res) => {
     try {
-      const reportData = insertReportSchema.parse({ ...req.body, userId: req.userId });
+      const authReq = req as AuthenticatedRequest;
+      const reportData = insertReportSchema.parse({ ...req.body, userId: authReq.userId });
       const report = await storage.createReport(reportData);
       res.json(report);
     } catch (error: any) {
@@ -292,11 +315,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/reports/export", requireAuth, async (req, res) => {
+  app.post("/api/reports/:id/export", requireAuth, async (req, res) => {
     try {
+      const reportId = parseInt(req.params.id);
+      const format = req.query.format as string || "pdf";
       // Implementation for report export would go here
       // For now, return a placeholder response
-      res.json({ success: true, message: "Export functionality not yet implemented" });
+      res.json({ success: true, message: `Export as ${format.toUpperCase()} functionality simulated`, reportId, format });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.delete("/api/reports/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteReport(id);
+      res.json({ success: true });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
