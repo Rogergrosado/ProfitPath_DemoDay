@@ -1,0 +1,60 @@
+Overview:
+The Products Sub-Page in ProfitPath (technically made up of Watchlist Products and Inventory Items) is the source of truth for all items you track, test, and sell on Amazon FBA. It is your pipeline—from ideation to inventory.
+
+🧱 Structure of the Products Sub-Page
+It’s logically split into two views:
+
+Watchlist Products (Pre-Inventory)
+
+Products you’re researching, tracking, or prepping for launch.
+
+Lives at: GET /api/products/watchlist
+
+Inventory Items (Active SKUs in Stock)
+
+Products that are launched and stocked.
+
+Lives at: GET /api/inventory
+
+Users “promote” items from Watchlist → Inventory once they’re approved for sourcing.
+
+🔗 Key Connections to Other Sub-Pages
+Connected Sub-Page	Connection Description	Data Flow Direction
+📊 Dashboard	Pulls live product data from inventory to show KPIs (stock value, low stock alerts, top products).	Inventory → Dashboard
+📈 Performance	Relies on SalesEntry records linked to each InventoryItem (via inventoryId) to calculate: revenue, units sold, profit, etc.	Inventory & SalesEntry → Performance
+🎯 Goals	Goals are often set per product (e.g., “Sell 100 units of SKU X in 30 days”), so they pull inventory data for context and progress.	Inventory → Goals
+📋 Reports	Uses both InventoryItem and SalesEntry to compile downloadable reports. Widgets might show sales trends per SKU, profit by category, etc.	Inventory + SalesEntry → Reports
+🚨 Reorder Alerts	Based on lowStockThreshold, leadTimeDays, and current quantity for each product.	Inventory → Alerts
+📥 Manual Entry / CSV Import	Allows uploading or manually entering product performance (sales, units sold). Maps to SKUs in the inventory table.	CSV → Inventory + SalesEntry
+🧮 Scenario Simulator (on Dashboard)	Simulates future revenue/profit based on inventory sales velocity and pricing—needs product price, cost, and lead time.	Inventory → Simulator
+
+🗂️ Database-Level Relationships
+Each InventoryItem:
+
+Belongs to a User
+
+Has many SalesEntries
+
+Optionally originates from a WatchlistProduct
+
+🚀 Typical Lifecycle of a Product in ProfitPath
+text
+Copiar código
+[Watchlist Product] → promote → [Inventory Item] → sells → [Sales Entries] → used in → [Performance] + [Goals] + [Reports] + [Alerts]
+🧰 Frontend Components Involved
+PromoteToInventoryForm.tsx → Form that moves a product from Watchlist → Inventory
+
+InventoryList.tsx → Table/list view of your live inventory
+
+TrackedProductsMiniCard.tsx → Dashboard widget that shows most watched/tracked SKUs
+
+PerformanceAnalytics.tsx → Pulls unitsSold, revenue from sales entries linked to inventory
+
+SalesEntryModal.tsx → Adds manual sales data to SalesEntry table, attached to a product
+
+GoalProgressPanel.tsx → Renders performance against product-level goals
+
+ReportBuilder.tsx → Uses inventory metadata to generate report widgets
+
+✅ Summary:
+The Products Sub-Page is the beating heart of ProfitPath. It houses all SKUs you're tracking and selling. Every major feature in the app—dashboards, analytics, goals, reports, alerts—pulls from either watchlist or inventory.

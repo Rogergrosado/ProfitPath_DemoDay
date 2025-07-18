@@ -34,6 +34,7 @@ export interface IStorage {
   createProduct(product: InsertProduct): Promise<Product>;
   updateProduct(id: number, product: Partial<InsertProduct>): Promise<Product>;
   deleteProduct(id: number): Promise<void>;
+  getWatchlistProducts(userId: number): Promise<Product[]>;
 
   // Inventory
   getInventory(userId: number): Promise<Inventory[]>;
@@ -117,6 +118,27 @@ export class DatabaseStorage implements IStorage {
 
   async deleteProduct(id: number): Promise<void> {
     await db.delete(products).where(eq(products.id, id));
+  }
+
+  async getWatchlistProducts(userId: number): Promise<Product[]> {
+    // Get products that haven't been promoted to inventory yet
+    const existingInventoryProductIds = await db
+      .select({ productId: inventory.productId })
+      .from(inventory)
+      .where(eq(inventory.userId, userId));
+    
+    const excludedIds = existingInventoryProductIds
+      .map(item => item.productId)
+      .filter(id => id !== null);
+
+    if (excludedIds.length === 0) {
+      // If no products are in inventory, return all products
+      return this.getProducts(userId);
+    }
+
+    // Return products not in inventory
+    const allProducts = await this.getProducts(userId);
+    return allProducts.filter(product => !excludedIds.includes(product.id));
   }
 
   // Inventory

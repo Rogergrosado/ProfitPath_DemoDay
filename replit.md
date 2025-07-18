@@ -31,6 +31,15 @@ ProfitPath is a comprehensive business intelligence dashboard designed for Amazo
   - Sample business data populated for testing dashboard functionality
   - Proper Firebase user lookup and database user creation flow
 
+✓ **Products Sub-Page Implementation**: Complete product pipeline management
+  - Dual-view system: Watchlist Products (pre-inventory) and Active Inventory
+  - Dynamic stats cards showing relevant metrics for each view
+  - Proper text visibility in both light and dark modes (white to black switching)
+  - Watchlist product cards with status badges (researching, validated, ready to launch)
+  - Inventory item cards with stock status and financial details
+  - Promote functionality to move products from watchlist to inventory
+  - Filtering by category and status with proper state management
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.

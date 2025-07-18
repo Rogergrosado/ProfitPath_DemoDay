@@ -72,7 +72,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/products/watchlist", requireAuth, async (req, res) => {
     try {
       const authReq = req as AuthenticatedRequest;
-      const products = await storage.getProducts(authReq.userId);
+      const products = await storage.getWatchlistProducts(authReq.userId);
       res.json(products);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -107,6 +107,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteProduct(id);
       res.json({ success: true });
     } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Promote product to inventory
+  app.post("/api/products/:id/promote", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const productId = parseInt(req.params.id);
+      const { sku, currentStock, costPrice, sellingPrice, reorderPoint } = req.body;
+
+      // Validate required fields
+      if (!sku || currentStock === undefined || !costPrice || !sellingPrice) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      // Get the product to promote
+      const product = await storage.getProduct(productId);
+      if (!product || product.userId !== authReq.userId) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+
+      // Create inventory item
+      const inventoryItem = await storage.createInventoryItem({
+        userId: authReq.userId,
+        productId: productId,
+        name: product.name,
+        sku: sku,
+        category: product.category,
+        currentStock: currentStock,
+        reservedStock: 0,
+        reorderPoint: reorderPoint || 0,
+        costPrice: costPrice.toString(),
+        sellingPrice: sellingPrice.toString(),
+        imageUrl: product.imageUrl,
+      });
+
+      res.json(inventoryItem);
+    } catch (error: any) {
+      console.error("Error promoting product:", error);
       res.status(500).json({ message: error.message });
     }
   });
