@@ -106,11 +106,18 @@ export function AddInventoryModal({ open, onOpenChange }: AddInventoryModalProps
       return;
     }
 
-    createMutation.mutate({
-      ...formData,
-      costPrice: parseFloat(formData.costPrice) || 0,
-      sellingPrice: parseFloat(formData.sellingPrice) || 0,
-    });
+    // Prepare data according to database schema
+    const submissionData = {
+      name: formData.name,
+      sku: formData.sku,
+      category: formData.category || null,
+      currentStock: formData.currentStock || 0,
+      reorderPoint: formData.reorderPoint || 0,
+      costPrice: formData.costPrice ? parseFloat(formData.costPrice).toFixed(2) : null,
+      sellingPrice: formData.sellingPrice ? parseFloat(formData.sellingPrice).toFixed(2) : null,
+    };
+
+    createMutation.mutate(submissionData);
   };
 
   const generateSKU = () => {

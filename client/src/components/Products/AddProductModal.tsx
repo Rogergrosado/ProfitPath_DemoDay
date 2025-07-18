@@ -65,7 +65,10 @@ export function AddProductModal({ children }: AddProductModalProps) {
   });
 
   const createProductMutation = useMutation({
-    mutationFn: (data: ProductFormData) => apiRequest("POST", "/api/products", data),
+    mutationFn: (data: ProductFormData) => apiRequest("/api/products", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/products/watchlist"] });
       toast({ title: "Product added successfully" });
