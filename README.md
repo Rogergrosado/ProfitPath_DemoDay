@@ -183,25 +183,48 @@ profitpath/
 
 ## Deployment
 
-### Production Build
+ProfitPath is production-ready with multiple deployment options:
 
+### Quick Deploy (Replit)
 ```bash
-npm run build
-npm run start
+# Already configured - just click Deploy in Replit
 ```
 
-### Environment Variables
+### Self-Deploy Script
+```bash
+# Make executable and run
+chmod +x deploy.sh
+./deploy.sh
+```
 
-Ensure all production environment variables are set:
-- Database connection string
-- Firebase configuration
-- Any API keys for external services
+### Platform-Specific Deployment
 
-### Recommended Hosting
+**Vercel**:
+```bash
+npm i -g vercel
+vercel --prod
+```
 
-- **Frontend**: Vercel, Netlify, or similar static hosting
-- **Backend**: Railway, Render, or similar Node.js hosting
-- **Database**: Neon, Supabase, or managed PostgreSQL
+**Railway**:
+```bash
+npm i -g @railway/cli
+railway login && railway up
+```
+
+**Docker**:
+```bash
+docker build -t profitpath .
+docker run -p 5000:5000 --env-file .env profitpath
+```
+
+### Production Requirements
+
+- **Database**: PostgreSQL (Neon/Supabase recommended)
+- **Environment Variables**: See `.env.example`
+- **Node.js**: Version 18+
+- **Health Checks**: `/health` and `/api/health` endpoints available
+
+See `production.md` for complete deployment guide.
 
 ## Troubleshooting
 
