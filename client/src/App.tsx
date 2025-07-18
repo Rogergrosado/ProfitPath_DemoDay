@@ -14,6 +14,7 @@ import Products from "@/pages/products";
 import Inventory from "@/pages/inventory";
 import SimpleAnalytics from "@/pages/simple-analytics";
 import Reports from "@/pages/reports";
+import Analytics from "@/pages/analytics";
 import Goals from "@/pages/goals";
 import Settings from "@/pages/settings";
 import Profile from "@/pages/profile";
@@ -27,7 +28,8 @@ function Router() {
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/products" component={Products} />
       <Route path="/inventory" component={Inventory} />
-      <Route path="/analytics" component={SimpleAnalytics} />
+      <Route path="/simple-analytics" component={SimpleAnalytics} />
+      <Route path="/analytics" component={Analytics} />
       <Route path="/reports" component={Reports} />
       <Route path="/goals" component={Goals} />
       <Route path="/settings" component={Settings} />

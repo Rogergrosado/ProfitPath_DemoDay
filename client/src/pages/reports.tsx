@@ -52,6 +52,7 @@ import {
   Trash2,
   FileSpreadsheet,
 } from "lucide-react";
+import { AdvancedReportBuilder } from "@/components/Reports/AdvancedReportBuilder";
 
 const REPORT_TEMPLATES = [
   {
@@ -233,6 +234,7 @@ export default function Reports() {
       
       <main className="flex-1 ml-64 p-6">
         <div className="fade-in">
+          <AdvancedReportBuilder />
           {/* Header */}
           <div className="mb-8">
             <div className="flex justify-between items-center">

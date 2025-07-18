@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AchievementSystem } from "@/components/Goals/AchievementSystem";
 import {
   Select,
   SelectContent,
@@ -334,8 +335,8 @@ export default function Goals() {
             </CardContent>
           </Card>
 
-          {/* Goals List */}
-          <div className="space-y-4">
+              {/* Goals List */}
+              <div className="space-y-4">
             {filteredGoals.length === 0 ? (
               <Card className="bg-gray-50 dark:bg-[#222831] border-gray-200 dark:border-slate-700">
                 <CardContent className="p-12 text-center">

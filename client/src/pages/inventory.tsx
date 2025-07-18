@@ -11,6 +11,8 @@ import { SalesEntryModal } from "@/components/Inventory/SalesEntryModal";
 import { InventoryImport } from "@/components/Inventory/InventoryImport";
 import { ReorderCalendar } from "@/components/Inventory/ReorderCalendar";
 import { AddInventoryModal } from "@/components/Inventory/AddInventoryModal";
+import { RealTimeAlerts } from "@/components/Inventory/RealTimeAlerts";
+import { AdvancedReorderCalendar } from "@/components/Inventory/AdvancedReorderCalendar";
 import PerformanceSyncModal from "@/components/modals/PerformanceSyncModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -245,15 +247,21 @@ export default function Inventory() {
 
           {/* Tabs Navigation */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-            <TabsList className="grid w-full grid-cols-3 bg-gray-100 dark:bg-[#222831]">
+            <TabsList className="grid w-full grid-cols-5 bg-gray-100 dark:bg-[#222831]">
               <TabsTrigger value="overview" className="data-[state=active]:bg-[#fd7014] data-[state=active]:text-white">
                 Overview
               </TabsTrigger>
+              <TabsTrigger value="alerts" className="data-[state=active]:bg-[#fd7014] data-[state=active]:text-white">
+                Real-Time Alerts
+              </TabsTrigger>
               <TabsTrigger value="calendar" className="data-[state=active]:bg-[#fd7014] data-[state=active]:text-white">
-                Reorder Calendar
+                Advanced Calendar
               </TabsTrigger>
               <TabsTrigger value="analytics" className="data-[state=active]:bg-[#fd7014] data-[state=active]:text-white">
                 Analytics
+              </TabsTrigger>
+              <TabsTrigger value="reports" className="data-[state=active]:bg-[#fd7014] data-[state=active]:text-white">
+                Reports
               </TabsTrigger>
             </TabsList>
 
@@ -311,12 +319,29 @@ export default function Inventory() {
               />
             </TabsContent>
 
+            <TabsContent value="alerts">
+              <RealTimeAlerts />
+            </TabsContent>
+
             <TabsContent value="calendar">
-              <ReorderCalendar items={inventory} />
+              <AdvancedReorderCalendar />
             </TabsContent>
 
             <TabsContent value="analytics">
               <InventoryAnalytics items={inventory} />
+            </TabsContent>
+
+            <TabsContent value="reports">
+              <div className="space-y-6">
+                <h3 className="text-xl font-semibold">Inventory Reports</h3>
+                <p className="text-muted-foreground">Generate detailed inventory reports and analytics</p>
+                <Button 
+                  onClick={() => setLocation('/reports')}
+                  className="bg-[#fd7014] hover:bg-[#e5640f] text-white"
+                >
+                  Go to Advanced Report Builder
+                </Button>
+              </div>
             </TabsContent>
           </Tabs>
 
