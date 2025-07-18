@@ -8,13 +8,13 @@ export default function TestPage() {
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
           <img 
-            src="/attached_assets/5f5c0872-e843-4d1f-a19d-d653d0fa8983_1752855956517.png" 
-            alt="ProfitPath" 
+            src="/logo-black.png" 
+            alt="ProfitPath Logo" 
             className="h-12 w-auto dark:hidden"
           />
           <img 
-            src="/attached_assets/7a80751a-749e-4d0e-8b47-68bb62ac7a9d_1752855949355.png" 
-            alt="ProfitPath" 
+            src="/logo-white.png" 
+            alt="ProfitPath Logo" 
             className="h-12 w-auto hidden dark:block"
           />
           <h2 className="text-2xl font-bold text-black dark:text-white mt-4">Test Page</h2>

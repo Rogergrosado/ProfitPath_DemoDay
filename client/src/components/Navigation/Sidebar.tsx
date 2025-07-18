@@ -57,9 +57,9 @@ export function Sidebar() {
       {/* Header */}
       <div className="px-6 py-4 border-b border-[#37414f] flex items-center justify-center">
         <img 
-          src="/attached_assets/7a80751a-749e-4d0e-8b47-68bb62ac7a9d_1752855949355.png" 
-          alt="ProfitPath" 
-          className="h-8 w-auto"
+          src="/logo-white.png" 
+          alt="ProfitPath Logo" 
+          className="h-10 w-auto"
         />
       </div>
 

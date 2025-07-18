@@ -56,11 +56,11 @@ export default function Landing() {
       <section className="relative px-6 lg:px-8 py-24">
         <div className="mx-auto max-w-7xl">
           <div className="text-center">
-            <div className="flex items-center justify-center mb-8">
+            <div className="flex items-center justify-center mb-12">
               <img 
-                src="/attached_assets/7a80751a-749e-4d0e-8b47-68bb62ac7a9d_1752855949355.png" 
-                alt="ProfitPath" 
-                className="h-20 w-auto"
+                src="/logo-white.png" 
+                alt="ProfitPath Logo" 
+                className="h-32 w-auto"
               />
             </div>
             
@@ -268,9 +268,9 @@ export default function Landing() {
           <div className="flex items-center justify-between">
             <div className="flex items-center">
               <img 
-                src="/attached_assets/7a80751a-749e-4d0e-8b47-68bb62ac7a9d_1752855949355.png" 
-                alt="ProfitPath" 
-                className="h-8 w-auto"
+                src="/logo-white.png" 
+                alt="ProfitPath Logo" 
+                className="h-10 w-auto"
               />
             </div>
             

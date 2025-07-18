@@ -140,16 +140,16 @@ export default function Auth() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center mb-4">
+          <div className="flex items-center justify-center mb-6">
             <img 
-              src="/attached_assets/7a80751a-749e-4d0e-8b47-68bb62ac7a9d_1752855949355.png" 
-              alt="ProfitPath" 
-              className="h-16 w-auto dark:hidden"
+              src="/logo-black.png" 
+              alt="ProfitPath Logo" 
+              className="h-24 w-auto dark:hidden"
             />
             <img 
-              src="/attached_assets/5f5c0872-e843-4d1f-a19d-d653d0fa8983_1752855956517.png" 
-              alt="ProfitPath" 
-              className="h-16 w-auto hidden dark:block"
+              src="/logo-white.png" 
+              alt="ProfitPath Logo" 
+              className="h-24 w-auto hidden dark:block"
             />
           </div>
           <p className="text-muted-foreground">Welcome back to your FBA dashboard</p>
