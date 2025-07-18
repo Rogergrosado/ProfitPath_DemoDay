@@ -59,11 +59,23 @@ export function SalesEntryModal({ children }: SalesEntryModalProps) {
       const totalRevenue = data.quantity * data.unitPrice;
       const profit = totalRevenue - (data.totalCost || 0);
       
-      return apiRequest("POST", "/api/sales", {
-        ...data,
+      const requestBody = {
+        sku: data.sku,
+        quantity: data.quantity,
+        unitPrice: data.unitPrice,
         totalRevenue,
+        totalCost: data.totalCost || 0,
         profit,
         saleDate: new Date(data.saleDate),
+        productName: data.sku, // Using SKU as product name fallback
+        category: "manual-entry",
+      };
+      
+      console.log("📤 Submitting sale:", requestBody);
+      
+      return apiRequest("/api/sales", {
+        method: "POST",
+        body: JSON.stringify(requestBody),
       });
     },
     onSuccess: () => {
@@ -73,8 +85,13 @@ export function SalesEntryModal({ children }: SalesEntryModalProps) {
       setOpen(false);
       form.reset();
     },
-    onError: () => {
-      toast({ title: "Failed to add sale", variant: "destructive" });
+    onError: (error: any) => {
+      console.error("❌ Error recording sale:", error.response?.data || error.message);
+      toast({ 
+        title: "Failed to add sale", 
+        description: error.response?.data?.message || error.message || "Please check all fields and try again.",
+        variant: "destructive" 
+      });
     },
   });
 

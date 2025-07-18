@@ -53,9 +53,10 @@ export function SalesEntryModal({ inventory, open, onOpenChange }: SalesEntryMod
       queryClient.invalidateQueries({ queryKey: ["/api/sales"] });
     },
     onError: (error: any) => {
+      console.error("❌ Error recording inventory sale:", error.response?.data || error.message);
       toast({
         title: "Failed to record sale",
-        description: error.message || "Please try again later.",
+        description: error.response?.data?.message || error.message || "Please check all fields and try again.",
         variant: "destructive",
       });
     },
@@ -86,7 +87,7 @@ export function SalesEntryModal({ inventory, open, onOpenChange }: SalesEntryMod
     const totalCost = formData.quantity * parseFloat(inventory.costPrice || "0");
     const profit = totalRevenue - totalCost;
 
-    createSaleMutation.mutate({
+    const requestBody = {
       inventoryId: inventory.id,
       sku: inventory.sku,
       quantity: formData.quantity,
@@ -96,7 +97,13 @@ export function SalesEntryModal({ inventory, open, onOpenChange }: SalesEntryMod
       profit: profit,
       saleDate: new Date(formData.saleDate),
       notes: formData.notes,
-    });
+      productName: inventory.name,
+      category: inventory.category || "inventory-item",
+    };
+    
+    console.log("📤 Submitting inventory sale:", requestBody);
+    
+    createSaleMutation.mutate(requestBody);
   };
 
   const totalRevenue = formData.quantity * formData.unitPrice;
