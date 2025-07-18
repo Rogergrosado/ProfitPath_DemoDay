@@ -285,6 +285,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const authReq = req as AuthenticatedRequest;
       const saleData = insertSaleSchema.parse({ ...req.body, userId: authReq.userId });
       const sale = await storage.createSale(saleData);
+      
+      // Update inventory levels when individual sales are recorded
+      if (sale.sku && sale.quantity) {
+        try {
+          await storage.updateInventoryFromSales(authReq.userId, sale.sku, sale.quantity);
+        } catch (error) {
+          console.warn(`Failed to update inventory for SKU ${sale.sku}:`, error);
+        }
+      }
+      
       res.json(sale);
     } catch (error: any) {
       res.status(400).json({ message: error.message });
