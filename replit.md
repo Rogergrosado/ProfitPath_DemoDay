@@ -6,6 +6,12 @@ ProfitPath is a comprehensive business intelligence dashboard designed for Amazo
 
 ## Recent Changes (July 18, 2025)
 
+✓ **README.md Documentation**: Comprehensive setup guide for local development with clone instructions
+  - Complete installation and setup instructions for new developers
+  - Environment variable configuration guide with Firebase and database setup
+  - Project structure documentation and development guidelines
+  - Troubleshooting section for common issues and deployment instructions
+
 ✓ **Real Data Integration System**: Complete connection between inventory management and performance analytics
   - Enhanced sales schema with product names, categories, marketplace tracking, and import batch IDs
   - Bulk CSV import functionality specifically for performance sub-page with timestamp-based history
