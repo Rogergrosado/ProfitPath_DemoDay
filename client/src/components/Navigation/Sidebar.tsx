@@ -42,9 +42,9 @@ function SidebarLink({ icon: Icon, label, path, locked = false, lockReason = "" 
 
   return (
     <Link href={path}>
-      <a
+      <div
         className={cn(
-          "flex items-center gap-2 px-3 py-2 rounded-md transition-all duration-200 ease-in-out",
+          "flex items-center gap-2 px-3 py-2 rounded-md transition-all duration-200 ease-in-out cursor-pointer",
           isActive 
             ? "bg-[#fd7014] text-white font-medium" 
             : "hover:bg-[#37414f] text-gray-300"
@@ -52,7 +52,7 @@ function SidebarLink({ icon: Icon, label, path, locked = false, lockReason = "" 
       >
         <Icon className="h-4 w-4" />
         <span className="text-sm">{label}</span>
-      </a>
+      </div>
     </Link>
   );
 }

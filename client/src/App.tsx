@@ -45,13 +45,11 @@ function Router() {
       </Switch>
 
       {/* Welcome Modal for new users */}
-      {showWelcome && user && (
-        <WelcomeModal
-          isOpen={showWelcome}
-          onClose={() => setShowWelcome(false)}
-          userName={user.displayName || user.email?.split('@')[0] || 'User'}
-        />
-      )}
+      <WelcomeModal
+        isOpen={showWelcome && !!user}
+        onClose={() => setShowWelcome(false)}
+        userName={user?.displayName || user?.email?.split('@')[0] || 'User'}
+      />
     </>
   );
 }

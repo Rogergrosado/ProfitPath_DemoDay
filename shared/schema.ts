@@ -169,6 +169,13 @@ export const insertProductSchema = createInsertSchema(products).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  estimatedPrice: z.union([z.string(), z.number()]).optional().transform((val) => 
+    val ? val.toString() : undefined
+  ),
+  demandScore: z.union([z.string(), z.number()]).optional().transform((val) => 
+    val ? Number(val) : undefined
+  ),
 });
 
 export const insertInventorySchema = createInsertSchema(inventory).omit({
