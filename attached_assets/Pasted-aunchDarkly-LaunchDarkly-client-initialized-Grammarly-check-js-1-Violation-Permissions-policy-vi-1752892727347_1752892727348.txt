@@ -1,0 +1,198 @@
+aunchDarkly] LaunchDarkly client initialized
+Grammarly-check.js:1 [Violation] Permissions policy violation: unload is not allowed in this document.
+ProfitPathSuite:1 Banner not shown: beforeinstallpromptevent.preventDefault() called. The page must call beforeinstallpromptevent.prompt() to show the banner.
+11
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+framework-4b8b1bf5451e30a9.js:1 Unrecognized feature: 'ambient-light-sensor'.
+framework-4b8b1bf5451e30a9.js:1 Unrecognized feature: 'battery'.
+framework-4b8b1bf5451e30a9.js:1 Unrecognized feature: 'execution-while-not-rendered'.
+framework-4b8b1bf5451e30a9.js:1 Unrecognized feature: 'execution-while-out-of-viewport'.
+framework-4b8b1bf5451e30a9.js:1 Unrecognized feature: 'layout-animations'.
+framework-4b8b1bf5451e30a9.js:1 Unrecognized feature: 'legacy-image-formats'.
+framework-4b8b1bf5451e30a9.js:1 Unrecognized feature: 'navigation-override'.
+framework-4b8b1bf5451e30a9.js:1 Unrecognized feature: 'oversized-images'.
+framework-4b8b1bf5451e30a9.js:1 Unrecognized feature: 'publickey-credentials'.
+framework-4b8b1bf5451e30a9.js:1 Unrecognized feature: 'speaker-selection'.
+framework-4b8b1bf5451e30a9.js:1 Unrecognized feature: 'unoptimized-images'.
+framework-4b8b1bf5451e30a9.js:1 Unrecognized feature: 'unsized-media'.
+framework-4b8b1bf5451e30a9.js:1 Unrecognized feature: 'pointer-lock'.
+framework-4b8b1bf5451e30a9.js:1 Allow attribute will take precedence over 'allowfullscreen'.
+framework-4b8b1bf5451e30a9.js:1 Allow attribute will take precedence over 'allowpaymentrequest'.
+20
+ProfitPathSuite:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received
+11969f6d-8010-4b74-a…cs&id=%3Ar12k%3A:32 Unrecognized feature: 'ambient-light-sensor'.
+11969f6d-8010-4b74-a…cs&id=%3Ar12k%3A:32 Unrecognized feature: 'battery'.
+11969f6d-8010-4b74-a…cs&id=%3Ar12k%3A:32 Unrecognized feature: 'execution-while-not-rendered'.
+11969f6d-8010-4b74-a…cs&id=%3Ar12k%3A:32 Unrecognized feature: 'execution-while-out-of-viewport'.
+11969f6d-8010-4b74-a…cs&id=%3Ar12k%3A:32 Unrecognized feature: 'layout-animations'.
+11969f6d-8010-4b74-a…cs&id=%3Ar12k%3A:32 Unrecognized feature: 'legacy-image-formats'.
+11969f6d-8010-4b74-a…cs&id=%3Ar12k%3A:32 Unrecognized feature: 'navigation-override'.
+11969f6d-8010-4b74-a…cs&id=%3Ar12k%3A:32 Unrecognized feature: 'oversized-images'.
+11969f6d-8010-4b74-a…cs&id=%3Ar12k%3A:32 Unrecognized feature: 'publickey-credentials'.
+11969f6d-8010-4b74-a…cs&id=%3Ar12k%3A:32 Unrecognized feature: 'speaker-selection'.
+11969f6d-8010-4b74-a…cs&id=%3Ar12k%3A:32 Unrecognized feature: 'unoptimized-images'.
+11969f6d-8010-4b74-a…cs&id=%3Ar12k%3A:32 Unrecognized feature: 'unsized-media'.
+11969f6d-8010-4b74-a…cs&id=%3Ar12k%3A:32 Allow attribute will take precedence over 'allowfullscreen'.
+11969f6d-8010-4b74-a…cs&id=%3Ar12k%3A:32 Allow attribute will take precedence over 'allowpaymentrequest'.
+11969f6d-8010-4b74-a…mance/recalculate:1 
+ Failed to load resource: the server responded with a status of 401 (Unauthorized)
+2
+ProfitPathSuite:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received
+Console.js:61 Firebase Config Debug: 
+Object
+apiKey
+: 
+"✓ Set"
+appId
+: 
+"✓ Set"
+authDomain
+: 
+"profithpath-demoday.firebaseapp.com"
+cleanedValues
+: 
+{apiKey: 'AIzaSyC9w8AjplHXxv6HBJ_0J1ckB1T4paEsB-k', projectId: 'profithpath-demoday', appId: '1:482793563032:web:124683965e640c27ee41ed'}
+projectId
+: 
+"✓ Set"
+rawValues
+: 
+{apiKey: '"AIzaSyC9w8AjplHXxv6HBJ_0J1ckB1T4paEsB-k"', projectId: '"profithpath-demoday"', appId: '"1:482793563032:web:124683965e640c27ee41ed"'}
+[[Prototype]]
+: 
+Object
+constructor
+: 
+ƒ Object()
+hasOwnProperty
+: 
+ƒ hasOwnProperty()
+isPrototypeOf
+: 
+ƒ isPrototypeOf()
+propertyIsEnumerable
+: 
+ƒ propertyIsEnumerable()
+toLocaleString
+: 
+ƒ toLocaleString()
+toString
+: 
+ƒ toString()
+valueOf
+: 
+ƒ valueOf()
+__defineGetter__
+: 
+ƒ __defineGetter__()
+__defineSetter__
+: 
+ƒ __defineSetter__()
+__lookupGetter__
+: 
+ƒ __lookupGetter__()
+__lookupSetter__
+: 
+ƒ __lookupSetter__()
+__proto__
+: 
+(...)
+get __proto__
+: 
+ƒ __proto__()
+set __proto__
+: 
+ƒ __proto__()
+Console.js:61 Existing user loaded: 
+Object
+autoSync
+: 
+false
+avgDailySales
+: 
+null
+businessName
+: 
+null
+createdAt
+: 
+"2025-07-18T19:48:56.506Z"
+currency
+: 
+"USD"
+defaultLeadTime
+: 
+14
+displayName
+: 
+"Roger Business"
+email
+: 
+"rogergbusiness34@gmail.com"
+emailNotifications
+: 
+true
+exportFormat
+: 
+"CSV"
+fbaYears
+: 
+null
+firebaseUid
+: 
+"cV57zq0OlVMU1GSISBhWYJDxDPc2"
+goalAlerts
+: 
+true
+id
+: 
+3
+industryType
+: 
+null
+inventoryAlerts
+: 
+true
+lowStockThreshold
+: 
+10
+phone
+: 
+null
+photoURL
+: 
+null
+theme
+: 
+"dark"
+timezone
+: 
+"UTC"
+updatedAt
+: 
+"2025-07-18T19:48:56.506Z"
+[[Prototype]]
+: 
+Object
+11969f6d-8010-4b74-a…mance/recalculate:1 
+ Failed to load resource: the server responded with a status of 401 (Unauthorized)
+Explanation
+
+Understanding the problem
+The error message "Failed to load resource: the server responded with a status of 401 (Unauthorized)" indicates that your browser attempted to access a resource (like a web page, image, script, or API endpoint) on a server, but the server rejected the request because it lacked valid authentication credentials. Essentially, you tried to access something that requires you to be logged in or provide some form of identification, and the server didn't recognize you or your credentials as authorized to access that specific resource [1, 2, 3].
+
+How to verify
+You can verify this by inspecting the network request in the Network tab of Chrome DevTools. Look for the specific request that failed and observe its HTTP status code, which will be 401. You may also find a WWW-Authenticate header in the response, which can provide clues about the expected authentication method [1].
+
+Suggested fix
+The fix depends on the specific resource you are trying to access and your application's authentication mechanism. Common solutions include:
+
+Ensure the user is logged in: If the resource requires a logged-in user, make sure the user has successfully authenticated.
+Provide valid credentials: If the request requires an API key, token, or other credentials, ensure they are correctly included in the request headers or body.
+Check for expired sessions or tokens: The user's session might have expired, or their authentication token might be invalid. Implement a mechanism to refresh tokens or prompt the user to log in again.
+Verify permissions: Even if the user is authenticated, they might not have the necessary permissions to access the specific resource. Ensure the user's role or permissions allow them to access the requested data.
+Summary
+A 401 Unauthorized error means the server refused your request because you didn't provide valid authentication credentials. You need to ensure the user is properly authenticated and authorized to access the requested resource.
+
+Sources and related content
+Data used to understand this message

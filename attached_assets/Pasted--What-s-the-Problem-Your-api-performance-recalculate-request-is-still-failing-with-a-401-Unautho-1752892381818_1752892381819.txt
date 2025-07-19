@@ -1,0 +1,80 @@
+🧨 What’s the Problem?
+Your /api/performance/recalculate request is still failing with a 401 Unauthorized error because you're not sending a valid Firebase token — only these two headers:
+
+js
+Copiar
+Editar
+[
+  "Authorization",   // Likely missing "Bearer <token>" value
+  "x-user-id"        // Custom ID, but not verifiable by backend
+]
+But your backend middleware is expecting a Bearer token to validate like this:
+
+ts
+Copiar
+Editar
+const authHeader = req.headers.authorization;
+if (!authHeader || !authHeader.startsWith("Bearer ")) {
+  return res.status(401).json({ message: "Missing or invalid token" });
+}
+✅ How to Fix It
+You must fetch the Firebase token from the authenticated user and send it properly:
+
+🔐 In React (Client)
+ts
+Copiar
+Editar
+import { getAuth } from "firebase/auth";
+
+const auth = getAuth();
+const user = auth.currentUser;
+
+if (user) {
+  const idToken = await user.getIdToken(); // 🔑 the real Bearer token
+
+  const res = await fetch("/api/performance/recalculate", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${idToken}`,      // ✅ Secure token
+      "x-user-id": user.uid                    // optional
+    },
+    body: JSON.stringify({ inventoryId: 12 })   // your payload
+  });
+}
+If you're using a hook like useFirebaseAuthHeaders(), make sure it returns the actual idToken.
+
+🔁 Bonus: Add Fallback if Token Is Expired
+Firebase tokens auto-expire. If you're seeing sudden 401s, consider refreshing the token before making critical requests:
+
+ts
+Copiar
+Editar
+const idToken = await user.getIdToken(true); // 'true' forces refresh
+🔧 Backend Reminder
+On the backend, your middleware should be:
+
+ts
+Copiar
+Editar
+import admin from "firebase-admin";
+
+export const verifyFirebaseToken = async (req, res, next) => {
+  const token = req.headers.authorization?.split("Bearer ")[1];
+  if (!token) return res.status(401).json({ message: "Unauthorized" });
+
+  try {
+    const decoded = await admin.auth().verifyIdToken(token);
+    req.user = decoded;
+    next();
+  } catch (err) {
+    return res.status(401).json({ message: "Token verification failed" });
+  }
+};
+✅ Summary
+Problem	Fix
+401 error	Pass valid Firebase Bearer token via Authorization header
+Tooltip NaN	Caused by null data from failed API
+Secure route	Backend must verify token using firebase-admin
+
+Would you li

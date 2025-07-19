@@ -43,9 +43,11 @@ export function SalesHistoryTable({ className }: SalesHistoryTableProps) {
 
   const recalculateMutation = useMutation({
     mutationFn: async () => {
+      console.log('🔄 Starting performance recalculation...');
       const response = await apiRequest("/api/performance/recalculate", {
         method: "POST"
       });
+      console.log('✅ Recalculation completed successfully');
       return response.json();
     },
     onSuccess: () => {

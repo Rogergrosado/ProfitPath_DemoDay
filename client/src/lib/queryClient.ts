@@ -13,22 +13,27 @@ export async function getAuthHeaders(): Promise<Record<string, string>> {
   const auth = getAuth();
   const user = auth.currentUser;
   
+  console.log('🔐 getAuthHeaders - Firebase current user:', user ? 'authenticated' : 'not authenticated');
+  
   if (!user) {
     // Fallback to stored user ID for backwards compatibility
     const storedUser = localStorage.getItem('current-user');
     if (storedUser) {
       try {
         const userData = JSON.parse(storedUser);
+        console.log('🔐 Using stored user ID:', userData.id);
         return { "x-user-id": userData.id.toString() };
       } catch (e) {
         console.warn('Failed to parse stored user data');
       }
     }
+    console.warn('🔐 No Firebase user and no stored user - returning empty headers');
     return {};
   }
 
   try {
     const idToken = await user.getIdToken();
+    console.log('🔐 Firebase token obtained, length:', idToken.length);
     return { 
       "Authorization": `Bearer ${idToken}`,
       "x-user-id": "3" // Keep backwards compatibility for now
@@ -74,22 +79,13 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    // Get user ID for authentication
-    let userIdToSend;
-    const storedUser = localStorage.getItem('current-user');
-    if (storedUser) {
-      try {
-        const user = JSON.parse(storedUser);
-        userIdToSend = user.id;
-      } catch (e) {
-        console.warn('Failed to parse stored user data');
-      }
-    }
+    // Use the same authentication headers as apiRequest
+    const authHeaders = await getAuthHeaders();
     
     const res = await fetch(queryKey.join("/") as string, {
       credentials: "include",
       headers: {
-        ...(userIdToSend ? { "x-user-id": userIdToSend.toString() } : {}),
+        ...authHeaders,
       },
     });
 
