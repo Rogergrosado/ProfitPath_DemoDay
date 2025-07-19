@@ -1,0 +1,128 @@
+❗ Current Problem
+You record a sale → inventory list updates (stock reduction?)
+❌ But other sections (Performance, Dashboard, Goals) don’t reflect the update or show no visible history.
+
+✅ SOLUTION OVERVIEW
+To make data flow and visibility consistent, your app needs:
+
+A sales history table or feed (audit log of sales)
+
+Automatic recalculation triggers for:
+
+Performance metrics (by product, category, time)
+
+Dashboard totals
+
+Goal progress
+
+Shared API endpoints or SWR caches to avoid duplicate fetches
+
+📤 1. Sales History Section (Analytics > Sales Log)
+Add a sub-section inside your /analytics/performance page:
+
+🔎 Example Table:
+Date	SKU	Product Name	Units Sold	Total Revenue
+2025-07-18	SOL-3077	SolarGlow Outdoor Lights	10	$249.90
+2025-07-17	GAM-2211	GripArm Pro Dumbbell Set	5	$599.95
+
+Use:
+
+tsx
+Copiar
+Editar
+GET /api/sales-entry?range=30d
+Store these entries in your SalesEntry[] model and display them with:
+
+Date filter (7d, 30d, 90d, custom)
+
+Filter by SKU or Category
+
+Linked to Performance dashboard cards (KPI source)
+
+📈 2. Recalculate Performance KPIs Automatically
+When a sale is posted:
+
+It should trigger a recalculation of performance:
+
+ts
+Copiar
+Editar
+revenue = sum(SalesEntry.unitsSold * InventoryItem.price)
+profit = revenue - (SalesEntry.unitsSold * InventoryItem.cost)
+Use a cron job or a POST /api/performance/recalculate endpoint that’s triggered after every successful sale post.
+
+This will populate:
+
+Product Performance Table
+
+Category Performance Chart
+
+KPI Summary (Revenue, Profit, Units, Conversion Rate)
+
+📊 3. Dashboard: Overall Career Snapshot
+This should call the same /api/performance/metrics and /api/goals/status endpoints, but scoped to all time or monthly total.
+
+Show:
+
+📈 Total Revenue
+
+🔥 Best-selling SKU
+
+✅ Goals Completed (connected to goal history)
+
+🕒 Last Sale Info
+
+🎯 4. Goals Sub-Page Integration
+Let each goal have:
+
+type: "revenue" | "units" | "profit"
+
+targetValue
+
+sku?: string (for product-specific goals)
+
+timeFrame: 7d | 30d | custom
+
+Example:
+ts
+Copiar
+Editar
+Goal {
+  title: "Sell 200 units in July",
+  sku: "SOL-3077",
+  startDate: "2025-07-01",
+  endDate: "2025-07-31",
+  targetValue: 200,
+  currentProgress: 140
+}
+Then use:
+
+ts
+Copiar
+Editar
+GET /api/sales-entry?sku=SOL-3077&range=30d
+You can link performance filters to goals like:
+
+Filter: “Only show SKUs that have active goals”
+Goal Status: “On track / At risk / Completed”
+
+🧠 Recommended Structure Per Page
+Sub-Page	What It Should Show
+Inventory	Current stock, cost/sell price, reorder point
+Performance	Revenue/profit by product, category, timeframe + sales log
+Dashboard	Global KPIs, top SKUs, last activity, goal % complete
+Goals	Track target vs current using live sales data
+Reports	Export filtered sales performance and goal progress
+
+🔄 Trigger Flow Summary
+Sales Input → POST /api/sales-entry
+
+After POST:
+
+Update Inventory quantity
+
+Recalculate metrics via POST /api/performance/recalculate
+
+Update goal progress via GET /api/goals/status
+
+All pages (Dashboard, Performance, Goals) refetch or use shared cache

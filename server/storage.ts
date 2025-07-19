@@ -301,18 +301,48 @@ export class DatabaseStorage implements IStorage {
     averageOrderValue: number;
     conversionRate: number;
   }> {
+    let whereCondition = eq(sales.userId, userId);
+    
+    // Add date range filtering if specified
+    if (dateRange) {
+      const now = new Date();
+      let startDate: Date;
+      
+      switch (dateRange) {
+        case '7d':
+          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case '30d':
+          startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          break;
+        case '90d':
+          startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+          break;
+        case '1y':
+          startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+          break;
+        default:
+          startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      }
+      
+      whereCondition = and(
+        eq(sales.userId, userId),
+        sql`${sales.saleDate} >= ${startDate}`
+      ) as any;
+    }
+
     const result = await db
       .select({
-        totalRevenue: sql<number>`COALESCE(SUM(${sales.totalRevenue}), 0)`,
-        totalProfit: sql<number>`COALESCE(SUM(${sales.profit}), 0)`,
+        totalRevenue: sql<number>`COALESCE(SUM(CAST(${sales.totalRevenue} AS DECIMAL)), 0)`,
+        totalProfit: sql<number>`COALESCE(SUM(CAST(${sales.profit} AS DECIMAL)), 0)`,
         totalUnits: sql<number>`COALESCE(SUM(${sales.quantity}), 0)`,
         totalSales: sql<number>`COUNT(*)`,
       })
       .from(sales)
-      .where(eq(sales.userId, userId));
+      .where(whereCondition);
 
     const metrics = result[0];
-    const averageOrderValue = metrics.totalSales > 0 ? metrics.totalRevenue / metrics.totalSales : 0;
+    const averageOrderValue = metrics.totalSales > 0 ? Number(metrics.totalRevenue) / Number(metrics.totalSales) : 0;
 
     return {
       totalRevenue: Number(metrics.totalRevenue),

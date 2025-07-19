@@ -4,6 +4,7 @@ import { useLocation } from "wouter";
 import { Sidebar } from "@/components/Navigation/Sidebar";
 import { ThemeToggle } from "@/components/Navigation/ThemeToggle";
 import { PredictiveAnalytics } from "@/components/Analytics/PredictiveAnalytics";
+import { SalesHistoryTable } from "@/components/Analytics/SalesHistoryTable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -66,25 +67,7 @@ export default function Analytics() {
 
             <TabsContent value="performance">
               <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <TrendingUp className="h-5 w-5" />
-                      <span>Performance Analytics</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground mb-4">
-                      Analyze your business performance across all key metrics
-                    </p>
-                    <Button 
-                      onClick={() => setLocation('/dashboard')}
-                      className="bg-[#fd7014] hover:bg-[#e5640f] text-white"
-                    >
-                      View Performance Dashboard
-                    </Button>
-                  </CardContent>
-                </Card>
+                <SalesHistoryTable />
               </div>
             </TabsContent>
 

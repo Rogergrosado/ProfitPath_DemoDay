@@ -9,6 +9,16 @@ interface AuthenticatedRequest extends Request {
   userId: number;
 }
 
+// Performance recalculation trigger function
+async function triggerPerformanceRecalculation(userId: number) {
+  // This could be expanded to update cached metrics, trigger webhooks, etc.
+  console.log(`🔄 Triggering performance recalculation for user ${userId}`);
+  
+  // For now, we'll just ensure the metrics are fresh
+  // The actual calculation happens in storage.getSalesMetrics()
+  await storage.getSalesMetrics(userId, "30d");
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Configure multer for file uploads
   const upload = multer({ 
@@ -287,8 +297,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/sales", requireAuth, async (req, res) => {
     try {
       const authReq = req as AuthenticatedRequest;
-      const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
-      const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
+      const range = req.query.range as string;
+      
+      let startDate: Date | undefined;
+      let endDate: Date | undefined;
+      
+      if (range) {
+        endDate = new Date();
+        switch (range) {
+          case '7d':
+            startDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+            break;
+          case '30d':
+            startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+            break;
+          case '90d':
+            startDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+            break;
+          case '1y':
+            startDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
+            break;
+        }
+      } else {
+        startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
+        endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
+      }
+      
       const sales = await storage.getSales(authReq.userId, startDate, endDate);
       res.json(sales);
     } catch (error: any) {
@@ -309,6 +343,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch (error) {
           console.warn(`Failed to update inventory for SKU ${sale.sku}:`, error);
         }
+      }
+      
+      // Trigger performance recalculation
+      try {
+        await triggerPerformanceRecalculation(authReq.userId);
+      } catch (error) {
+        console.warn('Performance recalculation failed:', error);
       }
       
       res.json(sale);
@@ -409,6 +450,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // Trigger performance recalculation after any sales import
+      if (importedSales.length > 0) {
+        try {
+          await triggerPerformanceRecalculation(authReq.userId);
+        } catch (error) {
+          console.warn('Performance recalculation failed after CSV import:', error);
+        }
+      }
+      
       res.json({
         message: `Successfully imported ${importedSales.length} sales and ${importedProducts.length} products`,
         importedSales: importedSales.length,
@@ -447,6 +497,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // Trigger performance recalculation after bulk import
+      try {
+        await triggerPerformanceRecalculation(authReq.userId);
+      } catch (error) {
+        console.warn('Performance recalculation failed after bulk import:', error);
+      }
+      
       res.json({ 
         message: `Successfully imported ${importedSales.length} sales records`,
         batchId,
@@ -477,6 +534,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const categories = await storage.getCategoryPerformance(authReq.userId, dateRange);
       res.json(categories);
     } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Performance recalculation endpoint
+  app.post("/api/performance/recalculate", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      console.log(`🔄 Manual performance recalculation triggered for user ${authReq.userId}`);
+      
+      // Force refresh of cached metrics
+      const metrics = await storage.getSalesMetrics(authReq.userId, "30d");
+      const categories = await storage.getCategoryPerformance(authReq.userId, "30d");
+      
+      res.json({ 
+        success: true, 
+        message: "Performance metrics recalculated successfully",
+        metrics,
+        categories
+      });
+    } catch (error: any) {
+      console.error("Performance recalculation error:", error);
       res.status(500).json({ message: error.message });
     }
   });
