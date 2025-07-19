@@ -116,13 +116,6 @@ export function Sidebar() {
             <SidebarLink 
               icon={BarChart3} 
               label="Performance" 
-              path="/simple-analytics" 
-              locked={!unlockAdvancedFeatures}
-              lockReason={lockReason}
-            />
-            <SidebarLink 
-              icon={TrendingUp} 
-              label="Advanced Analytics" 
               path="/analytics" 
               locked={!unlockAdvancedFeatures}
               lockReason={lockReason}

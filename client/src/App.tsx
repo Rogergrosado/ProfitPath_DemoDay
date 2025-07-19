@@ -34,8 +34,9 @@ function Router() {
         <Route path="/dashboard" component={Dashboard} />
         <Route path="/products" component={Products} />
         <Route path="/inventory" component={Inventory} />
-        <Route path="/simple-analytics" component={SimpleAnalytics} />
         <Route path="/analytics" component={Analytics} />
+        {/* Legacy route redirect */}
+        <Route path="/simple-analytics" component={Analytics} />
         <Route path="/reports" component={Reports} />
         <Route path="/goals" component={Goals} />
         <Route path="/settings" component={Settings} />
