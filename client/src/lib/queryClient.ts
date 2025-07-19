@@ -51,6 +51,7 @@ export async function apiRequest(
   const { method = "GET", body, headers = {} } = options || {};
   
   const authHeaders = await getAuthHeaders();
+  console.log('🔐 Making API request to:', url, 'with auth headers:', Object.keys(authHeaders));
   
   const res = await fetch(url, {
     method,

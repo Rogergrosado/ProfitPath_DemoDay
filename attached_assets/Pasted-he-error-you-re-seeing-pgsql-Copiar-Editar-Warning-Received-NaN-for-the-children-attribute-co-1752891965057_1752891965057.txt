@@ -1,0 +1,74 @@
+he error you're seeing:
+
+pgsql
+Copiar
+Editar
+Warning: Received NaN for the `children` attribute.
+…combined with the chart stack trace in Recharts, and this repeated failed request:
+
+bash
+Copiar
+Editar
+POST /api/performance/recalculate 401 (Unauthorized)
+means your Performance page chart is trying to render a tooltip or number that's undefined or broken due to missing or blocked data.
+
+🔍 Here's what’s going wrong:
+401 Unauthorized on /api/performance/recalculate
+
+This is preventing fresh analytics from being calculated.
+
+The frontend receives no data (or partial/null), and attempts to render NaN.
+
+Chart Tooltip or children element (span) tries to render a number that’s undefined or NaN
+
+This is a common side-effect of missing or malformed API data in Recharts (esp. for Tooltip or Label props).
+
+✅ Fix Checklist
+1. Secure Auth for /recalculate
+You’ve already added a protected route. Now ensure your frontend actually includes a bearer token on that fetch:
+
+ts
+Copiar
+Editar
+const token = await user.getIdToken(); // Firebase user token
+
+const res = await fetch('/api/performance/recalculate', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`,
+  },
+  body: JSON.stringify({ userId: user.uid }),
+});
+🔐 If you're using React Query, make sure the Authorization header is passed from the context.
+
+2. Fallback UI While Data Loads
+Wrap your Recharts component (e.g., <LineChart>, <PieChart>) with checks:
+
+tsx
+Copiar
+Editar
+{data && data.length > 0 ? (
+  <LineChart data={data}>
+    {/* your chart */}
+  </LineChart>
+) : (
+  <p>No performance data yet.</p>
+)}
+You should also handle empty/invalid numbers gracefully:
+
+ts
+Copiar
+Editar
+<span>{isNaN(value) ? '—' : value.toFixed(2)}</span>
+3. Check Backend: recalculate Result
+Make sure the response from /recalculate doesn’t return partial or malformed values (e.g., undefined or null unitPrice, totalCost, etc.).
+
+Your Zod validator on the backend should ensure these fields are required and strings if that’s expected.
+
+📌 Summary
+Issue	Fix
+NaN tooltip in Recharts	Add checks before rendering tooltip/values
+401 on recalculate	Add auth header with Firebase token
+Recharts fails silently	Provide fallback/default values and check data.length > 0 before rendering
+

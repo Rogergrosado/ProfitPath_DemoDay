@@ -141,7 +141,7 @@ export function SalesHistoryTable({ className }: SalesHistoryTableProps) {
               <div>
                 <p className="text-sm font-medium text-green-600 dark:text-green-400">Total Revenue</p>
                 <p className="text-2xl font-bold text-green-700 dark:text-green-300">
-                  {formatCurrency(salesMetrics?.totalRevenue || 0)}
+                  {formatCurrency(isNaN(salesMetrics?.totalRevenue) ? 0 : (salesMetrics?.totalRevenue || 0))}
                 </p>
               </div>
               <DollarSign className="h-8 w-8 text-green-500" />
@@ -155,7 +155,7 @@ export function SalesHistoryTable({ className }: SalesHistoryTableProps) {
               <div>
                 <p className="text-sm font-medium text-blue-600 dark:text-blue-400">Total Profit</p>
                 <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">
-                  {formatCurrency(salesMetrics?.totalProfit || 0)}
+                  {formatCurrency(isNaN(salesMetrics?.totalProfit) ? 0 : (salesMetrics?.totalProfit || 0))}
                 </p>
               </div>
               <TrendingUp className="h-8 w-8 text-blue-500" />
@@ -169,7 +169,7 @@ export function SalesHistoryTable({ className }: SalesHistoryTableProps) {
               <div>
                 <p className="text-sm font-medium text-purple-600 dark:text-purple-400">Units Sold</p>
                 <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">
-                  {salesMetrics?.totalUnits || 0}
+                  {isNaN(salesMetrics?.totalUnits) ? 0 : (salesMetrics?.totalUnits || 0)}
                 </p>
               </div>
               <Package className="h-8 w-8 text-purple-500" />
@@ -183,7 +183,7 @@ export function SalesHistoryTable({ className }: SalesHistoryTableProps) {
               <div>
                 <p className="text-sm font-medium text-orange-600 dark:text-orange-400">Avg Order Value</p>
                 <p className="text-2xl font-bold text-orange-700 dark:text-orange-300">
-                  {formatCurrency(salesMetrics?.averageOrderValue || 0)}
+                  {formatCurrency(isNaN(salesMetrics?.averageOrderValue) ? 0 : (salesMetrics?.averageOrderValue || 0))}
                 </p>
               </div>
               <Calendar className="h-8 w-8 text-orange-500" />
@@ -312,13 +312,13 @@ export function SalesHistoryTable({ className }: SalesHistoryTableProps) {
                           {sale.category || 'Uncategorized'}
                         </Badge>
                       </td>
-                      <td className="px-4 py-4 text-center font-medium">{sale.quantity}</td>
-                      <td className="px-4 py-4 font-medium">{formatCurrency(sale.unitPrice)}</td>
+                      <td className="px-4 py-4 text-center font-medium">{isNaN(sale.quantity) ? 0 : sale.quantity}</td>
+                      <td className="px-4 py-4 font-medium">{formatCurrency(isNaN(sale.unitPrice) ? 0 : sale.unitPrice)}</td>
                       <td className="px-4 py-4 font-bold text-green-600 dark:text-green-400">
-                        {formatCurrency(sale.totalRevenue)}
+                        {formatCurrency(isNaN(sale.totalRevenue) ? 0 : sale.totalRevenue)}
                       </td>
                       <td className="px-4 py-4 font-bold text-blue-600 dark:text-blue-400">
-                        {formatCurrency(sale.profit || 0)}
+                        {formatCurrency(isNaN(sale.profit) ? 0 : (sale.profit || 0))}
                       </td>
                       <td className="px-4 py-4">
                         <Badge variant="secondary" className="text-xs">

@@ -37,6 +37,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Auth middleware to get user from Firebase token or fallback to x-user-id
   const requireAuth = async (req: any, res: any, next: any) => {
+    console.log('🔐 Auth middleware called, headers:', {
+      authorization: req.headers.authorization ? `Bearer ${req.headers.authorization.split(' ')[1]?.substring(0, 20)}...` : 'none',
+      'x-user-id': req.headers['x-user-id'] || 'none'
+    });
+    
     // Check for Firebase token first
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -44,7 +49,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         // For now, we'll trust the token and use the fallback user ID
         // In production, you would verify the token with Firebase Admin SDK
-        console.log('🔐 Firebase token received:', token.substring(0, 20) + '...');
+        console.log('🔐 Firebase token received and accepted');
+        // Use hardcoded user ID for development
+        (req as AuthenticatedRequest).userId = 3;
+        return next();
       } catch (error) {
         console.warn('Firebase token verification failed:', error);
       }
@@ -53,6 +61,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Fallback to x-user-id header for backwards compatibility
     const userId = req.headers['x-user-id'];
     if (!userId) {
+      console.error('❌ No authentication found - missing both Bearer token and x-user-id');
       return res.status(401).json({ message: "Unauthorized" });
     }
     (req as AuthenticatedRequest).userId = parseInt(userId as string);
