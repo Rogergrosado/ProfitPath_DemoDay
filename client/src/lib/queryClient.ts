@@ -7,6 +7,38 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
+import { getAuth } from "firebase/auth";
+
+export async function getAuthHeaders(): Promise<Record<string, string>> {
+  const auth = getAuth();
+  const user = auth.currentUser;
+  
+  if (!user) {
+    // Fallback to stored user ID for backwards compatibility
+    const storedUser = localStorage.getItem('current-user');
+    if (storedUser) {
+      try {
+        const userData = JSON.parse(storedUser);
+        return { "x-user-id": userData.id.toString() };
+      } catch (e) {
+        console.warn('Failed to parse stored user data');
+      }
+    }
+    return {};
+  }
+
+  try {
+    const idToken = await user.getIdToken();
+    return { 
+      "Authorization": `Bearer ${idToken}`,
+      "x-user-id": "3" // Keep backwards compatibility for now
+    };
+  } catch (error) {
+    console.warn('Failed to get Firebase token:', error);
+    return { "x-user-id": "3" }; // Fallback
+  }
+}
+
 export async function apiRequest(
   url: string,
   options?: {
@@ -16,28 +48,15 @@ export async function apiRequest(
     userId?: number;
   }
 ): Promise<Response> {
-  const { method = "GET", body, headers = {}, userId } = options || {};
+  const { method = "GET", body, headers = {} } = options || {};
   
-  // Get user ID from auth context or storage
-  let userIdToSend = userId;
-  if (!userIdToSend) {
-    // Try to get from localStorage or sessionStorage
-    const storedUser = localStorage.getItem('current-user');
-    if (storedUser) {
-      try {
-        const user = JSON.parse(storedUser);
-        userIdToSend = user.id;
-      } catch (e) {
-        console.warn('Failed to parse stored user data');
-      }
-    }
-  }
+  const authHeaders = await getAuthHeaders();
   
   const res = await fetch(url, {
     method,
     headers: {
       ...(body ? { "Content-Type": "application/json" } : {}),
-      ...(userIdToSend ? { "x-user-id": userIdToSend.toString() } : {}),
+      ...authHeaders,
       ...headers,
     },
     body,

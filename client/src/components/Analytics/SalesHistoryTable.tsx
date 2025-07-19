@@ -1,13 +1,14 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Calendar, Filter, Download, TrendingUp, DollarSign, Package } from "lucide-react";
+import { Calendar, Filter, Download, TrendingUp, DollarSign, Package, RefreshCw } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface SalesHistoryTableProps {
   className?: string;
@@ -17,6 +18,9 @@ export function SalesHistoryTable({ className }: SalesHistoryTableProps) {
   const [dateRange, setDateRange] = useState("30d");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [skuFilter, setSkuFilter] = useState("");
+  
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: salesResponse = [], isLoading } = useQuery({
     queryKey: ["/api/sales", dateRange],
@@ -34,6 +38,34 @@ export function SalesHistoryTable({ className }: SalesHistoryTableProps) {
     queryFn: async () => {
       const response = await apiRequest(`/api/performance/metrics/${dateRange}`);
       return response.json();
+    },
+  });
+
+  const recalculateMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("/api/performance/recalculate", {
+        method: "POST"
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Performance Recalculated",
+        description: "All metrics have been updated successfully",
+      });
+      
+      // Refresh all related queries
+      queryClient.invalidateQueries({ queryKey: ["/api/sales"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/performance/metrics"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/performance/categories"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Recalculation Failed",
+        description: error.message || "Failed to recalculate performance metrics",
+        variant: "destructive",
+      });
     },
   });
 
@@ -177,6 +209,16 @@ export function SalesHistoryTable({ className }: SalesHistoryTableProps) {
               >
                 <Download className="h-4 w-4" />
                 Export CSV
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => recalculateMutation.mutate()}
+                disabled={recalculateMutation.isPending}
+                className="bg-blue-600 hover:bg-blue-700 text-white border-blue-600"
+              >
+                <RefreshCw className={`w-4 h-4 ${recalculateMutation.isPending ? 'animate-spin' : ''}`} />
+                {recalculateMutation.isPending ? 'Recalculating...' : 'Refresh'}
               </Button>
             </div>
           </div>
