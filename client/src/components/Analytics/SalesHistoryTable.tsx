@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Calendar, Filter, Download, TrendingUp, DollarSign, Package } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
 
 interface SalesHistoryTableProps {
   className?: string;
@@ -17,14 +18,23 @@ export function SalesHistoryTable({ className }: SalesHistoryTableProps) {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [skuFilter, setSkuFilter] = useState("");
 
-  const { data: salesHistory = [], isLoading } = useQuery({
+  const { data: salesResponse = [], isLoading } = useQuery({
     queryKey: ["/api/sales", dateRange],
-    queryFn: () => fetch(`/api/sales?range=${dateRange}`).then(res => res.json()),
+    queryFn: async () => {
+      const response = await apiRequest(`/api/sales?range=${dateRange}`);
+      return response.json();
+    },
   });
+
+  // Ensure we always have an array to work with
+  const salesHistory = Array.isArray(salesResponse) ? salesResponse : [];
 
   const { data: salesMetrics } = useQuery({
     queryKey: ["/api/performance/metrics", dateRange],
-    queryFn: () => fetch(`/api/performance/metrics/${dateRange}`).then(res => res.json()),
+    queryFn: async () => {
+      const response = await apiRequest(`/api/performance/metrics/${dateRange}`);
+      return response.json();
+    },
   });
 
   // Filter sales based on category and SKU

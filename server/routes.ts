@@ -453,7 +453,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Trigger performance recalculation after any sales import
       if (importedSales.length > 0) {
         try {
-          await triggerPerformanceRecalculation(authReq.userId);
+          const existingFunction = triggerPerformanceRecalculation;
+          if (typeof existingFunction === 'function') {
+            await existingFunction(authReq.userId);
+          }
         } catch (error) {
           console.warn('Performance recalculation failed after CSV import:', error);
         }
@@ -499,7 +502,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Trigger performance recalculation after bulk import
       try {
-        await triggerPerformanceRecalculation(authReq.userId);
+        const existingFunction = triggerPerformanceRecalculation;
+        if (typeof existingFunction === 'function') {
+          await existingFunction(authReq.userId);
+        }
       } catch (error) {
         console.warn('Performance recalculation failed after bulk import:', error);
       }
@@ -537,6 +543,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: error.message });
     }
   });
+
+  // Helper function for performance recalculation
+  async function triggerPerformanceRecalculation(userId: number): Promise<void> {
+    console.log(`🔄 Triggering performance recalculation for user ${userId}`);
+    // This could be expanded to clear caches, trigger background jobs, etc.
+  }
 
   // Performance recalculation endpoint
   app.post("/api/performance/recalculate", requireAuth, async (req, res) => {
