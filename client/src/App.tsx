@@ -20,6 +20,10 @@ import Goals from "@/pages/goals";
 import Settings from "@/pages/settings";
 import Profile from "@/pages/profile";
 import TestPage from "@/pages/test-page";
+import FeatureProductResearch from "@/pages/feature-product-research";
+import FeatureInventoryManagement from "@/pages/feature-inventory-management";
+import FeaturePerformanceAnalytics from "@/pages/feature-performance-analytics";
+import FeatureGoalTracking from "@/pages/feature-goal-tracking";
 import WelcomeModal from "@/components/Onboarding/WelcomeModal";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -42,6 +46,20 @@ function Router() {
         <Route path="/settings" component={Settings} />
         <Route path="/profile" component={Profile} />
         <Route path="/test" component={TestPage} />
+        {/* Feature detail pages */}
+        <Route
+          path="/feature/product-research"
+          component={FeatureProductResearch}
+        />
+        <Route
+          path="/feature/inventory-management"
+          component={FeatureInventoryManagement}
+        />
+        <Route
+          path="/feature/performance-analytics"
+          component={FeaturePerformanceAnalytics}
+        />
+        <Route path="/feature/goal-tracking" component={FeatureGoalTracking} />
         <Route component={NotFound} />
       </Switch>
 
@@ -49,7 +67,7 @@ function Router() {
       <WelcomeModal
         isOpen={showWelcome && !!user}
         onClose={() => setShowWelcome(false)}
-        userName={user?.displayName || user?.email?.split('@')[0] || 'User'}
+        userName={user?.displayName || user?.email?.split("@")[0] || "User"}
       />
     </>
   );

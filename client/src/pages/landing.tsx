@@ -29,71 +29,81 @@ export default function Landing() {
     {
       icon: Search,
       title: "Product Research",
-      description: "Validate products before investing with comprehensive market analysis",
+      description:
+        "Validate products before investing with comprehensive market analysis",
+      path: "/feature/product-research",
     },
     {
       icon: Package,
       title: "Inventory Management",
-      description: "Track stock levels, set reorder points, and manage your FBA inventory",
+      description:
+        "Track stock levels, set reorder points, and manage your FBA inventory",
+      path: "/feature/inventory-management",
     },
     {
       icon: BarChart3,
       title: "Performance Analytics",
       description: "Monitor sales, profits, and growth with detailed reporting",
+      path: "/feature/performance-analytics",
     },
     {
       icon: Target,
       title: "Goal Tracking",
-      description: "Set and track business goals with visual progress indicators",
+      description:
+        "Set and track business goals with visual progress indicators",
+      path: "/feature/goal-tracking",
     },
   ];
 
   return (
     <div className="min-h-screen bg-white dark:bg-[var(--navy)] text-black dark:text-white">
       <ThemeToggle />
-      
+
       {/* Hero Section */}
       <section className="relative px-6 lg:px-8 py-24">
         <div className="mx-auto max-w-7xl">
           <div className="text-center">
             <div className="flex items-center justify-center mb-12">
-              <img 
-                src="/logo-black.png" 
-                alt="ProfitPath Logo" 
+              <img
+                src="/logo-black.png"
+                alt="ProfitPath Logo"
                 className="w-96 h-auto dark:hidden"
-                style={{ maxWidth: '400px' }}
+                style={{ maxWidth: "400px" }}
               />
-              <img 
-                src="/logo-white.png" 
-                alt="ProfitPath Logo" 
+              <img
+                src="/logo-white.png"
+                alt="ProfitPath Logo"
                 className="w-96 h-auto hidden dark:block"
-                style={{ maxWidth: '400px' }}
+                style={{ maxWidth: "400px" }}
               />
             </div>
-            
+
             <h2 className="text-6xl font-bold tracking-tight mb-6">
               Amazon FBA Business
-              <span className="gradient-text block">Intelligence Dashboard</span>
+              <span className="gradient-text block">
+                Intelligence Dashboard
+              </span>
             </h2>
-            
+
             <p className="text-xl text-slate-600 dark:text-slate-400 mb-8 max-w-3xl mx-auto">
-              Make data-driven decisions, optimize your inventory, and scale your Amazon FBA business 
-              with our comprehensive analytics and management platform.
+              Make data-driven decisions, optimize your inventory, and scale
+              your Amazon FBA business with our comprehensive analytics and
+              management platform.
             </p>
-            
+
             <div className="flex items-center justify-center space-x-4">
               <Link href="/auth">
-                <Button 
-                  size="lg" 
+                <Button
+                  size="lg"
                   className="bg-[var(--orange-primary)] hover:bg-[var(--orange-light)] text-white px-8 py-3 text-lg"
                 >
                   Get Started Free
                 </Button>
               </Link>
               <Link href="/auth">
-                <Button 
-                  size="lg" 
-                  variant="outline" 
+                <Button
+                  size="lg"
+                  variant="outline"
                   className="border-slate-300 dark:border-slate-600 text-black dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800 px-8 py-3 text-lg"
                 >
                   Sign In
@@ -110,18 +120,24 @@ export default function Landing() {
           <h3 className="text-3xl font-bold text-center mb-12">
             Everything you need to scale your FBA business
           </h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {features.map((feature, index) => (
-              <Card key={index} className="bg-white dark:bg-[var(--charcoal)] border-slate-200 dark:border-[var(--slate-custom)] hover:border-[var(--orange-primary)] transition-all duration-300">
-                <CardContent className="p-6 text-center">
-                  <div className="w-12 h-12 bg-[var(--orange-primary)]/20 rounded-lg flex items-center justify-center mx-auto mb-4">
-                    <feature.icon className="h-6 w-6 text-[var(--orange-primary)]" />
-                  </div>
-                  <h4 className="text-lg font-semibold mb-2 text-black dark:text-white">{feature.title}</h4>
-                  <p className="text-slate-600 dark:text-slate-400 text-sm">{feature.description}</p>
-                </CardContent>
-              </Card>
+              <Link href={feature.path} key={index}>
+                <Card className="bg-white dark:bg-[var(--charcoal)] border-slate-200 dark:border-[var(--slate-custom)] hover:border-[var(--orange-primary)] transition-all duration-300 cursor-pointer hover:shadow-lg transform hover:scale-105">
+                  <CardContent className="p-6 text-center">
+                    <div className="w-12 h-12 bg-[var(--orange-primary)]/20 rounded-lg flex items-center justify-center mx-auto mb-4">
+                      <feature.icon className="h-6 w-6 text-[var(--orange-primary)]" />
+                    </div>
+                    <h4 className="text-lg font-semibold mb-2 text-black dark:text-white">
+                      {feature.title}
+                    </h4>
+                    <p className="text-slate-600 dark:text-slate-400 text-sm">
+                      {feature.description}
+                    </p>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
         </div>
@@ -133,10 +149,11 @@ export default function Landing() {
           <div className="text-center mb-12">
             <h3 className="text-3xl font-bold mb-4">FBA Profit Calculator</h3>
             <p className="text-slate-600 dark:text-slate-400">
-              See how much you could be earning with better data and optimization
+              See how much you could be earning with better data and
+              optimization
             </p>
           </div>
-          
+
           <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600">
             <CardContent className="p-8">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -154,7 +171,7 @@ export default function Landing() {
                       className="w-full"
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium mb-3 text-black dark:text-white">
                       Profit Margin: {profitMargin[0]}%
@@ -168,7 +185,7 @@ export default function Landing() {
                       className="w-full"
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium mb-3 text-black dark:text-white">
                       Units Sold: {unitsSold[0].toLocaleString()}
@@ -183,35 +200,44 @@ export default function Landing() {
                     />
                   </div>
                 </div>
-                
+
                 <div className="bg-slate-100 dark:bg-slate-900 rounded-lg p-6">
-                  <h4 className="text-lg font-semibold mb-4 text-black dark:text-white">Projected Results</h4>
+                  <h4 className="text-lg font-semibold mb-4 text-black dark:text-white">
+                    Projected Results
+                  </h4>
                   <div className="space-y-4">
                     <div className="flex justify-between">
-                      <span className="text-slate-600 dark:text-slate-400">Monthly Profit:</span>
+                      <span className="text-slate-600 dark:text-slate-400">
+                        Monthly Profit:
+                      </span>
                       <span className="text-[var(--orange-primary)] font-semibold">
                         ${calculatedProfit.toLocaleString()}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-600 dark:text-slate-400">Profit per Unit:</span>
+                      <span className="text-slate-600 dark:text-slate-400">
+                        Profit per Unit:
+                      </span>
                       <span className="text-[var(--orange-primary)] font-semibold">
                         ${profitPerUnit.toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-600 dark:text-slate-400">Annual Profit:</span>
+                      <span className="text-slate-600 dark:text-slate-400">
+                        Annual Profit:
+                      </span>
                       <span className="text-[var(--orange-primary)] font-semibold">
                         ${(calculatedProfit * 12).toLocaleString()}
                       </span>
                     </div>
                   </div>
-                  
+
                   <div className="mt-6 p-4 bg-[var(--orange-primary)]/10 rounded-lg border border-[var(--orange-primary)]/20">
                     <p className="text-sm text-[var(--orange-primary)]">
-                      <strong>Potential Increase:</strong> Optimize your business with ProfitPath 
-                      and potentially increase profits by 15-30% through better inventory management 
-                      and data-driven decisions.
+                      <strong>Potential Increase:</strong> Optimize your
+                      business with ProfitPath and potentially increase profits
+                      by 15-30% through better inventory management and
+                      data-driven decisions.
                     </p>
                   </div>
                 </div>
@@ -221,26 +247,60 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Social Proof */}
+      {/* About the Founder */}
       <section className="px-6 lg:px-8 py-24">
         <div className="mx-auto max-w-7xl">
           <div className="text-center mb-12">
-            <h3 className="text-3xl font-bold mb-4">Trusted by Amazon FBA Sellers</h3>
-            <p className="text-slate-600 dark:text-slate-400">Join thousands of sellers optimizing their business</p>
+            <h3 className="text-3xl font-bold mb-4 text-black dark:text-white">
+              Meet the Founder
+            </h3>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="text-4xl font-bold text-[var(--orange-primary)] mb-2">2,500+</div>
-              <div className="text-slate-600 dark:text-slate-400">Active Sellers</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-[var(--orange-primary)] mb-2">$50M+</div>
-              <div className="text-slate-600 dark:text-slate-400">Revenue Tracked</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-[var(--orange-primary)] mb-2">25%</div>
-              <div className="text-slate-600 dark:text-slate-400">Avg. Profit Increase</div>
+
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-white dark:bg-[var(--charcoal)] rounded-2xl p-8 lg:p-12 shadow-lg border border-slate-200 dark:border-slate-700">
+              <div className="text-center mb-8">
+                <h4 className="text-2xl font-bold mb-2 text-black dark:text-white">
+                  About Roger G. Rosado
+                </h4>
+                <p className="text-lg text-[var(--orange-primary)] font-medium">
+                  Founder of ProfitPath | Aspiring Amazon FBA Seller | Software
+                  Builder
+                </p>
+              </div>
+
+              <div className="prose prose-lg max-w-none text-left space-y-6">
+                <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+                  I'm Roger G. Rosado, a software developer with a growing
+                  passion for eCommerce—especially the Amazon FBA ecosystem.
+                  Although I don't come from a background in selling on Amazon,
+                  my curiosity about the business led me to build a tool that
+                  would help both aspiring and experienced sellers navigate it
+                  more clearly.
+                </p>
+
+                <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+                  That tool became{" "}
+                  <span className="font-semibold text-[var(--orange-primary)]">
+                    ProfitPath
+                  </span>
+                  —a smarter, more intuitive platform designed to help Amazon
+                  FBA sellers track profits, manage inventory, and make
+                  confident, data-backed decisions.
+                </p>
+
+                <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+                  With experience in software development and API integration,
+                  I've focused on building ProfitPath to be clean, efficient,
+                  and deeply useful—especially for those just starting out, like
+                  myself. It's not just a project—it's my way of learning the
+                  business while helping others grow theirs.
+                </p>
+
+                <p className="text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
+                  ProfitPath is my entry point into the world of Amazon—and
+                  hopefully, yours too.
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -249,20 +309,23 @@ export default function Landing() {
       {/* CTA Section */}
       <section className="px-6 lg:px-8 py-24 bg-slate-50 dark:bg-[var(--charcoal)]">
         <div className="mx-auto max-w-4xl text-center">
-          <h3 className="text-3xl font-bold mb-4">Ready to scale your Amazon FBA business?</h3>
+          <h3 className="text-3xl font-bold mb-4">
+            Ready to scale your Amazon FBA business?
+          </h3>
           <p className="text-slate-600 dark:text-slate-400 mb-8 text-lg">
-            Start your free trial today and see the difference data-driven decisions can make.
+            Start your free trial today and see the difference data-driven
+            decisions can make.
           </p>
-          
+
           <Link href="/auth">
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               className="bg-[var(--orange-primary)] hover:bg-[var(--orange-light)] text-white px-12 py-4 text-lg"
             >
               Start Free Trial
             </Button>
           </Link>
-          
+
           <p className="text-sm text-slate-500 dark:text-slate-500 mt-4">
             No credit card required • 14-day free trial • Cancel anytime
           </p>
@@ -274,20 +337,20 @@ export default function Landing() {
         <div className="mx-auto max-w-7xl">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <img 
-                src="/logo-black.png" 
-                alt="ProfitPath Logo" 
+              <img
+                src="/logo-black.png"
+                alt="ProfitPath Logo"
                 className="w-64 h-auto dark:hidden"
-                style={{ maxWidth: '256px' }}
+                style={{ maxWidth: "256px" }}
               />
-              <img 
-                src="/logo-white.png" 
-                alt="ProfitPath Logo" 
+              <img
+                src="/logo-white.png"
+                alt="ProfitPath Logo"
                 className="w-64 h-auto hidden dark:block"
-                style={{ maxWidth: '256px' }}
+                style={{ maxWidth: "256px" }}
               />
             </div>
-            
+
             <div className="text-slate-600 dark:text-slate-400 text-sm">
               © 2024 All rights reserved.
             </div>
