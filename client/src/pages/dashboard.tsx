@@ -1,5 +1,6 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useLocation } from "wouter";
+import { useValidateSession } from "@/hooks/useValidateSession";
 import { useQuery } from "@tanstack/react-query";
 import { Sidebar } from "@/components/Navigation/Sidebar";
 import { ThemeToggle } from "@/components/Navigation/ThemeToggle";
@@ -16,6 +17,7 @@ import { ArrowUp, TriangleAlert, BarChart3, DollarSign, Package, TrendingUp, Use
 export default function Dashboard() {
   const { user, loading } = useAuth();
   const [, setLocation] = useLocation();
+  const { isValid, loading: sessionLoading } = useValidateSession();
   
   // Fetch user profile for personalization
   const { data: userProfile } = useQuery({

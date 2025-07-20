@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { User as FirebaseUser } from "firebase/auth";
 import { auth, signInWithGoogle, signInWithEmail, signUpWithEmail, signOutUser, handleRedirectResult, onAuthStateChanged } from "@/lib/firebase";
+import { logout as utilLogout, validateSession, clearStaleSession } from "@/utils/authUtils";
 import type { User } from "@shared/schema";
 
 interface AuthContextType {
@@ -8,6 +9,7 @@ interface AuthContextType {
   firebaseUser: FirebaseUser | null;
   loading: boolean;
   showWelcome: boolean;
+  setUser: React.Dispatch<React.SetStateAction<User | null>>;
   setShowWelcome: (show: boolean) => void;
   signIn: () => void;
   signInWithEmailPassword: (email: string, password: string) => Promise<void>;
@@ -37,19 +39,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setFirebaseUser(firebaseUser);
       
-      if (firebaseUser) {
-        // Check if user exists in our database
+      if (!firebaseUser) {
+        // User logged out - clear all state
+        console.log("🚪 User logged out - clearing all state");
+        clearStaleSession();
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
+      // Check for UID mismatch (different user login)
+      const cachedUID = localStorage.getItem('uid');
+      const freshUID = firebaseUser.uid;
+      
+      console.log('🔍 Auth state changed:', { cachedUID, freshUID, isNewSession: cachedUID !== freshUID });
+
+      if (cachedUID && cachedUID !== freshUID) {
+        // Different user - clear old session data
+        console.log("🔄 Different user detected - clearing old session");
+        clearStaleSession();
+        setUser(null);
+      }
+
+      // Always fetch fresh data for new sessions or if no cached data
+      const cachedUser = localStorage.getItem('current-user');
+      const shouldFetchFresh = !cachedUID || cachedUID !== freshUID || !cachedUser;
+
+      if (shouldFetchFresh) {
+        console.log("📥 Fetching fresh user data...");
         try {
-          const response = await fetch(`/api/users/firebase/${firebaseUser.uid}`);
+          const response = await fetch(`/api/users/firebase/${freshUID}`);
           
           if (response.ok) {
             const userData = await response.json();
-            setUser(userData);
-            // Store user data for API requests
+            
+            // Store fresh session data
+            localStorage.setItem('uid', freshUID);
             localStorage.setItem('current-user', JSON.stringify(userData));
-            console.log("Existing user loaded:", userData);
+            
+            setUser(userData);
+            console.log("✅ Fresh user data loaded:", userData.email);
+            
           } else if (response.status === 404) {
             // Create new user
+            console.log("👤 Creating new user...");
             const newUserData = {
               email: firebaseUser.email!,
               displayName: firebaseUser.displayName || "",
@@ -65,31 +98,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             
             if (createResponse.ok) {
               const userData = await createResponse.json();
-              setUser(userData);
-              // Store user data for API requests
+              
+              // Store fresh session data
+              localStorage.setItem('uid', freshUID);
               localStorage.setItem('current-user', JSON.stringify(userData));
-              console.log("User created and stored:", userData);
-              // Show welcome modal for new users
+              
+              setUser(userData);
+              console.log("✅ New user created:", userData.email);
               setShowWelcome(true);
             } else {
               console.error("Failed to create user in database");
             }
           } else {
-            console.error("Failed to fetch user from database:", response.status);
+            console.error("Failed to fetch user data:", response.status);
           }
         } catch (error) {
           console.error("Error fetching user data:", error);
         }
       } else {
-        setUser(null);
-        // Clear stored user data
-        localStorage.removeItem('current-user');
+        // Use cached data for same session
+        try {
+          const userData = JSON.parse(cachedUser!);
+          
+          // Validate cached data matches current Firebase user
+          if (userData.firebaseUid === freshUID) {
+            setUser(userData);
+            console.log("♻️ Using cached user data:", userData.email);
+          } else {
+            // Cached data is for different user - fetch fresh
+            console.warn("⚠️ Cached UID mismatch - fetching fresh data");
+            window.location.reload(); // Force refresh to clear stale state
+          }
+        } catch (error) {
+          console.error("Failed to parse cached user data:", error);
+          clearStaleSession();
+        }
       }
       
       setLoading(false);
     });
 
-    return unsubscribe;
+    return () => unsubscribe();
   }, []);
 
   const signIn = () => {
@@ -128,18 +177,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
-    await signOutUser();
-    setUser(null);
+    try {
+      await utilLogout(setUser, true);
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   };
 
   return (
     <AuthContext.Provider value={{ 
       user, 
-      firebaseUser, 
+      firebaseUser,
       loading,
       showWelcome,
+      setUser,
       setShowWelcome,
-      signIn, 
+      signIn,
       signInWithEmailPassword,
       signUpWithEmailPassword,
       logout 

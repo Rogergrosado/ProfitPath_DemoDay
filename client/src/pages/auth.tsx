@@ -7,12 +7,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ThemeToggle } from "@/components/Navigation/ThemeToggle";
-import { TrendingUp, Mail, Lock, User, Eye, EyeOff } from "lucide-react";
+import { TrendingUp, Mail, Lock, User, Eye, EyeOff, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { devLogout } from "@/utils/authUtils";
 
 export default function Auth() {
   const [, setLocation] = useLocation();
-  const { signIn, signInWithEmailPassword, signUpWithEmailPassword, user, loading } = useAuth();
+  const { signIn, signInWithEmailPassword, signUpWithEmailPassword, user, loading, setUser } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   
@@ -149,9 +150,42 @@ export default function Auth() {
     );
   }
 
+  // Development utility handler
+  const handleDevLogout = async () => {
+    try {
+      await devLogout(setUser);
+      toast({
+        title: "Dev Auth Flushed",
+        description: "All authentication state cleared"
+      });
+    } catch (error) {
+      console.error("Dev logout failed:", error);
+      toast({
+        title: "Dev Flush Failed", 
+        description: "Check console for details",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-6">
       <ThemeToggle />
+      
+      {/* Dev Logout Button (development only) */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="absolute top-6 left-6">
+          <Button
+            onClick={handleDevLogout}
+            variant="outline"
+            size="sm"
+            className="flex items-center space-x-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            <span>Dev Flush Auth</span>
+          </Button>
+        </div>
+      )}
       
       <div className="w-full max-w-md">
         {/* Logo */}
