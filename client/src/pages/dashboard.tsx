@@ -1,6 +1,8 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useLocation } from "wouter";
 import { useValidateSession } from "@/hooks/useValidateSession";
+import { useAuthReady } from "@/hooks/useAuthReady";
+import { useAuthDebug } from "@/hooks/useAuthDebug";
 import { useQuery } from "@tanstack/react-query";
 import { Sidebar } from "@/components/Navigation/Sidebar";
 import { ThemeToggle } from "@/components/Navigation/ThemeToggle";
@@ -18,42 +20,49 @@ export default function Dashboard() {
   const { user, loading } = useAuth();
   const [, setLocation] = useLocation();
   const { isValid, loading: sessionLoading } = useValidateSession();
+  const authReady = useAuthReady();
   
-  // Fetch user profile for personalization
+  // Debug hook to catch UID mismatches
+  useAuthDebug();
+  
+  // Fetch user profile for personalization - wait for auth to be ready
   const { data: userProfile } = useQuery({
     queryKey: ["/api/user/profile"],
-    enabled: !!user,
+    enabled: !!user && authReady,
   });
 
-  // Fetch real performance metrics data
+  // Fetch real performance metrics data - wait for auth to be ready
   const { data: performanceMetrics } = useQuery({
     queryKey: ["/api/performance/metrics", "30d"],
-    enabled: !!user,
+    enabled: !!user && authReady,
   });
 
-  // Fetch inventory summary data
+  // Fetch inventory summary data - wait for auth to be ready
   const { data: inventorySummary } = useQuery({
     queryKey: ["/api/inventory/summary"],
-    enabled: !!user,
+    enabled: !!user && authReady,
   });
 
-  // Fetch sales data for trends
+  // Fetch sales data for trends - wait for auth to be ready
   const { data: salesData = [] } = useQuery({
     queryKey: ["/api/sales", "30d"],
-    enabled: !!user,
+    enabled: !!user && authReady,
   });
 
-  if (loading) {
+  if (loading || sessionLoading || !authReady) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-foreground">Loading dashboard...</div>
+        <div className="text-foreground">
+          {loading && "Loading user..."}
+          {sessionLoading && "Validating session..."}
+          {!authReady && user && "Refreshing auth token..."}
+        </div>
       </div>
     );
   }
 
-  if (!user) {
-    setLocation("/auth");
-    return null;
+  if (!user || !isValid) {
+    return null; // useValidateSession will handle redirect
   }
 
   // Calculate real values from data - show real data when available

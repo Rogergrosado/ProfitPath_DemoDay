@@ -11,36 +11,25 @@ import { getAuth } from "firebase/auth";
 
 export async function getAuthHeaders(): Promise<Record<string, string>> {
   const auth = getAuth();
-  const user = auth.currentUser;
+  const currentUser = auth.currentUser;
   
-  console.log('🔐 getAuthHeaders - Firebase current user:', user ? 'authenticated' : 'not authenticated');
+  console.log('🔐 getAuthHeaders - Firebase current user:', currentUser ? 'authenticated' : 'not authenticated');
   
-  if (!user) {
-    // Fallback to stored user ID for backwards compatibility
-    const storedUser = localStorage.getItem('current-user');
-    if (storedUser) {
-      try {
-        const userData = JSON.parse(storedUser);
-        console.log('🔐 Using stored user ID:', userData.id);
-        return { "x-user-id": userData.id.toString() };
-      } catch (e) {
-        console.warn('Failed to parse stored user data');
-      }
-    }
-    console.warn('🔐 No Firebase user and no stored user - returning empty headers');
-    return {};
+  if (!currentUser) {
+    throw new Error("User not authenticated - Firebase user required");
   }
 
   try {
-    const idToken = await user.getIdToken();
-    console.log('🔐 Firebase token obtained, length:', idToken.length);
-    return { 
-      "Authorization": `Bearer ${idToken}`,
-      "x-user-id": "3" // Keep backwards compatibility for now
+    // Force token refresh to ensure we have the latest token
+    const token = await currentUser.getIdToken(true);
+    console.log('🔐 Fresh Firebase token obtained, length:', token.length);
+    
+    return {
+      Authorization: `Bearer ${token}`,
     };
   } catch (error) {
-    console.warn('Failed to get Firebase token:', error);
-    return { "x-user-id": "3" }; // Fallback
+    console.error('🔐 Failed to get fresh Firebase token:', error);
+    throw new Error("Failed to get fresh authentication token");
   }
 }
 
@@ -79,22 +68,30 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    // Use the same authentication headers as apiRequest
-    const authHeaders = await getAuthHeaders();
-    
-    const res = await fetch(queryKey.join("/") as string, {
-      credentials: "include",
-      headers: {
-        ...authHeaders,
-      },
-    });
+    try {
+      // Use the same authentication headers as apiRequest
+      const authHeaders = await getAuthHeaders();
+      
+      const res = await fetch(queryKey.join("/") as string, {
+        credentials: "include",
+        headers: {
+          ...authHeaders,
+        },
+      });
 
-    if (unauthorizedBehavior === "returnNull" && res.status === 401) {
-      return null;
+      if (unauthorizedBehavior === "returnNull" && res.status === 401) {
+        return null;
+      }
+
+      await throwIfResNotOk(res);
+      return await res.json();
+    } catch (error) {
+      // If authentication fails, handle gracefully
+      if (unauthorizedBehavior === "returnNull") {
+        return null;
+      }
+      throw error;
     }
-
-    await throwIfResNotOk(res);
-    return await res.json();
   };
 
 export const queryClient = new QueryClient({
