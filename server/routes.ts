@@ -35,37 +35,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Auth middleware to get user from Firebase token or fallback to x-user-id
+  // Auth middleware to get user from Firebase token
   const requireAuth = async (req: any, res: any, next: any) => {
     console.log('🔐 Auth middleware called, headers:', {
-      authorization: req.headers.authorization ? `Bearer ${req.headers.authorization.split(' ')[1]?.substring(0, 20)}...` : 'none',
-      'x-user-id': req.headers['x-user-id'] || 'none'
+      authorization: req.headers.authorization ? `Bearer ${req.headers.authorization.split(' ')[1]?.substring(0, 20)}...` : 'none'
     });
     
-    // Check for Firebase token first
+    // Check for Firebase token
     const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.split(' ')[1];
-      try {
-        // For now, we'll trust the token and use the fallback user ID
-        // In production, you would verify the token with Firebase Admin SDK
-        console.log('🔐 Firebase token received and accepted');
-        // Use hardcoded user ID for development
-        (req as AuthenticatedRequest).userId = 3;
-        return next();
-      } catch (error) {
-        console.warn('Firebase token verification failed:', error);
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.error('❌ No Firebase Bearer token found');
+      return res.status(401).json({ message: "Unauthorized - Firebase token required" });
+    }
+
+    const token = authHeader.split(' ')[1];
+    try {
+      // Decode the Firebase JWT token (without verification for development)
+      // In production, you would use Firebase Admin SDK to verify
+      const decodedPayload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+      const firebaseUid = decodedPayload.user_id;
+      
+      if (!firebaseUid) {
+        console.error('❌ No user_id found in Firebase token');
+        return res.status(401).json({ message: "Invalid Firebase token - no user ID" });
       }
+
+      console.log('🔐 Firebase token decoded, UID:', firebaseUid);
+      
+      // Look up internal user ID by Firebase UID
+      const user = await storage.getUserByFirebaseUid(firebaseUid);
+      if (!user) {
+        console.error('❌ No user found for Firebase UID:', firebaseUid);
+        return res.status(401).json({ message: "User not found" });
+      }
+
+      console.log('✅ User authenticated:', user.email, '(ID:', user.id, ')');
+      (req as AuthenticatedRequest).userId = user.id;
+      return next();
+      
+    } catch (error) {
+      console.error('❌ Firebase token verification failed:', error);
+      return res.status(401).json({ message: "Invalid Firebase token" });
     }
-    
-    // Fallback to x-user-id header for backwards compatibility
-    const userId = req.headers['x-user-id'];
-    if (!userId) {
-      console.error('❌ No authentication found - missing both Bearer token and x-user-id');
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-    (req as AuthenticatedRequest).userId = parseInt(userId as string);
-    next();
   };
 
   // Users
