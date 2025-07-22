@@ -100,6 +100,7 @@ export interface IStorage {
   createCalendarSale(sale: InsertCalendarSales): Promise<CalendarSales>;
   getCalendarSales(userId: number, month?: string, year?: string): Promise<CalendarSales[]>;
   createReorderEntry(entry: InsertReorderCalendar): Promise<ReorderCalendar>;
+  createReorderCalendarEntry(entry: InsertReorderCalendar): Promise<ReorderCalendar>;
   getReorderCalendar(userId: number, month?: string, year?: string): Promise<ReorderCalendar[]>;
   getInventoryKPIs(userId: number): Promise<{
     totalSKUs: number;
@@ -689,6 +690,11 @@ export class DatabaseStorage implements IStorage {
   async createReorderEntry(entry: InsertReorderCalendar): Promise<ReorderCalendar> {
     const [newEntry] = await db.insert(reorderCalendar).values(entry).returning();
     return newEntry;
+  }
+
+  async createReorderCalendarEntry(entry: InsertReorderCalendar): Promise<ReorderCalendar> {
+    // Alias for createReorderEntry for better API consistency
+    return this.createReorderEntry(entry);
   }
 
   async getReorderCalendar(userId: number, month?: string, year?: string): Promise<ReorderCalendar[]> {

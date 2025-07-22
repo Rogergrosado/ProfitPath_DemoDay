@@ -341,13 +341,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Restock endpoint
+  // Restock endpoint with calendar integration
   app.post('/api/inventory/:sku/restock', requireAuth, async (req, res) => {
     try {
       const authReq = req as AuthenticatedRequest;
       const { sku } = req.params;
-      const { quantity, notes } = req.body;
+      const { quantity, reorderDate, notes } = req.body;
       const userId = authReq.userId;
+
+      if (!quantity || quantity <= 0) {
+        return res.status(400).json({ message: "Invalid quantity" });
+      }
 
       // Find inventory item by SKU
       const inventory = await storage.getInventory(userId);
@@ -357,21 +361,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Inventory item not found" });
       }
 
-      // Update inventory stock level
+      // Update inventory stock level (additive restock)
+      const newStockLevel = (item.currentStock || 0) + parseInt(quantity);
       const updatedItem = {
         ...item,
-        currentStock: (item.currentStock || 0) + parseInt(quantity)
+        currentStock: newStockLevel,
+        lastRestocked: new Date(reorderDate || new Date())
       };
 
       await storage.updateInventoryItem(item.id, updatedItem);
       
+      // Record reorder to calendar for advanced reorder calendar tracking
+      try {
+        await storage.createReorderCalendarEntry({
+          userId,
+          inventoryId: item.id,
+          sku: item.sku || "",
+          productName: item.name || "",
+          reorderDate: new Date(reorderDate || new Date()),
+          quantity: parseInt(quantity),
+          unitCost: parseFloat(item.costPrice || "0"),
+          totalCost: parseInt(quantity) * parseFloat(item.costPrice || "0"),
+          supplierName: item.supplierName || "",
+          notes: notes || "",
+          status: "completed"
+        });
+      } catch (calendarError) {
+        console.warn('Failed to record reorder calendar entry:', calendarError);
+        // Don't fail the entire request if calendar entry fails
+      }
+      
       res.json({ 
-        message: "Stock updated successfully", 
-        newStock: updatedItem.currentStock 
+        message: "Product restocked successfully", 
+        item: updatedItem,
+        previousStock: (item.currentStock || 0),
+        newStock: newStockLevel,
+        quantityAdded: parseInt(quantity),
+        reorderDate: reorderDate || new Date().toISOString(),
+        notes: notes || ""
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Restock error:', error);
-      res.status(500).json({ message: 'Failed to update stock' });
+      res.status(500).json({ message: error.message || 'Failed to update stock' });
     }
   });
 

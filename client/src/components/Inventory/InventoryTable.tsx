@@ -1,16 +1,16 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, ShoppingCart, Package, AlertTriangle, TrendingUp } from "lucide-react";
+import { Edit, Package as PackageRestock, Package, AlertTriangle, TrendingUp } from "lucide-react";
 
 interface InventoryTableProps {
   items: any[];
   onEdit: (item: any) => void;
-  onAddSale: (item: any) => void;
+  onRestock: (item: any) => void;
   onAnalytics?: (item: any) => void;
 }
 
-export function InventoryTable({ items, onEdit, onAddSale, onAnalytics }: InventoryTableProps) {
+export function InventoryTable({ items, onEdit, onRestock, onAnalytics }: InventoryTableProps) {
   const getStockStatus = (item: any) => {
     const currentStock = item.currentStock || 0;
     const reorderPoint = item.reorderPoint || 0;
@@ -126,10 +126,11 @@ export function InventoryTable({ items, onEdit, onAddSale, onAnalytics }: Invent
                         </Button>
                         <Button
                           size="sm"
-                          onClick={() => onAddSale(item)}
+                          onClick={() => onRestock(item)}
                           className="bg-[#fd7014] hover:bg-[#e5640f] text-white"
+                          title="Restock Product"
                         >
-                          <ShoppingCart className="h-4 w-4" />
+                          <PackageRestock className="h-4 w-4" />
                         </Button>
                         {onAnalytics && (
                           <Button

@@ -7,7 +7,7 @@ import { Sidebar } from "@/components/Navigation/Sidebar";
 import { ThemeToggle } from "@/components/Navigation/ThemeToggle";
 import { InventoryTable } from "@/components/Inventory/InventoryTable";
 import { InventoryDetailModal } from "@/components/Inventory/InventoryDetailModal";
-import { SalesEntryModal } from "@/components/Inventory/SalesEntryModal";
+import { RestockProductModal } from "@/components/Inventory/RestockProductModal";
 import { InventoryImport } from "@/components/Inventory/InventoryImport";
 import { ReorderCalendar } from "@/components/Inventory/ReorderCalendar";
 import { AddInventoryModal } from "@/components/Inventory/AddInventoryModal";
@@ -42,7 +42,7 @@ import {
   RefreshCw,
   Eye,
   Edit,
-  ShoppingCart,
+
   BarChart3
 } from "lucide-react";
 
@@ -54,7 +54,7 @@ export default function Inventory() {
   const [stockFilter, setStockFilter] = useState("all");
   const [selectedInventory, setSelectedInventory] = useState<any>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [showSalesModal, setShowSalesModal] = useState(false);
+  const [showRestockModal, setShowRestockModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
@@ -136,9 +136,9 @@ export default function Inventory() {
     setShowDetailModal(true);
   };
 
-  const handleAddSale = (item: any) => {
+  const handleRestock = (item: any) => {
     setSelectedInventory(item);
-    setShowSalesModal(true);
+    setShowRestockModal(true);
   };
 
   const handleAnalytics = (item: any) => {
@@ -325,7 +325,7 @@ export default function Inventory() {
               <InventoryTable 
                 items={filteredItems}
                 onEdit={handleEditInventory}
-                onAddSale={handleAddSale}
+                onRestock={handleRestock}
                 onAnalytics={handleAnalytics}
               />
             </TabsContent>
@@ -418,11 +418,11 @@ export default function Inventory() {
             />
           )}
 
-          {showSalesModal && selectedInventory && (
-            <SalesEntryModal
+          {showRestockModal && selectedInventory && (
+            <RestockProductModal
               inventory={selectedInventory}
-              open={showSalesModal}
-              onOpenChange={setShowSalesModal}
+              open={showRestockModal}
+              onOpenChange={setShowRestockModal}
             />
           )}
 
