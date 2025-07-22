@@ -265,6 +265,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Sales History endpoint
+  app.get('/api/sales/history', requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const { sku, startDate, endDate } = req.query;
+      const userId = authReq.userId;
+
+      // For now, return existing sales data filtered by SKU if provided
+      const sales = await storage.getSales(userId);
+      let filteredSales = sales;
+
+      if (sku) {
+        filteredSales = sales.filter(sale => sale.sku === sku);
+      }
+
+      if (startDate && endDate) {
+        const start = new Date(startDate as string);
+        const end = new Date(endDate as string);
+        filteredSales = filteredSales.filter(sale => {
+          const saleDate = new Date(sale.saleDate);
+          return saleDate >= start && saleDate <= end;
+        });
+      }
+
+      res.json(filteredSales);
+    } catch (error) {
+      console.error('Sales history error:', error);
+      res.status(500).json({ message: 'Failed to fetch sales history' });
+    }
+  });
+
+  // Calendar endpoints for sales and reorder data
+  app.get('/api/sales/calendar', requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const { month, year } = req.query;
+      const userId = authReq.userId;
+
+      // Get sales data for the specified month/year
+      const sales = await storage.getSales(userId);
+      const filteredSales = sales.filter(sale => {
+        const saleDate = new Date(sale.saleDate);
+        return saleDate.getMonth() === parseInt(month as string) - 1 && 
+               saleDate.getFullYear() === parseInt(year as string);
+      });
+
+      res.json(filteredSales);
+    } catch (error) {
+      console.error('Sales calendar error:', error);
+      res.status(500).json({ message: 'Failed to fetch sales calendar' });
+    }
+  });
+
+  app.get('/api/reorder/calendar', requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const { month, year } = req.query;
+      const userId = authReq.userId;
+
+      // Get inventory items that need reordering
+      const inventory = await storage.getInventory(userId);
+      const reorderItems = inventory.filter(item => 
+        (item.currentStock || 0) <= (item.reorderPoint || 0)
+      ).map(item => ({
+        ...item,
+        reorderDate: new Date().toISOString(), // Placeholder - in real app this would be calculated
+        quantity: item.reorderPoint || 0
+      }));
+
+      res.json(reorderItems);
+    } catch (error) {
+      console.error('Reorder calendar error:', error);
+      res.status(500).json({ message: 'Failed to fetch reorder calendar' });
+    }
+  });
+
+  // Restock endpoint
+  app.post('/api/inventory/:sku/restock', requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const { sku } = req.params;
+      const { quantity, notes } = req.body;
+      const userId = authReq.userId;
+
+      // Find inventory item by SKU
+      const inventory = await storage.getInventory(userId);
+      const item = inventory.find(inv => inv.sku === sku);
+      
+      if (!item) {
+        return res.status(404).json({ message: "Inventory item not found" });
+      }
+
+      // Update inventory stock level
+      const updatedItem = {
+        ...item,
+        currentStock: (item.currentStock || 0) + parseInt(quantity)
+      };
+
+      await storage.updateInventoryItem(item.id, updatedItem);
+      
+      res.json({ 
+        message: "Stock updated successfully", 
+        newStock: updatedItem.currentStock 
+      });
+    } catch (error) {
+      console.error('Restock error:', error);
+      res.status(500).json({ message: 'Failed to update stock' });
+    }
+  });
+
   // Inventory
   app.get("/api/inventory", requireAuth, async (req, res) => {
     try {

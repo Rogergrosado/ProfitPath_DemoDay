@@ -1,5 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
+import { getAuthHeaders } from "@/lib/queryClient";
+import { useAuth } from "@/contexts/AuthContext";
+import { useAuthReady } from "@/hooks/useAuthReady";
 import {
   Table,
   TableBody,
@@ -19,16 +22,27 @@ interface SalesHistoryTableProps {
 }
 
 export function SalesHistoryTable({ inventorySku, startDate, endDate }: SalesHistoryTableProps) {
+  const { user } = useAuth();
+  const authReady = useAuthReady();
+
   const { data: salesHistory, isLoading } = useQuery({
     queryKey: ["/api/sales/history", inventorySku, startDate, endDate],
+    enabled: !!user && authReady,
     queryFn: async () => {
       const params = new URLSearchParams();
       if (startDate) params.append("startDate", startDate.toISOString());
       if (endDate) params.append("endDate", endDate.toISOString());
       if (inventorySku) params.append("sku", inventorySku);
       
-      const response = await fetch(`/api/sales/history?${params}`);
-      return response.json();
+      const authHeaders = await getAuthHeaders();
+      const response = await fetch(`/api/sales/history?${params}`, {
+        headers: authHeaders,
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
     },
   });
 
@@ -51,12 +65,14 @@ export function SalesHistoryTable({ inventorySku, startDate, endDate }: SalesHis
     );
   }
 
-  const totalRevenue = salesHistory?.reduce((sum: number, sale: any) => 
-    sum + parseFloat(sale.totalRevenue || 0), 0) || 0;
-  const totalUnits = salesHistory?.reduce((sum: number, sale: any) => 
-    sum + (sale.quantitySold || 0), 0) || 0;
-  const totalProfit = salesHistory?.reduce((sum: number, sale: any) => 
-    sum + parseFloat(sale.profit || 0), 0) || 0;
+  const safeHistory = Array.isArray(salesHistory) ? salesHistory : [];
+  
+  const totalRevenue = safeHistory.reduce((sum: number, sale: any) => 
+    sum + parseFloat(sale.totalRevenue || 0), 0);
+  const totalUnits = safeHistory.reduce((sum: number, sale: any) => 
+    sum + (sale.quantitySold || 0), 0);
+  const totalProfit = safeHistory.reduce((sum: number, sale: any) => 
+    sum + parseFloat(sale.profit || 0), 0);
 
   return (
     <div className="space-y-6">
@@ -114,7 +130,7 @@ export function SalesHistoryTable({ inventorySku, startDate, endDate }: SalesHis
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {salesHistory && salesHistory.length > 0 ? (
+          {safeHistory && safeHistory.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -128,7 +144,7 @@ export function SalesHistoryTable({ inventorySku, startDate, endDate }: SalesHis
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {salesHistory.map((sale: any) => (
+                {safeHistory.map((sale: any) => (
                   <TableRow key={sale.id}>
                     <TableCell>
                       {format(new Date(sale.saleDate), "MMM dd, yyyy")}

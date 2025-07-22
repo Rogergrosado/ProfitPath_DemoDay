@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, parseISO, startOfWeek } from "date-fns";
+import { getAuthHeaders } from "@/lib/queryClient";
+import { useAuth } from "@/contexts/AuthContext";
+import { useAuthReady } from "@/hooks/useAuthReady";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +15,8 @@ interface CalendarViewProps {
 }
 
 export function CalendarView({ type, className }: CalendarViewProps) {
+  const { user } = useAuth();
+  const authReady = useAuthReady();
   const [currentDate, setCurrentDate] = useState(new Date());
   
   const monthStart = startOfMonth(currentDate);
@@ -22,11 +27,19 @@ export function CalendarView({ type, className }: CalendarViewProps) {
   
   const { data: calendarData, isLoading } = useQuery({
     queryKey: [`/api/${type}/calendar`, format(currentDate, "yyyy-MM")],
+    enabled: !!user && authReady,
     queryFn: async () => {
       const month = format(currentDate, "MM");
       const year = format(currentDate, "yyyy");
-      const response = await fetch(`/api/${type}/calendar?month=${month}&year=${year}`);
-      return response.json();
+      const authHeaders = await getAuthHeaders();
+      const response = await fetch(`/api/${type}/calendar?month=${month}&year=${year}`, {
+        headers: authHeaders,
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
     },
   });
 
