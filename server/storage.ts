@@ -5,6 +5,9 @@ import {
   sales,
   goals,
   reports,
+  salesHistory,
+  calendarSales,
+  reorderCalendar,
   type User,
   type InsertUser,
   type Product,
@@ -17,6 +20,12 @@ import {
   type InsertGoal,
   type Report,
   type InsertReport,
+  type SalesHistory,
+  type InsertSalesHistory,
+  type CalendarSales,
+  type InsertCalendarSales,
+  type ReorderCalendar,
+  type InsertReorderCalendar,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
@@ -47,9 +56,12 @@ export interface IStorage {
   // Inventory
   getInventory(userId: number): Promise<Inventory[]>;
   getInventoryItem(id: number): Promise<Inventory | undefined>;
+  getInventoryItemBySku(sku: string, userId: number): Promise<Inventory | undefined>;
   createInventoryItem(item: InsertInventory): Promise<Inventory>;
   updateInventoryItem(id: number, item: Partial<InsertInventory>): Promise<Inventory>;
+  updateInventoryItemBySku(sku: string, userId: number, item: Partial<InsertInventory>): Promise<Inventory>;
   deleteInventoryItem(id: number): Promise<void>;
+  restockInventoryItem(sku: string, userId: number, quantity: number, notes?: string): Promise<Inventory>;
 
   // Sales
   getSales(userId: number, startDate?: Date, endDate?: Date): Promise<Sale[]>;
@@ -81,6 +93,20 @@ export interface IStorage {
   getReports(userId: number): Promise<Report[]>;
   createReport(report: InsertReport): Promise<Report>;
   deleteReport(id: number): Promise<void>;
+
+  // Sales History & Calendar (New for inventory system overhaul)
+  createSalesHistoryEntry(entry: InsertSalesHistory): Promise<SalesHistory>;
+  getSalesHistory(userId: number, startDate?: Date, endDate?: Date): Promise<SalesHistory[]>;
+  createCalendarSale(sale: InsertCalendarSales): Promise<CalendarSales>;
+  getCalendarSales(userId: number, month?: string, year?: string): Promise<CalendarSales[]>;
+  createReorderEntry(entry: InsertReorderCalendar): Promise<ReorderCalendar>;
+  getReorderCalendar(userId: number, month?: string, year?: string): Promise<ReorderCalendar[]>;
+  getInventoryKPIs(userId: number): Promise<{
+    totalSKUs: number;
+    totalValue: number;
+    lowStockItems: number;
+    outOfStockItems: number;
+  }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -221,6 +247,14 @@ export class DatabaseStorage implements IStorage {
     return item || undefined;
   }
 
+  async getInventoryItemBySku(sku: string, userId: number): Promise<Inventory | undefined> {
+    const [item] = await db
+      .select()
+      .from(inventory)
+      .where(and(eq(inventory.sku, sku), eq(inventory.userId, userId)));
+    return item || undefined;
+  }
+
   async createInventoryItem(item: InsertInventory): Promise<Inventory> {
     const [newItem] = await db.insert(inventory).values(item).returning();
     return newItem;
@@ -233,6 +267,47 @@ export class DatabaseStorage implements IStorage {
       .where(eq(inventory.id, id))
       .returning();
     return item;
+  }
+
+  async updateInventoryItemBySku(sku: string, userId: number, updateData: Partial<InsertInventory>): Promise<Inventory> {
+    const [item] = await db
+      .update(inventory)
+      .set({ ...updateData, lastUpdated: new Date() })
+      .where(and(eq(inventory.sku, sku), eq(inventory.userId, userId)))
+      .returning();
+    return item;
+  }
+
+  async restockInventoryItem(sku: string, userId: number, quantity: number, notes?: string): Promise<Inventory> {
+    // Get current inventory item
+    const existingItem = await this.getInventoryItemBySku(sku, userId);
+    if (!existingItem) {
+      throw new Error("Inventory item not found");
+    }
+
+    // Update stock
+    const newStock = (existingItem.currentStock || 0) + quantity;
+    const [updatedItem] = await db
+      .update(inventory)
+      .set({ 
+        currentStock: newStock, 
+        lastUpdated: new Date() 
+      })
+      .where(and(eq(inventory.sku, sku), eq(inventory.userId, userId)))
+      .returning();
+
+    // Add reorder calendar entry
+    await this.createReorderEntry({
+      userId,
+      inventoryId: existingItem.id,
+      sku: sku,
+      productName: existingItem.name,
+      reorderDate: new Date(),
+      quantity,
+      notes: notes || null,
+    });
+
+    return updatedItem;
   }
 
   async deleteInventoryItem(id: number): Promise<void> {
@@ -568,6 +643,93 @@ export class DatabaseStorage implements IStorage {
 
   async deleteReport(id: number): Promise<void> {
     await db.delete(reports).where(eq(reports.id, id));
+  }
+
+  // New methods for inventory system overhaul
+  async createSalesHistoryEntry(entry: InsertSalesHistory): Promise<SalesHistory> {
+    const [newEntry] = await db.insert(salesHistory).values(entry).returning();
+    return newEntry;
+  }
+
+  async getSalesHistory(userId: number, startDate?: Date, endDate?: Date): Promise<SalesHistory[]> {
+    let query = db.select().from(salesHistory).where(eq(salesHistory.userId, userId));
+
+    if (startDate && endDate) {
+      query = query.where(and(
+        eq(salesHistory.userId, userId),
+        gte(salesHistory.saleDate, startDate),
+        lte(salesHistory.saleDate, endDate)
+      ));
+    }
+
+    return query.orderBy(desc(salesHistory.saleDate));
+  }
+
+  async createCalendarSale(sale: InsertCalendarSales): Promise<CalendarSales> {
+    const [newSale] = await db.insert(calendarSales).values(sale).returning();
+    return newSale;
+  }
+
+  async getCalendarSales(userId: number, month?: string, year?: string): Promise<CalendarSales[]> {
+    let query = db.select().from(calendarSales).where(eq(calendarSales.userId, userId));
+
+    if (month && year) {
+      const startDate = new Date(`${year}-${month}-01`);
+      const endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0);
+      query = query.where(and(
+        eq(calendarSales.userId, userId),
+        gte(calendarSales.saleDate, startDate),
+        lte(calendarSales.saleDate, endDate)
+      ));
+    }
+
+    return query.orderBy(desc(calendarSales.saleDate));
+  }
+
+  async createReorderEntry(entry: InsertReorderCalendar): Promise<ReorderCalendar> {
+    const [newEntry] = await db.insert(reorderCalendar).values(entry).returning();
+    return newEntry;
+  }
+
+  async getReorderCalendar(userId: number, month?: string, year?: string): Promise<ReorderCalendar[]> {
+    let query = db.select().from(reorderCalendar).where(eq(reorderCalendar.userId, userId));
+
+    if (month && year) {
+      const startDate = new Date(`${year}-${month}-01`);
+      const endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0);
+      query = query.where(and(
+        eq(reorderCalendar.userId, userId),
+        gte(reorderCalendar.reorderDate, startDate),
+        lte(reorderCalendar.reorderDate, endDate)
+      ));
+    }
+
+    return query.orderBy(desc(reorderCalendar.reorderDate));
+  }
+
+  async getInventoryKPIs(userId: number): Promise<{
+    totalSKUs: number;
+    totalValue: number;
+    lowStockItems: number;
+    outOfStockItems: number;
+  }> {
+    const result = await db
+      .select({
+        totalSKUs: sql<number>`COUNT(DISTINCT ${inventory.sku})`,
+        totalValue: sql<number>`COALESCE(SUM(${inventory.currentStock} * ${inventory.sellingPrice}), 0)`,
+        lowStockItems: sql<number>`COUNT(CASE WHEN ${inventory.currentStock} <= ${inventory.reorderPoint} AND ${inventory.currentStock} > 0 THEN 1 END)`,
+        outOfStockItems: sql<number>`COUNT(CASE WHEN ${inventory.currentStock} = 0 THEN 1 END)`,
+      })
+      .from(inventory)
+      .where(eq(inventory.userId, userId));
+
+    const metrics = result[0];
+    return {
+      totalSKUs: Number(metrics.totalSKUs),
+      totalValue: Number(metrics.totalValue),
+      lowStockItems: Number(metrics.lowStockItems),
+      outOfStockItems: Number(metrics.outOfStockItems),
+    };
   }
 }
 

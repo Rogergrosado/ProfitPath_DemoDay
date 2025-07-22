@@ -51,6 +51,8 @@ export function SalesEntryModal({ inventory, open, onOpenChange }: SalesEntryMod
       });
       queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
       queryClient.invalidateQueries({ queryKey: ["/api/sales"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/sales/history"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/sales/calendar"] });
     },
     onError: (error: any) => {
       console.error("❌ Error recording inventory sale:", error.response?.data || error.message);
@@ -69,6 +71,15 @@ export function SalesEntryModal({ inventory, open, onOpenChange }: SalesEntryMod
       toast({
         title: "Invalid input",
         description: "Quantity and unit price must be greater than zero.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (formData.quantity > (inventory.currentStock || 0)) {
+      toast({
+        title: "Insufficient stock",
+        description: `Cannot sell ${formData.quantity} units. Only ${inventory.currentStock || 0} units available.`,
         variant: "destructive",
       });
       return;

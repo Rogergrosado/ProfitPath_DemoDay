@@ -2,7 +2,7 @@ import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import multer from "multer";
 import { storage } from "./storage";
-import { insertUserSchema, insertProductSchema, insertInventorySchema, insertSaleSchema, insertGoalSchema, insertReportSchema } from "@shared/schema";
+import { insertUserSchema, insertProductSchema, insertInventorySchema, insertSaleSchema, insertGoalSchema, insertReportSchema, insertSalesHistorySchema, insertCalendarSalesSchema, insertReorderCalendarSchema } from "@shared/schema";
 
 // Extend Express Request type to include userId
 interface AuthenticatedRequest extends Request {
@@ -728,6 +728,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
+    }
+  });
+
+  // New endpoints for inventory system overhaul
+  
+  // Inventory KPIs
+  app.get("/api/inventory/kpis", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const kpis = await storage.getInventoryKPIs(authReq.userId);
+      res.json(kpis);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Restock inventory item
+  app.post("/api/inventory/:sku/restock", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const sku = req.params.sku;
+      const { quantity, notes } = req.body;
+
+      if (!quantity || quantity <= 0) {
+        return res.status(400).json({ message: "Invalid quantity" });
+      }
+
+      const updatedItem = await storage.restockInventoryItem(sku, authReq.userId, quantity, notes);
+      res.json(updatedItem);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  // Sales History
+  app.get("/api/sales/history", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
+      const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
+      
+      const salesHistory = await storage.getSalesHistory(authReq.userId, startDate, endDate);
+      res.json(salesHistory);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/sales/history", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const entryData = insertSalesHistorySchema.parse({ ...req.body, userId: authReq.userId });
+      const entry = await storage.createSalesHistoryEntry(entryData);
+      res.json(entry);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  // Calendar Sales
+  app.get("/api/sales/calendar", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const month = req.query.month as string;
+      const year = req.query.year as string;
+      
+      const calendarSales = await storage.getCalendarSales(authReq.userId, month, year);
+      res.json(calendarSales);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/sales/calendar", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const saleData = insertCalendarSalesSchema.parse({ ...req.body, userId: authReq.userId });
+      const sale = await storage.createCalendarSale(saleData);
+      res.json(sale);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  // Reorder Calendar
+  app.get("/api/reorder/calendar", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const month = req.query.month as string;
+      const year = req.query.year as string;
+      
+      const reorderCalendar = await storage.getReorderCalendar(authReq.userId, month, year);
+      res.json(reorderCalendar);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/reorder/calendar", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const entryData = insertReorderCalendarSchema.parse({ ...req.body, userId: authReq.userId });
+      const entry = await storage.createReorderEntry(entryData);
+      res.json(entry);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
     }
   });
 

@@ -14,7 +14,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Package, Calendar, User, Building } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Package, Calendar, User, Building, TrendingUp, BarChart3, History, Plus } from "lucide-react";
+import { SalesHistoryTable } from "./SalesHistoryTable";
 
 interface InventoryDetailModalProps {
   inventory: any;
@@ -24,6 +27,8 @@ interface InventoryDetailModalProps {
 
 export function InventoryDetailModal({ inventory, open, onOpenChange }: InventoryDetailModalProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
+  const [restockData, setRestockData] = useState({ quantity: 0, notes: "" });
   const [formData, setFormData] = useState({
     name: inventory.name || "",
     sku: inventory.sku || "",
@@ -63,9 +68,45 @@ export function InventoryDetailModal({ inventory, open, onOpenChange }: Inventor
     },
   });
 
+  const restockMutation = useMutation({
+    mutationFn: (data: any) => apiRequest(`/api/inventory/${inventory.sku}/restock`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+    onSuccess: () => {
+      toast({
+        title: "Stock updated successfully",
+        description: `Added ${restockData.quantity} units to inventory.`,
+      });
+      setRestockData({ quantity: 0, notes: "" });
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reorder/calendar"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to update stock",
+        description: error.message || "Please try again later.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     updateMutation.mutate(formData);
+  };
+
+  const handleRestock = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (restockData.quantity <= 0) {
+      toast({
+        title: "Invalid quantity",
+        description: "Please enter a valid quantity greater than 0.",
+        variant: "destructive",
+      });
+      return;
+    }
+    restockMutation.mutate(restockData);
   };
 
   const getStockStatus = () => {
@@ -86,18 +127,38 @@ export function InventoryDetailModal({ inventory, open, onOpenChange }: Inventor
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto bg-white dark:bg-[#222831] border-gray-200 dark:border-slate-700">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white dark:bg-[#222831] border-gray-200 dark:border-slate-700">
         <DialogHeader>
           <DialogTitle className="flex items-center text-black dark:text-white">
             <Package className="h-5 w-5 mr-2 text-[#fd7014]" />
-            Inventory Details
+            {formData.name} - Enhanced Inventory Management
           </DialogTitle>
           <DialogDescription className="text-gray-600 dark:text-gray-400">
-            View and manage inventory item details, stock levels, and supplier information.
+            Complete inventory management with stock tracking, sales history, and analytics
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-4 bg-gray-100 dark:bg-slate-800">
+            <TabsTrigger value="overview" className="data-[state=active]:bg-[#fd7014] data-[state=active]:text-white">
+              Overview
+            </TabsTrigger>
+            <TabsTrigger value="restock" className="data-[state=active]:bg-[#fd7014] data-[state=active]:text-white">
+              <Plus className="w-4 h-4 mr-1" />
+              Restock
+            </TabsTrigger>
+            <TabsTrigger value="history" className="data-[state=active]:bg-[#fd7014] data-[state=active]:text-white">
+              <History className="w-4 h-4 mr-1" />
+              History
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="data-[state=active]:bg-[#fd7014] data-[state=active]:text-white">
+              <BarChart3 className="w-4 h-4 mr-1" />
+              Analytics
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
           {/* Basic Information */}
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -325,7 +386,116 @@ export function InventoryDetailModal({ inventory, open, onOpenChange }: Inventor
             )}
           </div>
         </form>
-      </DialogContent>
-    </Dialog>
-  );
+      </TabsContent>
+
+      <TabsContent value="restock" className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5" />
+              Restock Inventory
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleRestock} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="restockQuantity" className="text-black dark:text-white">Quantity to Add</Label>
+                  <Input
+                    id="restockQuantity"
+                    type="number"
+                    min="1"
+                    value={restockData.quantity}
+                    onChange={(e) => setRestockData({ ...restockData, quantity: parseInt(e.target.value) || 0 })}
+                    className="bg-gray-50 dark:bg-slate-800 border-gray-300 dark:border-slate-600 text-black dark:text-white"
+                  />
+                </div>
+                <div>
+                  <Label className="text-black dark:text-white">New Total Stock</Label>
+                  <div className="mt-2 text-lg font-semibold text-green-600 dark:text-green-400">
+                    {(formData.currentStock || 0) + restockData.quantity} units
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="restockNotes" className="text-black dark:text-white">Notes (Optional)</Label>
+                <Textarea
+                  id="restockNotes"
+                  value={restockData.notes}
+                  onChange={(e) => setRestockData({ ...restockData, notes: e.target.value })}
+                  placeholder="Add notes about this restock..."
+                  className="bg-gray-50 dark:bg-slate-800 border-gray-300 dark:border-slate-600 text-black dark:text-white"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setRestockData({ quantity: 0, notes: "" })}
+                  className="border-gray-300 dark:border-slate-600 text-black dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700"
+                >
+                  Reset
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={restockMutation.isPending || restockData.quantity <= 0}
+                  className="bg-[#fd7014] hover:bg-[#e5640f] text-white"
+                >
+                  {restockMutation.isPending ? "Adding Stock..." : `Add ${restockData.quantity} Units`}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="history" className="space-y-6">
+        <SalesHistoryTable inventorySku={inventory.sku} />
+      </TabsContent>
+
+      <TabsContent value="analytics" className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Stock Value</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                ${stockValue.toFixed(2)}
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Current inventory value</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Potential Profit</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                ${potentialProfit.toFixed(2)}
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">If all stock sells</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Days Until Reorder</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                {formData.currentStock <= formData.reorderPoint ? "NOW" : "TBD"}
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Based on current stock</p>
+            </CardContent>
+          </Card>
+        </div>
+      </TabsContent>
+    </Tabs>
+  </DialogContent>
+</Dialog>
+);
 }

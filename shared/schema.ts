@@ -105,6 +105,46 @@ export const reports = pgTable("reports", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// New tables for inventory system overhaul
+export const salesHistory = pgTable("sales_history", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  inventoryId: integer("inventory_id").references(() => inventory.id),
+  sku: text("sku").notNull(),
+  productName: text("product_name").notNull(),
+  quantitySold: integer("quantity_sold").notNull(),
+  unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
+  totalRevenue: decimal("total_revenue", { precision: 10, scale: 2 }).notNull(),
+  totalCost: decimal("total_cost", { precision: 10, scale: 2 }),
+  profit: decimal("profit", { precision: 10, scale: 2 }),
+  saleDate: timestamp("sale_date").notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const calendarSales = pgTable("calendar_sales", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  sku: text("sku").notNull(),
+  productName: text("product_name").notNull(),
+  saleDate: timestamp("sale_date").notNull(),
+  quantity: integer("quantity").notNull(),
+  totalRevenue: decimal("total_revenue", { precision: 10, scale: 2 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const reorderCalendar = pgTable("reorder_calendar", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  inventoryId: integer("inventory_id").references(() => inventory.id),
+  sku: text("sku").notNull(),
+  productName: text("product_name").notNull(),
+  reorderDate: timestamp("reorder_date").notNull(),
+  quantity: integer("quantity").notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   products: many(products),
@@ -112,6 +152,9 @@ export const usersRelations = relations(users, ({ many }) => ({
   sales: many(sales),
   goals: many(goals),
   reports: many(reports),
+  salesHistory: many(salesHistory),
+  calendarSales: many(calendarSales),
+  reorderCalendar: many(reorderCalendar),
 }));
 
 export const productsRelations = relations(products, ({ one, many }) => ({
@@ -120,6 +163,35 @@ export const productsRelations = relations(products, ({ one, many }) => ({
     references: [users.id],
   }),
   inventoryItems: many(inventory),
+}));
+
+export const salesHistoryRelations = relations(salesHistory, ({ one }) => ({
+  user: one(users, {
+    fields: [salesHistory.userId],
+    references: [users.id],
+  }),
+  inventory: one(inventory, {
+    fields: [salesHistory.inventoryId],
+    references: [inventory.id],
+  }),
+}));
+
+export const calendarSalesRelations = relations(calendarSales, ({ one }) => ({
+  user: one(users, {
+    fields: [calendarSales.userId],
+    references: [users.id],
+  }),
+}));
+
+export const reorderCalendarRelations = relations(reorderCalendar, ({ one }) => ({
+  user: one(users, {
+    fields: [reorderCalendar.userId],
+    references: [users.id],
+  }),
+  inventory: one(inventory, {
+    fields: [reorderCalendar.inventoryId],
+    references: [inventory.id],
+  }),
 }));
 
 export const inventoryRelations = relations(inventory, ({ one, many }) => ({
@@ -213,6 +285,43 @@ export const insertReportSchema = createInsertSchema(reports).omit({
   updatedAt: true,
 });
 
+// New insert schemas for inventory system overhaul
+export const insertSalesHistorySchema = createInsertSchema(salesHistory).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  saleDate: z.union([z.date(), z.string()]).transform((val) => 
+    typeof val === 'string' ? new Date(val) : val
+  ),
+  unitPrice: z.union([z.string(), z.number()]).transform((val) => val.toString()),
+  totalRevenue: z.union([z.string(), z.number()]).transform((val) => val.toString()),
+  totalCost: z.union([z.string(), z.number()]).optional().transform((val) => 
+    val ? val.toString() : undefined
+  ),
+  profit: z.union([z.string(), z.number()]).optional().transform((val) => 
+    val ? val.toString() : undefined
+  ),
+});
+
+export const insertCalendarSalesSchema = createInsertSchema(calendarSales).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  saleDate: z.union([z.date(), z.string()]).transform((val) => 
+    typeof val === 'string' ? new Date(val) : val
+  ),
+  totalRevenue: z.union([z.string(), z.number()]).transform((val) => val.toString()),
+});
+
+export const insertReorderCalendarSchema = createInsertSchema(reorderCalendar).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  reorderDate: z.union([z.date(), z.string()]).transform((val) => 
+    typeof val === 'string' ? new Date(val) : val
+  ),
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -226,3 +335,11 @@ export type Goal = typeof goals.$inferSelect;
 export type InsertGoal = z.infer<typeof insertGoalSchema>;
 export type Report = typeof reports.$inferSelect;
 export type InsertReport = z.infer<typeof insertReportSchema>;
+
+// New types for inventory system overhaul
+export type SalesHistory = typeof salesHistory.$inferSelect;
+export type InsertSalesHistory = z.infer<typeof insertSalesHistorySchema>;
+export type CalendarSales = typeof calendarSales.$inferSelect;
+export type InsertCalendarSales = z.infer<typeof insertCalendarSalesSchema>;
+export type ReorderCalendar = typeof reorderCalendar.$inferSelect;
+export type InsertReorderCalendar = z.infer<typeof insertReorderCalendarSchema>;

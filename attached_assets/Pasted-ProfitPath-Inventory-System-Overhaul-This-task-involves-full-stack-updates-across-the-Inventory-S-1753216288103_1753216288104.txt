@@ -1,0 +1,351 @@
+ProfitPath Inventory System Overhaul
+💡 This task involves full-stack updates across the Inventory Sub-Page, Analytics Integration, and Performance Sub-Page, including state management, UI changes, API endpoints, and database schema adjustments.
+
+📌 GOAL OVERVIEW
+Redesign the “Edit” button: Allow editing of all product fields except stock. Preserve pre-filled data. Reflect edits immediately in the Inventory list.
+
+Replace “Record Sales” with “Restock Product”: Update inventory, reorder calendar, and total KPI metrics.
+
+Revamp “Analytics & Sales Entry” manual entry: Show live summaries, update connected KPIs, and auto-update a new Sale History Calendar on the Performance page.
+
+Replace unused “Demand Forecasting” with the “Sale History Calendar”.
+
+Ensure all affected components sync with the DB, update KPI metrics, and maintain clean state management.
+
+🧩 FRONTEND TASKS
+1. 🛠 Update Edit Action Modal (Editable Product Info)
+Update UI:
+Editable Fields:
+
+Product Name
+
+SKU
+
+Category
+
+Pricing Information:
+
+Cost Price
+
+Selling Price
+
+Supplier Info:
+
+Supplier Name
+
+Supplier SKU
+
+Lead Time (Days)
+
+Notes (optional)
+
+Read-only (Displayed only):
+
+Stock Info (Current Stock, Reorder Point)
+
+Status (Reactive to Reorder Point and Stock)
+
+Calculated Fields:
+
+Stock Value (Current Stock × Unit Price)
+
+Potential Profit ((Unit Price – Cost Price) × Current Stock)
+
+Buttons:
+Edit Details → triggers PUT request
+
+Delete → triggers DELETE request
+
+Close → closes modal with no changes
+
+Frontend Logic:
+Pre-fill all form inputs with current values from DB.
+
+Update state locally after submission.
+
+Recalculate “Value” and “Profit” based on current inventory data.
+
+On update: Refresh the inventory list with modified info.
+
+2. 🔄 Replace "Record Sales" Action with "Restock Product"
+New Modal UI:
+Static Summary:
+
+Product Name
+
+SKU
+
+Current Stock
+
+Unit Price
+
+User Inputs:
+
+Reorder Quantity (adds to stock)
+
+Reorder Date (passed to reorder calendar)
+
+Notes (optional)
+
+Summary Output:
+
+Remaining Stock (Current + Input)
+
+Stock Status (recalculate using Reorder Point)
+
+Total Value (Unit Price × Remaining Stock)
+
+Total Cost (Cost × Reorder Quantity – displayed as negative)
+
+Frontend Logic:
+On submit:
+
+Trigger POST request to /api/inventory/restock
+
+Update Inventory KPIs (stock, value, status)
+
+Add entry to Advanced Reorder Calendar
+
+Re-render Inventory List with new stock
+
+Recalculate “Low Stock” and “Out of Stock” KPIs
+
+3. 📊 Modify “Analytics & Sales Entry” – Manual Entry
+New Modal UI:
+Product Summary:
+
+Product Name
+
+SKU
+
+Current Stock
+
+Unit Price
+
+User Inputs:
+
+Quantity Sold *
+
+Unit Price *
+
+Sale Date (must populate Sale History Calendar)
+
+Notes (Optional)
+
+Live Summary Display:
+
+Total Revenue (Qty × Unit Price)
+
+Total Cost (Qty × Cost)
+
+Profit (Revenue – Cost)
+
+Remaining Stock (Current Stock – Qty)
+
+Optional Warning Message:
+
+If sale causes low or out-of-stock status
+
+Frontend Logic:
+Validate input fields
+
+On submit:
+
+POST to /api/sales/manual-entry
+
+Update:
+
+Product stock in inventory
+
+Inventory KPIs
+
+Sale History Calendar in performance page
+
+Analytics chart data
+
+Recalculate affected KPIs and re-render
+
+4. 📆 Replace “Demand Forecasting” with “Sales History Calendar”
+On /analytics/performance page:
+
+Remove Demand Forecasting section
+
+Replace with calendar view
+
+Calendar displays sale records per date
+
+Tooltip or modal on click with sale summary:
+
+Product
+
+Quantity
+
+Price
+
+Revenue
+
+🔗 BACKEND TASKS (Node/Express)
+1. Update/Edit Product Endpoint
+Route: PUT /api/inventory/:sku
+
+Allow updating:
+
+Name, SKU, Category
+
+Cost Price, Selling Price
+
+Supplier Name, Supplier SKU, Lead Time, Notes
+
+Do not allow stock value changes via this route
+
+2. Restock Endpoint
+Route: POST /api/inventory/restock
+
+Payload:
+
+SKU
+
+Quantity
+
+Reorder Date
+
+Notes
+
+Actions:
+
+Increment product stock
+
+Log reorder in reorder_calendar table
+
+Recalculate and return new KPIs
+
+3. Manual Sales Entry Endpoint
+Route: POST /api/sales/manual-entry
+
+Payload:
+
+SKU
+
+Quantity Sold
+
+Unit Price
+
+Date
+
+Notes
+
+Actions:
+
+Reduce stock from inventory
+
+Add record to sales_history
+
+Add record to calendar_sales
+
+Recalculate:
+
+Stock Status
+
+KPIs
+
+Analytics data for SKU
+
+Return updated KPI data
+
+4. Calendar Sale Fetch Endpoint
+Route: GET /api/calendar/sales
+
+Query by month or date range
+
+Return daily grouped sales for calendar display
+
+🗃️ DATABASE SCHEMA UPDATES
+Inventory Table (inventory)
+Already contains:
+
+sku, name, category, stock, reorder_point, cost_price, selling_price, supplier fields
+
+✅ No schema change needed, but ensure:
+
+stock is updated via restock/sales logic
+
+value, status, and profit are calculated on the fly or via DB triggers (if using)
+
+New Table: sales_history
+sql
+Copiar
+Editar
+CREATE TABLE sales_history (
+  id SERIAL PRIMARY KEY,
+  sku VARCHAR(50) NOT NULL,
+  quantity_sold INTEGER NOT NULL,
+  unit_price DECIMAL(10, 2) NOT NULL,
+  sale_date DATE NOT NULL,
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+New Table: calendar_sales
+sql
+Copiar
+Editar
+CREATE TABLE calendar_sales (
+  id SERIAL PRIMARY KEY,
+  sku VARCHAR(50),
+  product_name VARCHAR(255),
+  sale_date DATE,
+  quantity INTEGER,
+  total_revenue DECIMAL(10,2)
+);
+New Table: reorder_calendar
+sql
+Copiar
+Editar
+CREATE TABLE reorder_calendar (
+  id SERIAL PRIMARY KEY,
+  sku VARCHAR(50),
+  product_name VARCHAR(255),
+  reorder_date DATE,
+  quantity INTEGER,
+  note TEXT
+);
+📈 KPI Updates (Dynamic)
+After any update (edit, restock, or sale), recalculate and return these values:
+
+Total SKUs: Count of distinct SKUs
+
+Total Value: Sum of (stock × selling_price)
+
+Low Stock Alerts: Count where stock ≤ reorder_point
+
+Out of Stock: Count where stock == 0
+
+Backend should expose a GET /api/inventory/kpis endpoint and call this after each modifying action.
+
+✅ STATE MANAGEMENT
+Use React context or Zustand to store:
+
+inventoryList
+
+kpiSummary
+
+calendarEntries
+
+Use useMutation and useQueryClient().invalidateQueries() on form submissions
+
+Inventory list should re-render immediately with updates
+
+🎨 UI/UX Suggestions
+Modal Navigation:
+
+Use tabs or collapsible cards for “Edit”, “Restock”, “Sales Entry” to keep layout clean
+
+Reactive Summaries:
+
+Use hooks to compute live summaries as inputs change
+
+Calendar Views:
+
+Use react-calendar or fullcalendar.io for interactive sale/reorder calendar
+
+Style to match ProfitPath dark mode UI
+
