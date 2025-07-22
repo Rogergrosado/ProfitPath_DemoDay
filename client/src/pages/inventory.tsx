@@ -42,7 +42,8 @@ import {
   RefreshCw,
   Eye,
   Edit,
-  ShoppingCart
+  ShoppingCart,
+  BarChart3
 } from "lucide-react";
 
 export default function Inventory() {

@@ -4,7 +4,21 @@
 
 ProfitPath is a comprehensive business intelligence dashboard designed for Amazon FBA sellers. It's a full-stack SaaS application that provides product research, inventory management, sales analytics, and goal tracking capabilities. The application follows a modern monorepo structure with shared types and a clear separation between frontend and backend concerns.
 
-## Recent Changes (July 20, 2025)
+## Recent Changes (July 22, 2025)
+
+✅ **Major Inventory System Overhaul**: Complete enhancement of inventory management capabilities
+  - Enhanced InventoryDetailModal with 4-tab interface (Overview, Restock, History, Analytics)
+  - Added comprehensive restock functionality with quantity tracking, validation, and notes
+  - Created SalesHistoryTable component with revenue, units sold, and profit summaries
+  - Built CalendarView component supporting both sales and reorder calendar visualization
+  - Enhanced inventory page with advanced dual calendar views (sales/reorder)
+  - Integrated real sales history data with enhanced inventory detail modals
+  - Added comprehensive analytics with stock turn rates, days of supply, and reorder value calculations
+  - Created new API endpoints: /sales-history, /calendar-sales, /reorder-calendar with proper authentication
+  - Enhanced database schema to support sales history tracking and calendar-based management
+  - Improved user experience with tabbed interfaces and real-time inventory updates
+
+## Previous Changes (July 20, 2025)
 
 ✅ **Critical Backend Data Isolation Fix**: Resolved cross-user data contamination issue
   - Fixed hardcoded userId = 3 in authentication middleware that was causing all users to see User 3's data
