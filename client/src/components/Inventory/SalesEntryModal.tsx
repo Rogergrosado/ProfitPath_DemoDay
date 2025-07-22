@@ -13,7 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { ShoppingCart, Package, DollarSign } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { ShoppingCart, Package, DollarSign, Info, AlertTriangle, CheckCircle } from "lucide-react";
 
 interface SalesEntryModalProps {
   inventory: any;
@@ -33,7 +34,7 @@ export function SalesEntryModal({ inventory, open, onOpenChange }: SalesEntryMod
   const queryClient = useQueryClient();
 
   const createSaleMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("/api/sales", {
+    mutationFn: (data: any) => apiRequest("/api/sales/manual-entry", {
       method: "POST",
       body: JSON.stringify(data),
     }),
@@ -49,13 +50,16 @@ export function SalesEntryModal({ inventory, open, onOpenChange }: SalesEntryMod
         saleDate: new Date().toISOString().split('T')[0],
         notes: "",
       });
+      // Invalidate all related queries for comprehensive updates
       queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory/kpis"] });
       queryClient.invalidateQueries({ queryKey: ["/api/sales"] });
       queryClient.invalidateQueries({ queryKey: ["/api/sales/history"] });
       queryClient.invalidateQueries({ queryKey: ["/api/sales/calendar"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/performance/metrics"] });
     },
     onError: (error: any) => {
-      console.error("❌ Error recording inventory sale:", error.response?.data || error.message);
+      console.error("❌ Error recording manual sale:", error.response?.data || error.message);
       toast({
         title: "Failed to record sale",
         description: error.response?.data?.message || error.message || "Please check all fields and try again.",
@@ -99,61 +103,66 @@ export function SalesEntryModal({ inventory, open, onOpenChange }: SalesEntryMod
     const profit = totalRevenue - totalCost;
 
     const requestBody = {
-      inventoryId: inventory.id,
       sku: inventory.sku,
-      quantity: formData.quantity,
-      unitPrice: formData.unitPrice.toFixed(2),
-      totalRevenue: totalRevenue.toFixed(2),
-      totalCost: totalCost.toFixed(2),
-      profit: profit.toFixed(2),
-      saleDate: new Date(formData.saleDate),
+      quantity_sold: formData.quantity,
+      unit_price: formData.unitPrice,
+      sale_date: formData.saleDate,
       notes: formData.notes,
-      productName: inventory.name,
-      category: inventory.category || "inventory-item",
     };
     
-    console.log("📤 Submitting inventory sale:", requestBody);
+    console.log("📤 Submitting manual sale entry:", requestBody);
     
     createSaleMutation.mutate(requestBody);
   };
 
+  // Calculate financial metrics and warnings
   const totalRevenue = formData.quantity * formData.unitPrice;
   const totalCost = formData.quantity * parseFloat(inventory.costPrice || "0");
   const profit = totalRevenue - totalCost;
   const remainingStock = (inventory.currentStock || 0) - formData.quantity;
+  
+  // Warning states
+  const isLowStock = remainingStock <= (inventory.reorderPoint || 0) && remainingStock > 0;
+  const isOutOfStock = remainingStock <= 0;
+  const hasStockWarning = isLowStock || isOutOfStock;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] bg-white dark:bg-[#222831] border-gray-200 dark:border-slate-700">
+      <DialogContent className="sm:max-w-[600px] bg-white dark:bg-[#222831] border-gray-200 dark:border-slate-700">
         <DialogHeader>
           <DialogTitle className="flex items-center text-black dark:text-white">
             <ShoppingCart className="h-5 w-5 mr-2 text-[#fd7014]" />
-            Record Sale
+            Manual Sales Entry
           </DialogTitle>
           <DialogDescription className="text-gray-600 dark:text-gray-400">
-            Record a sale for {inventory.name} and update inventory levels.
+            Record a manual sale entry and update inventory levels automatically
           </DialogDescription>
         </DialogHeader>
 
-        {/* Current Status Summary */}
-        <div className="bg-gray-50 dark:bg-slate-800 p-4 rounded-lg mb-6">
-          <h3 className="font-semibold text-black dark:text-white mb-3">Current Status Summary</h3>
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Product Name</Label>
-              <p className="font-semibold text-black dark:text-white">{inventory.name}</p>
-            </div>
-            <div>
-              <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">SKU</Label>
-              <p className="font-semibold text-black dark:text-white">{inventory.sku || "N/A"}</p>
-            </div>
-            <div>
-              <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Current Stock</Label>
-              <p className="font-bold text-blue-600 dark:text-blue-400">{inventory.currentStock || 0} units</p>
-            </div>
-            <div>
-              <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Unit Price</Label>
-              <p className="font-bold text-blue-600 dark:text-blue-400">${inventory.sellingPrice || "0.00"}</p>
+        <div className="space-y-6">
+          {/* 1. Current Status Summary (Display-only) */}
+          <div className="bg-gray-50 dark:bg-slate-800 p-4 rounded-lg">
+            <h3 className="font-semibold text-black dark:text-white mb-3 flex items-center">
+              <Info className="h-4 w-4 mr-2 text-[#fd7014]" />
+              Current Status Summary
+            </h3>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Product Name</Label>
+                <p className="font-semibold text-black dark:text-white">{inventory.name}</p>
+              </div>
+              <div>
+                <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">SKU</Label>
+                <p className="font-semibold text-black dark:text-white">{inventory.sku || "N/A"}</p>
+              </div>
+              <div>
+                <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Current Stock</Label>
+                <p className="font-bold text-blue-600 dark:text-blue-400">{inventory.currentStock || 0} units</p>
+              </div>
+              <div>
+                <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Unit Price</Label>
+                <p className="font-bold text-blue-600 dark:text-blue-400">${inventory.sellingPrice || "0.00"}</p>
+              </div>
             </div>
           </div>
         </div>
@@ -238,25 +247,28 @@ export function SalesEntryModal({ inventory, open, onOpenChange }: SalesEntryMod
             </div>
           </div>
 
-          {/* Warning for low stock */}
-          {remainingStock <= (inventory.reorderPoint || 0) && remainingStock > 0 && (
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 p-3 rounded-lg">
-              <div className="flex items-center">
-                <div className="w-4 h-4 bg-yellow-500 rounded-full mr-2"></div>
-                <span className="text-sm text-yellow-800 dark:text-yellow-200">
-                  Warning: This sale will bring stock below the reorder point ({inventory.reorderPoint || 0} units)
-                </span>
-              </div>
-            </div>
-          )}
 
-          {/* Out of stock warning */}
-          {remainingStock <= 0 && (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3 rounded-lg">
+
+          {/* Warning Section */}
+          {hasStockWarning && (
+            <div className={`p-4 rounded-lg border ${
+              isOutOfStock 
+                ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' 
+                : 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
+            }`}>
               <div className="flex items-center">
-                <div className="w-4 h-4 bg-red-500 rounded-full mr-2"></div>
-                <span className="text-sm text-red-800 dark:text-red-200">
-                  Warning: This sale will result in out-of-stock status
+                <AlertTriangle className={`h-4 w-4 mr-2 ${
+                  isOutOfStock ? 'text-red-600 dark:text-red-400' : 'text-yellow-600 dark:text-yellow-400'
+                }`} />
+                <span className={`text-sm font-medium ${
+                  isOutOfStock 
+                    ? 'text-red-800 dark:text-red-200' 
+                    : 'text-yellow-800 dark:text-yellow-200'
+                }`}>
+                  {isOutOfStock 
+                    ? 'Out of Stock Warning: This sale will result in zero inventory' 
+                    : `Low Stock Alert: Remaining stock (${remainingStock}) will be at or below reorder point (${inventory.reorderPoint || 0})`
+                  }
                 </span>
               </div>
             </div>

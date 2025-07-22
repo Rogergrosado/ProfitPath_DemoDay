@@ -221,7 +221,7 @@ export default function Analytics() {
           </Tabs>
         </div>
       </main>
-      {isSyncing && <PerformanceSyncModal />}
+      {isSyncing && <PerformanceSyncModal isOpen={isSyncing} />}
     </div>
   );
 }

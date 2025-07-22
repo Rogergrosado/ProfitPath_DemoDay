@@ -108,6 +108,25 @@ export interface IStorage {
     lowStockItems: number;
     outOfStockItems: number;
   }>;
+
+  // Manual Sales Entry (New comprehensive method)
+  processManualSale(userId: number, saleData: {
+    sku: string;
+    quantity_sold: number;
+    unit_price: number;
+    sale_date: string;
+    notes?: string;
+  }): Promise<{
+    updatedInventory: Inventory;
+    saleEntry: Sale;
+    calendarEntry: CalendarSales;
+    kpis: {
+      totalSKUs: number;
+      totalValue: number;
+      lowStockItems: number;
+      outOfStockItems: number;
+    };
+  }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -735,6 +754,101 @@ export class DatabaseStorage implements IStorage {
       totalValue: Number(metrics.totalValue),
       lowStockItems: Number(metrics.lowStockItems),
       outOfStockItems: Number(metrics.outOfStockItems),
+    };
+  }
+
+  // Manual Sales Entry - Comprehensive processing method
+  async processManualSale(userId: number, saleData: {
+    sku: string;
+    quantity_sold: number;
+    unit_price: number;
+    sale_date: string;
+    notes?: string;
+  }): Promise<{
+    updatedInventory: Inventory;
+    saleEntry: Sale;
+    calendarEntry: CalendarSales;
+    kpis: {
+      totalSKUs: number;
+      totalValue: number;
+      lowStockItems: number;
+      outOfStockItems: number;
+    };
+  }> {
+    // 1. Fetch current inventory item by SKU
+    const inventoryItem = await this.getInventoryItemBySku(saleData.sku, userId);
+    if (!inventoryItem) {
+      throw new Error(`Inventory item with SKU ${saleData.sku} not found`);
+    }
+
+    // 2. Validate quantity sold doesn't exceed current stock
+    if (saleData.quantity_sold > (inventoryItem.currentStock || 0)) {
+      throw new Error(`Cannot sell ${saleData.quantity_sold} units. Only ${inventoryItem.currentStock || 0} units available.`);
+    }
+
+    // 3. Calculate sale metrics
+    const totalRevenue = saleData.quantity_sold * saleData.unit_price;
+    const costPrice = parseFloat(inventoryItem.costPrice || "0");
+    const totalCost = saleData.quantity_sold * costPrice;
+    const profit = totalRevenue - totalCost;
+    const newStock = (inventoryItem.currentStock || 0) - saleData.quantity_sold;
+
+    // 4. Update inventory stock
+    const updatedInventory = await this.updateInventoryItem(inventoryItem.id, {
+      currentStock: newStock,
+      lastUpdated: new Date(),
+    });
+
+    // 5. Create sale entry
+    const saleEntry = await this.createSale({
+      userId,
+      inventoryId: inventoryItem.id,
+      sku: saleData.sku,
+      productName: inventoryItem.name,
+      category: inventoryItem.category || "inventory-item",
+      quantity: saleData.quantity_sold,
+      unitPrice: saleData.unit_price.toString(),
+      totalRevenue: totalRevenue.toString(),
+      totalCost: totalCost.toString(),
+      profit: profit.toString(),
+      saleDate: new Date(saleData.sale_date),
+      marketplace: "manual",
+      region: "US",
+    });
+
+    // 6. Create calendar entry for sales history calendar
+    const calendarEntry = await this.createCalendarSale({
+      userId,
+      sku: saleData.sku,
+      productName: inventoryItem.name,
+      saleDate: new Date(saleData.sale_date),
+      quantity: saleData.quantity_sold,
+      totalRevenue: totalRevenue.toString(),
+    });
+
+    // 7. Create sales history entry with notes
+    await this.createSalesHistoryEntry({
+      userId,
+      inventoryId: inventoryItem.id,
+      sku: saleData.sku,
+      productName: inventoryItem.name,
+      quantitySold: saleData.quantity_sold,
+      unitPrice: saleData.unit_price.toString(),
+      totalRevenue: totalRevenue.toString(),
+      totalCost: totalCost.toString(),
+      profit: profit.toString(),
+      saleDate: new Date(saleData.sale_date),
+      notes: saleData.notes || null,
+    });
+
+    // 8. Recalculate and return KPIs
+    const kpis = await this.getInventoryKPIs(userId);
+
+    return {
+      updatedInventory,
+      saleEntry,
+      calendarEntry,
+      kpis,
     };
   }
 }

@@ -265,6 +265,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Manual Sales Entry - Comprehensive endpoint
+  app.post('/api/sales/manual-entry', requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const { sku, quantity_sold, unit_price, sale_date, notes } = req.body;
+      const userId = authReq.userId;
+
+      // Validate required fields
+      if (!sku || !quantity_sold || !unit_price || !sale_date) {
+        return res.status(400).json({ 
+          message: "Missing required fields: sku, quantity_sold, unit_price, sale_date" 
+        });
+      }
+
+      // Validate data types
+      if (quantity_sold <= 0 || unit_price <= 0) {
+        return res.status(400).json({ 
+          message: "Quantity sold and unit price must be greater than zero" 
+        });
+      }
+
+      console.log(`📤 Processing manual sale entry for user ${userId}:`, {
+        sku, quantity_sold, unit_price, sale_date, notes
+      });
+
+      // Process the comprehensive manual sale
+      const result = await storage.processManualSale(userId, {
+        sku,
+        quantity_sold: parseInt(quantity_sold),
+        unit_price: parseFloat(unit_price),
+        sale_date,
+        notes
+      });
+
+      // Trigger performance recalculation
+      await triggerPerformanceRecalculation(userId);
+
+      console.log(`✅ Manual sale processed successfully:`, {
+        newStock: result.updatedInventory.currentStock,
+        revenue: result.saleEntry.totalRevenue,
+        profit: result.saleEntry.profit
+      });
+
+      res.json({
+        success: true,
+        message: "Sale recorded successfully",
+        data: {
+          inventory: result.updatedInventory,
+          sale: result.saleEntry,
+          calendar: result.calendarEntry,
+          kpis: result.kpis
+        }
+      });
+
+    } catch (error: any) {
+      console.error('❌ Manual sales entry error:', error);
+      res.status(500).json({ 
+        message: error.message || 'Failed to process manual sale entry' 
+      });
+    }
+  });
+
+  // Inventory KPIs endpoint
+  app.get('/api/inventory/kpis', requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const kpis = await storage.getInventoryKPIs(authReq.userId);
+      res.json(kpis);
+    } catch (error: any) {
+      console.error('KPIs error:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Sales History endpoint
   app.get('/api/sales/history', requireAuth, async (req, res) => {
     try {
