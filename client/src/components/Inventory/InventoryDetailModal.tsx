@@ -16,7 +16,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Package, Calendar, User, Building, TrendingUp, BarChart3, History, Plus } from "lucide-react";
+import { Package, Calendar, User, Building, TrendingUp, BarChart3, History, Plus, Edit, Trash } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SalesHistoryTable } from "./SalesHistoryTable";
 
 interface InventoryDetailModalProps {
@@ -91,6 +92,27 @@ export function InventoryDetailModal({ inventory, open, onOpenChange }: Inventor
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: () => apiRequest(`/api/inventory/${inventory.id}`, {
+      method: "DELETE",
+    }),
+    onSuccess: () => {
+      toast({
+        title: "Product deleted successfully",
+        description: "The inventory item has been removed.",
+      });
+      onOpenChange(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to delete product",
+        description: error.message || "Please try again later.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     updateMutation.mutate(formData);
@@ -107,6 +129,12 @@ export function InventoryDetailModal({ inventory, open, onOpenChange }: Inventor
       return;
     }
     restockMutation.mutate(restockData);
+  };
+
+  const handleDelete = () => {
+    if (window.confirm(`Are you sure you want to delete ${formData.name}? This action cannot be undone.`)) {
+      deleteMutation.mutate();
+    }
   };
 
   const getStockStatus = () => {
@@ -158,237 +186,343 @@ export function InventoryDetailModal({ inventory, open, onOpenChange }: Inventor
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
-            <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Basic Information */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="name" className="text-black dark:text-white">Product Name</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                disabled={!isEditing}
-                className="bg-gray-50 dark:bg-slate-800 border-gray-300 dark:border-slate-600 text-black dark:text-white"
-              />
-            </div>
-            <div>
-              <Label htmlFor="sku" className="text-black dark:text-white">SKU</Label>
-              <Input
-                id="sku"
-                value={formData.sku}
-                onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                disabled={!isEditing}
-                className="bg-gray-50 dark:bg-slate-800 border-gray-300 dark:border-slate-600 text-black dark:text-white"
-              />
-            </div>
-          </div>
+            {!isEditing ? (
+              // Display Mode
+              <div className="space-y-6">
+                {/* Product Information */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Product Information</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label className="text-sm font-medium">Product Name</Label>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">{formData.name}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">SKU</Label>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">{formData.sku}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">Category</Label>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">{formData.category}</p>
+                    </div>
+                  </CardContent>
+                </Card>
 
-          <div>
-            <Label htmlFor="category" className="text-black dark:text-white">Category</Label>
-            <Input
-              id="category"
-              value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-              disabled={!isEditing}
-              className="bg-gray-50 dark:bg-slate-800 border-gray-300 dark:border-slate-600 text-black dark:text-white"
-            />
-          </div>
+                {/* Stock Information */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Stock Information</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label className="text-sm font-medium">Current Stock</Label>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">{formData.currentStock || 0} units</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">Reorder Point</Label>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">{formData.reorderPoint || 0} units</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">Stock Status</Label>
+                      <div className="mt-1">
+                        {getStockStatus()}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
 
-          {/* Stock Information */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-black dark:text-white flex items-center">
-              <Package className="h-4 w-4 mr-2" />
-              Stock Information
-            </h3>
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="currentStock" className="text-black dark:text-white">Current Stock</Label>
-                <Input
-                  id="currentStock"
-                  type="number"
-                  min="0"
-                  value={formData.currentStock}
-                  onChange={(e) => setFormData({ ...formData, currentStock: parseInt(e.target.value) || 0 })}
-                  disabled={!isEditing}
-                  className="bg-gray-50 dark:bg-slate-800 border-gray-300 dark:border-slate-600 text-black dark:text-white"
-                />
-              </div>
-              <div>
-                <Label htmlFor="reorderPoint" className="text-black dark:text-white">Reorder Point</Label>
-                <Input
-                  id="reorderPoint"
-                  type="number"
-                  min="0"
-                  value={formData.reorderPoint}
-                  onChange={(e) => setFormData({ ...formData, reorderPoint: parseInt(e.target.value) || 0 })}
-                  disabled={!isEditing}
-                  className="bg-gray-50 dark:bg-slate-800 border-gray-300 dark:border-slate-600 text-black dark:text-white"
-                />
-              </div>
-              <div>
-                <Label className="text-black dark:text-white">Stock Status</Label>
-                <div className="mt-2">
-                  {getStockStatus()}
+                {/* Pricing Information */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Pricing Information</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label className="text-sm font-medium">Cost Price</Label>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                        ${parseFloat(formData.costPrice || "0").toFixed(2)}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">Selling Price</Label>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                        ${parseFloat(formData.sellingPrice || "0").toFixed(2)}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">Stock Value</Label>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                        ${stockValue.toFixed(2)}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">Potential Profit</Label>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                        ${potentialProfit.toFixed(2)}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Supplier Information */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Supplier Information</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label className="text-sm font-medium">Supplier Name</Label>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                        {formData.supplierName || "Not specified"}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">Supplier SKU</Label>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                        {formData.supplierSKU || "Not specified"}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">Lead Time (Days)</Label>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                        {formData.leadTimeDays || 0} days
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Notes */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Notes</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                      {formData.notes || "No notes"}
+                    </p>
+                  </CardContent>
+                </Card>
+
+                {/* Edit Button */}
+                <div className="flex justify-end">
+                  <Button 
+                    onClick={() => setIsEditing(true)}
+                    variant="outline"
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit
+                  </Button>
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* Pricing Information */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-black dark:text-white">Pricing Information</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="costPrice" className="text-black dark:text-white">Cost Price</Label>
-                <Input
-                  id="costPrice"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.costPrice}
-                  onChange={(e) => setFormData({ ...formData, costPrice: e.target.value })}
-                  disabled={!isEditing}
-                  className="bg-gray-50 dark:bg-slate-800 border-gray-300 dark:border-slate-600 text-black dark:text-white"
-                />
-              </div>
-              <div>
-                <Label htmlFor="sellingPrice" className="text-black dark:text-white">Selling Price</Label>
-                <Input
-                  id="sellingPrice"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.sellingPrice}
-                  onChange={(e) => setFormData({ ...formData, sellingPrice: e.target.value })}
-                  disabled={!isEditing}
-                  className="bg-gray-50 dark:bg-slate-800 border-gray-300 dark:border-slate-600 text-black dark:text-white"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4 p-4 bg-gray-100 dark:bg-slate-700 rounded-lg">
-              <div>
-                <span className="text-sm text-gray-600 dark:text-gray-400">Stock Value:</span>
-                <p className="font-bold text-black dark:text-white">${stockValue.toFixed(2)}</p>
-              </div>
-              <div>
-                <span className="text-sm text-gray-600 dark:text-gray-400">Potential Profit:</span>
-                <p className="font-bold text-black dark:text-white">${potentialProfit.toFixed(2)}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Supplier Information */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-black dark:text-white flex items-center">
-              <Building className="h-4 w-4 mr-2" />
-              Supplier Information
-            </h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="supplierName" className="text-black dark:text-white">Supplier Name</Label>
-                <Input
-                  id="supplierName"
-                  value={formData.supplierName}
-                  onChange={(e) => setFormData({ ...formData, supplierName: e.target.value })}
-                  disabled={!isEditing}
-                  className="bg-gray-50 dark:bg-slate-800 border-gray-300 dark:border-slate-600 text-black dark:text-white"
-                />
-              </div>
-              <div>
-                <Label htmlFor="supplierSKU" className="text-black dark:text-white">Supplier SKU</Label>
-                <Input
-                  id="supplierSKU"
-                  value={formData.supplierSKU}
-                  onChange={(e) => setFormData({ ...formData, supplierSKU: e.target.value })}
-                  disabled={!isEditing}
-                  className="bg-gray-50 dark:bg-slate-800 border-gray-300 dark:border-slate-600 text-black dark:text-white"
-                />
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="leadTimeDays" className="text-black dark:text-white">Lead Time (Days)</Label>
-              <Input
-                id="leadTimeDays"
-                type="number"
-                min="0"
-                value={formData.leadTimeDays}
-                onChange={(e) => setFormData({ ...formData, leadTimeDays: parseInt(e.target.value) || 0 })}
-                disabled={!isEditing}
-                className="bg-gray-50 dark:bg-slate-800 border-gray-300 dark:border-slate-600 text-black dark:text-white"
-              />
-            </div>
-          </div>
-
-          {/* Notes */}
-          <div>
-            <Label htmlFor="notes" className="text-black dark:text-white">Notes</Label>
-            <Textarea
-              id="notes"
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              disabled={!isEditing}
-              placeholder="Add any notes about this inventory item..."
-              className="bg-gray-50 dark:bg-slate-800 border-gray-300 dark:border-slate-600 text-black dark:text-white"
-            />
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              className="border-gray-300 dark:border-slate-600 text-black dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700"
-            >
-              Close
-            </Button>
-            {!isEditing ? (
-              <Button
-                type="button"
-                onClick={() => setIsEditing(true)}
-                className="bg-[#fd7014] hover:bg-[#e5640f] text-white"
-              >
-                Edit Details
-              </Button>
             ) : (
-              <>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setIsEditing(false);
-                    setFormData({
-                      name: inventory.name || "",
-                      sku: inventory.sku || "",
-                      category: inventory.category || "",
-                      currentStock: inventory.currentStock || 0,
-                      reorderPoint: inventory.reorderPoint || 0,
-                      costPrice: inventory.costPrice || "",
-                      sellingPrice: inventory.sellingPrice || "",
-                      supplierName: inventory.supplierName || "",
-                      supplierSKU: inventory.supplierSKU || "",
-                      leadTimeDays: inventory.leadTimeDays || 0,
-                      notes: inventory.notes || "",
-                    });
-                  }}
-                  className="border-gray-300 dark:border-slate-600 text-black dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={updateMutation.isPending}
-                  className="bg-[#fd7014] hover:bg-[#e5640f] text-white"
-                >
-                  {updateMutation.isPending ? "Saving..." : "Save Changes"}
-                </Button>
-              </>
-            )}
-          </div>
-        </form>
-      </TabsContent>
+              // Edit Mode
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Edit Product Details</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {/* Basic Product Info - Editable */}
+                    <div className="space-y-4">
+                      <div>
+                        <Label className="text-sm font-medium">Product Name</Label>
+                        <Input
+                          value={formData.name}
+                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                          className="mt-1"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium">SKU</Label>
+                        <Input
+                          value={formData.sku}
+                          onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                          className="mt-1"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium">Category</Label>
+                        <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+                          <SelectTrigger className="mt-1">
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Electronics">Electronics</SelectItem>
+                            <SelectItem value="Beauty">Beauty</SelectItem>
+                            <SelectItem value="Home">Home</SelectItem>
+                            <SelectItem value="Books">Books</SelectItem>
+                            <SelectItem value="Sports">Sports</SelectItem>
+                            <SelectItem value="Automotive">Automotive</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
 
-      <TabsContent value="restock" className="space-y-6">
+                    {/* Stock Information - Display Only */}
+                    <div className="border-t pt-4">
+                      <h4 className="text-sm font-medium mb-4">Stock Information</h4>
+                      <div className="grid grid-cols-3 gap-4">
+                        <div>
+                          <Label className="text-sm font-medium text-gray-500">Current Stock</Label>
+                          <p className="text-sm text-gray-600 dark:text-gray-300">{formData.currentStock || 0} units</p>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-gray-500">Reorder Point</Label>
+                          <p className="text-sm text-gray-600 dark:text-gray-300">{formData.reorderPoint || 0} units</p>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-gray-500">Stock Status</Label>
+                          <div className="mt-1">
+                            {getStockStatus()}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Pricing Information - Editable */}
+                    <div className="border-t pt-4">
+                      <h4 className="text-sm font-medium mb-4">Pricing Information</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label className="text-sm font-medium">Cost Price</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={formData.costPrice}
+                            onChange={(e) => setFormData({ ...formData, costPrice: e.target.value })}
+                            className="mt-1"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium">Selling Price</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={formData.sellingPrice}
+                            onChange={(e) => setFormData({ ...formData, sellingPrice: e.target.value })}
+                            className="mt-1"
+                            required
+                          />
+                        </div>
+                      </div>
+                      
+                      {/* Reactive Fields */}
+                      <div className="grid grid-cols-2 gap-4 mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        <div>
+                          <Label className="text-sm font-medium text-gray-500">Stock Value</Label>
+                          <p className="text-sm font-medium">
+                            ${((formData.currentStock || 0) * parseFloat(formData.costPrice || "0")).toFixed(2)}
+                          </p>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-gray-500">Potential Profit</Label>
+                          <p className="text-sm font-medium">
+                            ${((formData.currentStock || 0) * (parseFloat(formData.sellingPrice || "0") - parseFloat(formData.costPrice || "0"))).toFixed(2)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Supplier Information - Editable */}
+                    <div className="border-t pt-4">
+                      <h4 className="text-sm font-medium mb-4">Supplier Information</h4>
+                      <div className="grid grid-cols-1 gap-4">
+                        <div>
+                          <Label className="text-sm font-medium">Supplier Name</Label>
+                          <Input
+                            value={formData.supplierName}
+                            onChange={(e) => setFormData({ ...formData, supplierName: e.target.value })}
+                            className="mt-1"
+                            placeholder="Enter supplier name"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium">Supplier SKU</Label>
+                          <Input
+                            value={formData.supplierSKU}
+                            onChange={(e) => setFormData({ ...formData, supplierSKU: e.target.value })}
+                            className="mt-1"
+                            placeholder="Enter supplier SKU"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium">Lead Time (Days)</Label>
+                          <Input
+                            type="number"
+                            value={formData.leadTimeDays}
+                            onChange={(e) => setFormData({ ...formData, leadTimeDays: parseInt(e.target.value) || 0 })}
+                            className="mt-1"
+                            placeholder="Lead time in days"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Notes - Editable */}
+                    <div className="border-t pt-4">
+                      <Label className="text-sm font-medium">Notes (optional)</Label>
+                      <Textarea
+                        value={formData.notes}
+                        onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                        className="mt-1"
+                        placeholder="Additional notes"
+                      />
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex justify-between pt-4 border-t">
+                      <Button 
+                        type="button" 
+                        variant="destructive"
+                        onClick={handleDelete}
+                        disabled={deleteMutation.isPending}
+                      >
+                        <Trash className="h-4 w-4 mr-2" />
+                        {deleteMutation.isPending ? "Deleting..." : "Delete"}
+                      </Button>
+                      <div className="flex gap-2">
+                        <Button 
+                          type="button" 
+                          variant="outline"
+                          onClick={() => {
+                            setIsEditing(false);
+                            setFormData({
+                              name: inventory.name || "",
+                              sku: inventory.sku || "",
+                              category: inventory.category || "",
+                              currentStock: inventory.currentStock || 0,
+                              reorderPoint: inventory.reorderPoint || 0,
+                              costPrice: inventory.costPrice || "",
+                              sellingPrice: inventory.sellingPrice || "",
+                              supplierName: inventory.supplierName || "",
+                              supplierSKU: inventory.supplierSKU || "",
+                              leadTimeDays: inventory.leadTimeDays || 0,
+                              notes: inventory.notes || "",
+                            });
+                          }}
+                        >
+                          Close
+                        </Button>
+                        <Button 
+                          type="submit"
+                          disabled={updateMutation.isPending}
+                        >
+                          {updateMutation.isPending ? "Saving..." : "Edit Details"}
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </form>
+            )}
+          </TabsContent>
+
+          <TabsContent value="restock" className="space-y-6">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
