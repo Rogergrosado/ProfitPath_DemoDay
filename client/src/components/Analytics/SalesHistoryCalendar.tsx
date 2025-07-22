@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
+import { getAuthHeaders } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,23 +12,29 @@ interface SalesHistoryCalendarProps {
 }
 
 export function SalesHistoryCalendar({ className = "" }: SalesHistoryCalendarProps) {
+  const { user } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
 
   // Fetch sales history for calendar display
   const { data: salesHistory = [], isLoading } = useQuery({
-    queryKey: ["/api/calendar-sales", currentMonth + 1, currentYear],
+    queryKey: ["/api/sales/calendar", currentMonth + 1, currentYear],
+    enabled: !!user,
     queryFn: async () => {
-      const response = await fetch(`/api/calendar-sales?month=${currentMonth + 1}&year=${currentYear}`, {
-        headers: {
-          'Authorization': `Bearer ${await window.firebase?.auth?.currentUser?.getIdToken?.()}`,
+      try {
+        const authHeaders = await getAuthHeaders();
+        const response = await fetch(`/api/sales/calendar?month=${currentMonth + 1}&year=${currentYear}`, {
+          headers: authHeaders
+        });
+        if (!response.ok) {
+          throw new Error('Failed to fetch calendar sales');
         }
-      });
-      if (!response.ok) {
-        throw new Error('Failed to fetch calendar sales');
+        return response.json();
+      } catch (error) {
+        console.error('Error fetching calendar sales:', error);
+        return [];
       }
-      return response.json();
     },
   });
 
