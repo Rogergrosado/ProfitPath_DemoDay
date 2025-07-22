@@ -167,14 +167,11 @@ export function InventoryDetailModal({ inventory, open, onOpenChange }: Inventor
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 bg-gray-100 dark:bg-slate-800">
+          <TabsList className="grid w-full grid-cols-3 bg-gray-100 dark:bg-slate-800">
             <TabsTrigger value="overview" className="data-[state=active]:bg-[#fd7014] data-[state=active]:text-white">
               Overview
             </TabsTrigger>
-            <TabsTrigger value="restock" className="data-[state=active]:bg-[#fd7014] data-[state=active]:text-white">
-              <Plus className="w-4 h-4 mr-1" />
-              Restock
-            </TabsTrigger>
+
             <TabsTrigger value="history" className="data-[state=active]:bg-[#fd7014] data-[state=active]:text-white">
               <History className="w-4 h-4 mr-1" />
               History
@@ -522,68 +519,7 @@ export function InventoryDetailModal({ inventory, open, onOpenChange }: Inventor
             )}
           </TabsContent>
 
-          <TabsContent value="restock" className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Plus className="h-5 w-5" />
-              Restock Inventory
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleRestock} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="restockQuantity" className="text-black dark:text-white">Quantity to Add</Label>
-                  <Input
-                    id="restockQuantity"
-                    type="number"
-                    min="1"
-                    value={restockData.quantity}
-                    onChange={(e) => setRestockData({ ...restockData, quantity: parseInt(e.target.value) || 0 })}
-                    className="bg-gray-50 dark:bg-slate-800 border-gray-300 dark:border-slate-600 text-black dark:text-white"
-                  />
-                </div>
-                <div>
-                  <Label className="text-black dark:text-white">New Total Stock</Label>
-                  <div className="mt-2 text-lg font-semibold text-green-600 dark:text-green-400">
-                    {(formData.currentStock || 0) + restockData.quantity} units
-                  </div>
-                </div>
-              </div>
 
-              <div>
-                <Label htmlFor="restockNotes" className="text-black dark:text-white">Notes (Optional)</Label>
-                <Textarea
-                  id="restockNotes"
-                  value={restockData.notes}
-                  onChange={(e) => setRestockData({ ...restockData, notes: e.target.value })}
-                  placeholder="Add notes about this restock..."
-                  className="bg-gray-50 dark:bg-slate-800 border-gray-300 dark:border-slate-600 text-black dark:text-white"
-                />
-              </div>
-
-              <div className="flex justify-end space-x-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setRestockData({ quantity: 0, notes: "" })}
-                  className="border-gray-300 dark:border-slate-600 text-black dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700"
-                >
-                  Reset
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={restockMutation.isPending || restockData.quantity <= 0}
-                  className="bg-[#fd7014] hover:bg-[#e5640f] text-white"
-                >
-                  {restockMutation.isPending ? "Adding Stock..." : `Add ${restockData.quantity} Units`}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      </TabsContent>
 
       <TabsContent value="history" className="space-y-6">
         <SalesHistoryTable inventorySku={inventory.sku} />

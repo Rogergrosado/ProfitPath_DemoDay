@@ -2,6 +2,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Package as PackageRestock, Package, AlertTriangle, TrendingUp } from "lucide-react";
+import { 
+  ProfitTooltip, 
+  VelocityTooltip, 
+  StockTooltip, 
+  PricingTooltip 
+} from "@/components/Inventory/InventoryTooltip";
 
 interface InventoryTableProps {
   items: any[];
@@ -51,13 +57,21 @@ export function InventoryTable({ items, onEdit, onRestock, onAnalytics }: Invent
           <table className="min-w-full">
             <thead>
               <tr className="border-b border-gray-200 dark:border-slate-600">
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">Product</th>
+                <StockTooltip>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400 cursor-help">Product</th>
+                </StockTooltip>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">SKU</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">Category</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">Stock</th>
+                <VelocityTooltip>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400 cursor-help">Stock</th>
+                </VelocityTooltip>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">Status</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">Cost</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">Price</th>
+                <PricingTooltip>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400 cursor-help">Cost</th>
+                </PricingTooltip>
+                <ProfitTooltip>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400 cursor-help">Price</th>
+                </ProfitTooltip>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">Value</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">Actions</th>
               </tr>

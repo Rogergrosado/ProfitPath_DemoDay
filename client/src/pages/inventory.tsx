@@ -5,6 +5,13 @@ import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { Sidebar } from "@/components/Navigation/Sidebar";
 import { ThemeToggle } from "@/components/Navigation/ThemeToggle";
+import { 
+  StockTooltip, 
+  ReorderTooltip, 
+  PricingTooltip, 
+  AnalyticsTooltip, 
+  CalendarTooltip 
+} from "@/components/Inventory/InventoryTooltip";
 import { InventoryTable } from "@/components/Inventory/InventoryTable";
 import { InventoryDetailModal } from "@/components/Inventory/InventoryDetailModal";
 import { RestockProductModal } from "@/components/Inventory/RestockProductModal";
@@ -202,7 +209,9 @@ export default function Inventory() {
               <CardContent className="p-6">
                 <div className="flex items-center">
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-600 dark:text-slate-400">Total SKUs</p>
+                    <StockTooltip>
+                      <p className="text-sm font-medium text-gray-600 dark:text-slate-400">Total SKUs</p>
+                    </StockTooltip>
                     <p className="text-2xl font-bold text-black dark:text-white">{totalItems}</p>
                   </div>
                   <div className="w-12 h-12 bg-blue-500/10 dark:bg-blue-500/20 rounded-lg flex items-center justify-center">
@@ -216,7 +225,9 @@ export default function Inventory() {
               <CardContent className="p-6">
                 <div className="flex items-center">
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-600 dark:text-slate-400">Total Value</p>
+                    <PricingTooltip>
+                      <p className="text-sm font-medium text-gray-600 dark:text-slate-400">Total Value</p>
+                    </PricingTooltip>
                     <p className="text-2xl font-bold text-black dark:text-white">${Math.round(totalValue).toLocaleString()}</p>
                   </div>
                   <div className="w-12 h-12 bg-green-500/10 dark:bg-green-500/20 rounded-lg flex items-center justify-center">
@@ -230,7 +241,9 @@ export default function Inventory() {
               <CardContent className="p-6">
                 <div className="flex items-center">
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-600 dark:text-slate-400">Low Stock Alerts</p>
+                    <ReorderTooltip>
+                      <p className="text-sm font-medium text-gray-600 dark:text-slate-400">Low Stock Alerts</p>
+                    </ReorderTooltip>
                     <p className="text-2xl font-bold text-black dark:text-white">{lowStockItems}</p>
                   </div>
                   <div className="w-12 h-12 bg-yellow-500/10 dark:bg-yellow-500/20 rounded-lg flex items-center justify-center">
@@ -265,7 +278,9 @@ export default function Inventory() {
                 Real-Time Alerts
               </TabsTrigger>
               <TabsTrigger value="calendar" className="data-[state=active]:bg-[#fd7014] data-[state=active]:text-white">
-                Advanced Calendar
+                <CalendarTooltip>
+                  <span>Reorder Calendar</span>
+                </CalendarTooltip>
               </TabsTrigger>
               <TabsTrigger value="analytics" className="data-[state=active]:bg-[#fd7014] data-[state=active]:text-white">
                 Analytics

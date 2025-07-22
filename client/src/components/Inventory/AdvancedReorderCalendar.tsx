@@ -56,16 +56,14 @@ export function AdvancedReorderCalendar() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedPriority, setSelectedPriority] = useState("all");
   const [calendarView, setCalendarView] = useState<'month' | 'week'>('month');
+  const [showDateModal, setShowDateModal] = useState(false);
+  const [dateEvents, setDateEvents] = useState<ReorderEvent[]>([]);
 
   const { data: inventory = [] } = useQuery({
     queryKey: ["/api/inventory"],
   });
 
-  const { data: salesData = [] } = useQuery({
-    queryKey: ["/api/sales"],
-  });
-
-  // Calculate reorder events based on inventory and sales velocity
+  // Calculate reorder events based on inventory levels only
   const reorderEvents = useMemo(() => {
     const events: ReorderEvent[] = [];
     const today = new Date();
@@ -73,36 +71,27 @@ export function AdvancedReorderCalendar() {
     inventory.forEach((item: any) => {
       const currentStock = item.currentStock || 0;
       const reorderPoint = item.reorderPoint || 10;
-      const leadTime = item.leadTime || 7; // days
+      const leadTime = item.leadTimeDays || 7; // days
 
-      // Calculate sales velocity (units per day)
-      const last30Days = salesData.filter((sale: any) => {
-        const saleDate = new Date(sale.saleDate);
-        const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
-        return sale.sku === item.sku && saleDate > thirtyDaysAgo;
-      });
-
-      const totalSold = last30Days.reduce((sum: number, sale: any) => sum + (sale.quantity || 0), 0);
-      const dailyVelocity = totalSold / 30;
-
-      // Calculate days until reorder point
+      // Calculate days until reorder point based on current stock status
       let daysUntilReorder = 0;
-      if (dailyVelocity > 0) {
-        daysUntilReorder = Math.max(0, Math.ceil((currentStock - reorderPoint) / dailyVelocity));
+      if (currentStock <= reorderPoint) {
+        daysUntilReorder = 0; // Immediate reorder needed
       } else {
-        // If no sales data, estimate based on stock level
-        daysUntilReorder = currentStock <= reorderPoint ? 0 : 30;
+        // Estimate based on stock level and reorder point
+        const stockAboveReorder = currentStock - reorderPoint;
+        daysUntilReorder = Math.ceil(stockAboveReorder / 2); // Conservative estimate
       }
 
       // Determine priority based on urgency
       let priority: 'urgent' | 'high' | 'medium' | 'low' = 'low';
-      if (currentStock <= reorderPoint) priority = 'urgent';
+      if (currentStock <= 0) priority = 'urgent';
+      else if (currentStock <= reorderPoint) priority = 'urgent';
       else if (daysUntilReorder <= 7) priority = 'high';
       else if (daysUntilReorder <= 14) priority = 'medium';
 
       // Calculate suggested reorder quantity
-      const averageMonthlyDemand = totalSold || item.averageMonthlyDemand || 50;
-      const suggestedQuantity = Math.ceil(averageMonthlyDemand * 1.5); // 1.5 months of stock
+      const suggestedQuantity = Math.max(50, reorderPoint * 2); // Conservative reorder amount
 
       // Create reorder event
       const reorderDate = new Date(today.getTime() + daysUntilReorder * 24 * 60 * 60 * 1000);
@@ -110,21 +99,21 @@ export function AdvancedReorderCalendar() {
       events.push({
         id: `reorder-${item.id}`,
         sku: item.sku,
-        productName: item.productName,
+        productName: item.name,
         currentStock,
         reorderPoint,
         suggestedQuantity,
         daysUntilReorder,
         priority,
         category: item.category || 'Uncategorized',
-        supplier: item.supplier || 'Default Supplier',
+        supplier: item.supplierName || 'Default Supplier',
         leadTime,
         date: reorderDate,
       });
     });
 
     return events;
-  }, [inventory, salesData]);
+  }, [inventory]);
 
   // Filter events
   const filteredEvents = reorderEvents.filter(event => {
@@ -192,8 +181,8 @@ export function AdvancedReorderCalendar() {
       {/* Header Controls */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold">Advanced Reorder Calendar</h2>
-          <p className="text-muted-foreground">Smart reorder scheduling based on sales velocity</p>
+          <h2 className="text-2xl font-bold">Reorder Calendar</h2>
+          <p className="text-muted-foreground">Smart reorder scheduling based on stock levels</p>
         </div>
         <div className="flex space-x-2">
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
@@ -262,7 +251,11 @@ export function AdvancedReorderCalendar() {
                       ${day.isToday ? 'ring-2 ring-primary' : ''}
                       hover:bg-muted/50
                     `}
-                    onClick={() => setSelectedDate(day.date)}
+                    onClick={() => {
+                      setSelectedDate(day.date);
+                      setDateEvents(day.events);
+                      setShowDateModal(true);
+                    }}
                   >
                     <div className="text-sm font-medium mb-1">
                       {day.date.getDate()}
