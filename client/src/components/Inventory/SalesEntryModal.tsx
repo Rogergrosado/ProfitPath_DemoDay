@@ -135,29 +135,25 @@ export function SalesEntryModal({ inventory, open, onOpenChange }: SalesEntryMod
           </DialogDescription>
         </DialogHeader>
 
-        {/* Product Information */}
+        {/* Current Status Summary */}
         <div className="bg-gray-50 dark:bg-slate-800 p-4 rounded-lg mb-6">
-          <div className="flex items-center space-x-3 mb-3">
-            {inventory.imageUrl ? (
-              <img src={inventory.imageUrl} alt={inventory.name} className="h-12 w-12 rounded-lg object-cover" />
-            ) : (
-              <div className="h-12 w-12 bg-gray-200 dark:bg-slate-600 rounded-lg flex items-center justify-center">
-                <Package className="h-6 w-6 text-gray-400" />
-              </div>
-            )}
-            <div>
-              <h3 className="font-semibold text-black dark:text-white">{inventory.name}</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">SKU: {inventory.sku}</p>
-            </div>
-          </div>
+          <h3 className="font-semibold text-black dark:text-white mb-3">Current Status Summary</h3>
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="text-gray-600 dark:text-gray-400">Current Stock:</span>
-              <p className="font-medium text-black dark:text-white">{inventory.currentStock || 0} units</p>
+              <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Product Name</Label>
+              <p className="font-semibold text-black dark:text-white">{inventory.name}</p>
             </div>
             <div>
-              <span className="text-gray-600 dark:text-gray-400">Unit Price:</span>
-              <p className="font-medium text-black dark:text-white">${inventory.sellingPrice || "0.00"}</p>
+              <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">SKU</Label>
+              <p className="font-semibold text-black dark:text-white">{inventory.sku || "N/A"}</p>
+            </div>
+            <div>
+              <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Current Stock</Label>
+              <p className="font-bold text-blue-600 dark:text-blue-400">{inventory.currentStock || 0} units</p>
+            </div>
+            <div>
+              <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Unit Price</Label>
+              <p className="font-bold text-blue-600 dark:text-blue-400">${inventory.sellingPrice || "0.00"}</p>
             </div>
           </div>
         </div>
@@ -203,6 +199,7 @@ export function SalesEntryModal({ inventory, open, onOpenChange }: SalesEntryMod
               className="bg-white dark:bg-slate-800 border-gray-300 dark:border-slate-600 text-black dark:text-white"
               required
             />
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">This date will update the sales history calendar</p>
           </div>
 
           <div>
@@ -242,12 +239,24 @@ export function SalesEntryModal({ inventory, open, onOpenChange }: SalesEntryMod
           </div>
 
           {/* Warning for low stock */}
-          {remainingStock <= (inventory.reorderPoint || 0) && (
+          {remainingStock <= (inventory.reorderPoint || 0) && remainingStock > 0 && (
             <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 p-3 rounded-lg">
               <div className="flex items-center">
                 <div className="w-4 h-4 bg-yellow-500 rounded-full mr-2"></div>
                 <span className="text-sm text-yellow-800 dark:text-yellow-200">
                   Warning: This sale will bring stock below the reorder point ({inventory.reorderPoint || 0} units)
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Out of stock warning */}
+          {remainingStock <= 0 && (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3 rounded-lg">
+              <div className="flex items-center">
+                <div className="w-4 h-4 bg-red-500 rounded-full mr-2"></div>
+                <span className="text-sm text-red-800 dark:text-red-200">
+                  Warning: This sale will result in out-of-stock status
                 </span>
               </div>
             </div>

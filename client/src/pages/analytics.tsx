@@ -7,6 +7,7 @@ import { Sidebar } from "@/components/Navigation/Sidebar";
 import { ThemeToggle } from "@/components/Navigation/ThemeToggle";
 import { PredictiveAnalytics } from "@/components/Analytics/PredictiveAnalytics";
 import { SalesHistoryTable } from "@/components/Analytics/SalesHistoryTable";
+import { SalesHistoryCalendar } from "@/components/Analytics/SalesHistoryCalendar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -171,7 +172,7 @@ export default function Analytics() {
                 Predictive Analytics
               </TabsTrigger>
               <TabsTrigger value="forecasting" className="data-[state=active]:bg-[#fd7014] data-[state=active]:text-white">
-                Demand Forecasting
+                Sales History Calendar
               </TabsTrigger>
               <TabsTrigger value="insights" className="data-[state=active]:bg-[#fd7014] data-[state=active]:text-white">
                 Market Insights
@@ -190,25 +191,7 @@ export default function Analytics() {
 
             <TabsContent value="forecasting">
               <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <BarChart3 className="h-5 w-5" />
-                      <span>Demand Forecasting</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground mb-4">
-                      Advanced demand forecasting is integrated into the Predictive Analytics tab
-                    </p>
-                    <Button 
-                      onClick={() => {}}
-                      className="bg-[#fd7014] hover:bg-[#e5640f] text-white"
-                    >
-                      Access via Predictive Analytics
-                    </Button>
-                  </CardContent>
-                </Card>
+                <SalesHistoryCalendar />
               </div>
             </TabsContent>
 
