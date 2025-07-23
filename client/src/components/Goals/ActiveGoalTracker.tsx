@@ -3,7 +3,7 @@ import { Target, CheckCircle, AlertTriangle, Clock, X } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { useAuthReady } from "@/hooks/use-auth";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ActiveGoal {
   id: number;
@@ -20,11 +20,11 @@ interface ActiveGoal {
 }
 
 export function ActiveGoalTracker() {
-  const { user, authReady } = useAuthReady();
+  const { user, loading } = useAuth();
   
   const { data: activeGoals = [], isLoading } = useQuery<ActiveGoal[]>({
     queryKey: ['/api/goals/active'],
-    enabled: !!user && authReady,
+    enabled: !!user && !loading,
   });
 
   const getStatusIcon = (status: string) => {

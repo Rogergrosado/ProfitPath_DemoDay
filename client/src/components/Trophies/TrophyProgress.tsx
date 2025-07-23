@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAuthReady } from "@/hooks/use-auth";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface TrophyProgress {
   trophy: {
@@ -36,16 +36,16 @@ interface ClosestTrophy {
 }
 
 export function TrophyProgress() {
-  const { user, authReady } = useAuthReady();
+  const { user, loading } = useAuth();
   
   const { data: allTrophies = [], isLoading: loadingAll } = useQuery<TrophyProgress[]>({
     queryKey: ['/api/trophies'],
-    enabled: !!user && authReady,
+    enabled: !!user && !loading,
   });
 
   const { data: closestTrophies = [], isLoading: loadingClosest } = useQuery<ClosestTrophy[]>({
     queryKey: ['/api/trophies/closest', { limit: 20 }],
-    enabled: !!user && authReady,
+    enabled: !!user && !loading,
   });
 
   const incompleteTrophies = allTrophies.filter(t => !t.completed && t.trophy.tier !== 'platinum');

@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { useAuthReady } from "@/hooks/use-auth";
+import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "wouter";
 
 interface ClosestTrophy {
@@ -22,11 +22,11 @@ interface ClosestTrophy {
 }
 
 export function ClosestTrophies() {
-  const { user, authReady } = useAuthReady();
+  const { user, loading } = useAuth();
   
   const { data: closestTrophies = [], isLoading } = useQuery<ClosestTrophy[]>({
     queryKey: ['/api/trophies/closest'],
-    enabled: !!user && authReady,
+    enabled: !!user && !loading,
   });
 
   if (isLoading) {
