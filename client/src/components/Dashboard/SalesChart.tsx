@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Line } from 'react-chartjs-2';
 import { motion } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -27,54 +29,68 @@ ChartJS.register(
   Filler
 );
 
-interface SalesData {
-  daily: {
-    labels: string[];
-    revenue: number[];
-    units: number[];
-    profit: number[];
-  };
-  weekly: {
-    labels: string[];
-    revenue: number[];
-    units: number[];
-    profit: number[];
-  };
-  monthly: {
-    labels: string[];
-    revenue: number[];
-    units: number[];
-    profit: number[];
-  };
+interface SalesApiData {
+  date: string;
+  revenue: number;
+  profit: number;  
+  units: number;
 }
 
-const salesData: SalesData = {
-  daily: {
-    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-    revenue: [12500, 15200, 11800, 18400, 16900, 22100, 19800],
-    units: [45, 52, 38, 61, 58, 73, 67],
-    profit: [3200, 3900, 2850, 4700, 4300, 5650, 5040]
-  },
-  weekly: {
-    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-    revenue: [89500, 102300, 95200, 118600],
-    units: [324, 378, 345, 421],
-    profit: [22800, 26100, 24300, 30200]
-  },
-  monthly: {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-    revenue: [345000, 398000, 420000, 389000, 456000, 502000],
-    units: [1245, 1432, 1518, 1389, 1634, 1789],
-    profit: [88200, 101500, 107100, 99200, 116400, 128000]
-  }
-};
+interface DashboardSummaryResponse {
+  salesData: SalesApiData[];
+  summary: {
+    totalRevenue: number;
+    totalProfit: number;
+    totalUnitsSold: number;
+  };
+}
 
 type TimeFrame = 'daily' | 'weekly' | 'monthly';
 
 export function SalesChart() {
-  const [timeFrame, setTimeFrame] = useState<TimeFrame>('daily');
+  const [timeFrame, setTimeFrame] = useState<TimeFrame>('weekly');
+  const { user, loading } = useAuth();
 
-  const currentData = salesData[timeFrame];
+  // Fetch real-time dashboard summary data
+  const { data: dashboardData, isLoading } = useQuery<DashboardSummaryResponse>({
+    queryKey: ['/api/analytics/dashboard-summary', `?range=${timeFrame}`],
+    enabled: !!user && !loading,
+  });
+
+  // Transform API data for Chart.js
+  const transformDataForChart = (apiData: SalesApiData[]) => {
+    if (!apiData || apiData.length === 0) {
+      return {
+        labels: [],
+        revenue: [],
+        units: [],
+        profit: []
+      };
+    }
+
+    // Format dates based on timeframe
+    const formatDate = (dateStr: string) => {
+      const date = new Date(dateStr);
+      switch (timeFrame) {
+        case 'daily':
+          return date.toLocaleDateString('en-US', { weekday: 'short' });
+        case 'monthly':
+          return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        case 'weekly':
+        default:
+          return `Week ${Math.ceil(date.getDate() / 7)}`;
+      }
+    };
+
+    return {
+      labels: apiData.map(item => formatDate(item.date)),
+      revenue: apiData.map(item => item.revenue),
+      units: apiData.map(item => item.units),
+      profit: apiData.map(item => item.profit)
+    };
+  };
+
+  const currentData = transformDataForChart(dashboardData?.salesData || []);
 
   const chartOptions = {
     responsive: true,
@@ -193,28 +209,42 @@ export function SalesChart() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="h-80">
-            <Line data={chartData} options={chartOptions} />
-          </div>
+          {isLoading ? (
+            <div className="h-80 flex items-center justify-center">
+              <div className="text-muted-foreground">Loading chart data...</div>
+            </div>
+          ) : currentData.labels.length === 0 ? (
+            <div className="h-80 flex items-center justify-center">
+              <div className="text-center text-muted-foreground">
+                <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No sales data available for the selected time period.</p>
+                <p className="text-sm mt-2">Try adding some sales records to see your performance chart.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="h-80">
+              <Line data={chartData} options={chartOptions} />
+            </div>
+          )}
           
-          {/* Chart summary */}
+          {/* Chart summary - use API response data when available */}
           <div className="grid grid-cols-3 gap-4 mt-6 pt-4 border-t border-border">
             <div className="text-center">
               <p className="text-sm text-muted-foreground">Total Revenue</p>
               <p className="text-xl font-bold text-card-foreground">
-                ${currentData.revenue.reduce((a, b) => a + b, 0).toLocaleString()}
+                ${(dashboardData?.summary.totalRevenue || 0).toLocaleString()}
               </p>
             </div>
             <div className="text-center">
               <p className="text-sm text-muted-foreground">Total Units</p>
               <p className="text-xl font-bold text-card-foreground">
-                {currentData.units.reduce((a, b) => a + b, 0).toLocaleString()}
+                {(dashboardData?.summary.totalUnitsSold || 0).toLocaleString()}
               </p>
             </div>
             <div className="text-center">
               <p className="text-sm text-muted-foreground">Total Profit</p>
               <p className="text-xl font-bold text-card-foreground">
-                ${currentData.profit.reduce((a, b) => a + b, 0).toLocaleString()}
+                ${(dashboardData?.summary.totalProfit || 0).toLocaleString()}
               </p>
             </div>
           </div>

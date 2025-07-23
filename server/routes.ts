@@ -819,6 +819,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // NEW: Dashboard Analytics Summary - Real-time chart data
+  app.get("/api/analytics/dashboard-summary", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const { range = 'weekly' } = req.query;
+      
+      const salesData = await storage.getSalesSummaryByRange(authReq.userId, range as string);
+      
+      const totalRevenue = salesData.reduce((sum, item) => sum + item.revenue, 0);
+      const totalProfit = salesData.reduce((sum, item) => sum + item.profit, 0);  
+      const totalUnitsSold = salesData.reduce((sum, item) => sum + item.units, 0);
+      
+      res.json({
+        salesData,
+        summary: {
+          totalRevenue,
+          totalProfit,
+          totalUnitsSold,
+        }
+      });
+    } catch (error: any) {
+      console.error('Error fetching dashboard summary:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // NEW: Sales Trends Explorer API
   app.get("/api/analytics/sales-trend", requireAuth, async (req, res) => {
     try {

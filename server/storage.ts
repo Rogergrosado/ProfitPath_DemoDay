@@ -977,6 +977,60 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // NEW: Dashboard Analytics Summary - Sales data by time range
+  async getSalesSummaryByRange(userId: number, range: string): Promise<{
+    date: string;
+    revenue: number;
+    profit: number;
+    units: number;
+  }[]> {
+    try {
+      let groupBy: string;
+      let dateFilter: string;
+      
+      switch (range) {
+        case 'daily':
+          groupBy = "DATE(sale_date)";
+          dateFilter = "sale_date >= CURRENT_DATE - INTERVAL '7 days'";
+          break;
+        case 'monthly':
+          groupBy = "DATE_TRUNC('month', sale_date)";  
+          dateFilter = "sale_date >= CURRENT_DATE - INTERVAL '12 months'";
+          break;
+        case 'weekly':
+        default:
+          groupBy = "DATE_TRUNC('week', sale_date)";
+          dateFilter = "sale_date >= CURRENT_DATE - INTERVAL '8 weeks'";
+          break;
+      }
+
+      const results = await db
+        .select({
+          date: sql<string>`${sql.raw(groupBy)}`,
+          units: sql<number>`COALESCE(SUM(${sales.quantity}), 0)`,
+          revenue: sql<number>`COALESCE(SUM(CAST(${sales.totalRevenue} AS DECIMAL)), 0)`,
+          profit: sql<number>`COALESCE(SUM(CAST(${sales.profit} AS DECIMAL)), 0)`
+        })
+        .from(sales)
+        .where(and(
+          eq(sales.userId, userId),
+          sql`${sql.raw(dateFilter)}`
+        ))
+        .groupBy(sql`${sql.raw(groupBy)}`)
+        .orderBy(sql`${sql.raw(groupBy)}`);
+
+      return results.map(row => ({
+        date: row.date,
+        units: Number(row.units),
+        revenue: Number(row.revenue),
+        profit: Number(row.profit),
+      }));
+    } catch (error) {
+      console.error('Error fetching sales summary by range:', error);
+      return [];
+    }
+  }
+
   // NEW: Sales Trends Explorer - Time-series data
   async getSalesTrends(userId: number, filters: {
     startDate?: string;
