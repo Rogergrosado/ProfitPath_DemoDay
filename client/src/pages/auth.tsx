@@ -10,6 +10,7 @@ import { ThemeToggle } from "@/components/Navigation/ThemeToggle";
 import { TrendingUp, Mail, Lock, User, Eye, EyeOff, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { devLogout } from "@/utils/authUtils";
+import BackButton from "@/components/ui/BackButton";
 
 export default function Auth() {
   const [, setLocation] = useLocation();
@@ -158,6 +159,11 @@ export default function Auth() {
   return (
     <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-6">
       <ThemeToggle />
+      
+      {/* Back Button */}
+      <div className="absolute top-6 right-6">
+        <BackButton to="/" label="Back to Home" />
+      </div>
       
       {/* Dev Logout Button (development only) */}
       {process.env.NODE_ENV === 'development' && (

@@ -22,6 +22,7 @@ import {
   CreditCard,
   AlertTriangle,
 } from "lucide-react";
+import BackButton from "@/components/ui/BackButton";
 
 interface UserSettings {
   id: number;
@@ -106,6 +107,7 @@ export default function Settings() {
   return (
     <div className="min-h-screen bg-white dark:bg-black text-black dark:text-white p-8 pl-64">
       <div className="max-w-5xl mx-auto space-y-6">
+        <BackButton to="/dashboard" label="Back to Dashboard" />
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
