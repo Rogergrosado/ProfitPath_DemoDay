@@ -628,6 +628,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const saleData = insertSaleSchema.parse({ ...req.body, userId: authReq.userId });
       const sale = await storage.createSale(saleData);
       
+      // Create corresponding sales history entry for consistency
+      try {
+        await storage.createSalesHistoryEntry({
+          userId: authReq.userId,
+          inventoryId: sale.inventoryId,
+          sku: sale.sku,
+          productName: sale.productName || 'Unknown Product',
+          quantitySold: sale.quantity,
+          unitPrice: sale.unitPrice,
+          totalRevenue: sale.totalRevenue,
+          totalCost: sale.totalCost,
+          profit: sale.profit,
+          saleDate: sale.saleDate,
+          notes: null,
+        });
+        console.log(`📊 Sales history entry created for SKU: ${sale.sku}`);
+      } catch (historyError) {
+        console.warn(`Failed to create sales history entry for SKU ${sale.sku}:`, historyError);
+      }
+      
       // Update inventory levels when individual sales are recorded
       if (sale.sku && sale.quantity) {
         try {

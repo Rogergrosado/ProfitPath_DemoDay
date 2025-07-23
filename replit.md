@@ -6,6 +6,17 @@ ProfitPath is a comprehensive business intelligence dashboard designed for Amazo
 
 ## Recent Changes (July 23, 2025)
 
+✅ **Critical Sales History List Update Fix**: Complete resolution of sales history not updating after sale entry
+  - Identified root cause: /api/sales endpoint (used by Analytics) only creates sales table entries, not sales_history entries
+  - Fixed /api/sales endpoint to create both sales and sales_history entries for consistency with manual entry endpoint
+  - Removed duplicate /api/sales/history endpoint definitions that were causing routing confusion
+  - Enhanced sales history endpoint with improved logging and SKU filtering capabilities
+  - Added debug logging to frontend SalesHistoryTable component for better troubleshooting
+  - Fixed query invalidation to use predicate pattern for parameterized queries (/api/sales/history with SKU filters)
+  - Added forced refetch with timeout to ensure backend updates are reflected immediately
+  - Applied consistent invalidation patterns across all sales entry modals (Analytics and Inventory)
+  - Sales history table now properly updates in real-time after recording sales from any interface
+
 ✅ **Smart Onboarding Walkthrough System with Centralized Tooltips**: Complete guided tour system for new users
   - Implemented comprehensive onboarding system with step-by-step guidance across all major pages
   - Created OnboardingProvider, OnboardingTooltip, OnboardingTrigger, and OnboardingWrapper components
