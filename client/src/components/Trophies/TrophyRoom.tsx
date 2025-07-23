@@ -3,7 +3,7 @@ import { Trophy, Crown, Award, Medal } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TrophyCard } from "./TrophyCard";
-import { useAuthReady } from "@/hooks/use-auth";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface TrophyData {
   trophy: {
@@ -27,11 +27,11 @@ const tierNames = {
 };
 
 export function TrophyRoom() {
-  const { user, authReady } = useAuthReady();
+  const { user, loading } = useAuth();
   
   const { data: trophies = [], isLoading } = useQuery<TrophyData[]>({
     queryKey: ['/api/trophies'],
-    enabled: !!user && authReady,
+    enabled: !!user && !loading,
   });
 
   const completedTrophies = trophies.filter(t => t.completed);
