@@ -96,6 +96,18 @@ ProfitPath is a comprehensive business intelligence dashboard designed for Amazo
   - Integrated html2pdf.js library for high-quality PDF generation from report canvas elements
   - Enhanced CSV export functionality using existing backend API with proper authentication flow
 
+✅ **Goal Archiving System Database Fix - FULLY RESOLVED**: Complete resolution of goal history tracking and database constraint issues
+  - **Root Cause Identified**: goal_history table progress_percentage column had NOT NULL constraint but archiving function wasn't including it
+  - **Database Fix**: Updated archiveGoal function to properly calculate and insert progress_percentage in goal_history records
+  - **SQL Query Enhancement**: Fixed INSERT statement to include all required NOT NULL columns (progress_percentage, target_value, final_value)
+  - **Backend Validation**: Enhanced getGoalHistory API to return progress_percentage field for frontend display
+  - **Real-time Archiving**: Goals now automatically archive to history when completed with proper progress calculation
+  - **Data Integrity**: Eliminated "null value in column progress_percentage violates not-null constraint" database errors
+  - **Progress Tracking**: Goals now show accurate completion percentages (100%, 200%, etc.) in archived history
+  - **API Consistency**: Both /api/goals/with-progress and /api/goals/history endpoints working correctly with real data
+  - **Verification**: Successfully tested with Goal 12 (100% completion) and Goal 13 (200% completion) archiving properly
+  - **Status**: Production ready - goal archiving system fully operational with database constraint compliance
+
 ✅ **Trophy System Database Constraint Fix & Real Goal Tracking Implementation**: Complete resolution of user achievement visibility issues
   - Fixed critical database constraint error in trophy system preventing users from seeing earned achievements
   - Replaced onConflictDoUpdate with proper upsert pattern using select-then-update/insert logic

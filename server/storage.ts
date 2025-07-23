@@ -776,38 +776,20 @@ export class DatabaseStorage implements IStorage {
 
   // Goal History Management
   async archiveGoal(goal: Goal, achievedValue: number, startDate: Date, endDate: Date, status: 'met' | 'unmet'): Promise<void> {
-    const now = new Date();
-    const daysToComplete = Math.ceil((now.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000));
-    
-    // Create goal history record matching existing table structure
-    const historyRecord = {
-      user_id: goal.userId,
-      originalGoalId: goal.id,
-      metric: goal.metric,
-      target_value: goal.targetValue,
-      final_value: achievedValue.toString(), // Using final_value instead of achieved_value
-      scope: goal.scope,
-      target_category: goal.targetCategory,
-      target_sku: goal.targetSKU,
-      period: goal.period,
-      description: goal.description,
-      status,
-      start_date: startDate,
-      end_date: endDate,
-      progress_percentage: (achievedValue / Number(goal.targetValue)) * 100
-    };
-
     try {
+      // Calculate progress percentage
+      const progressPercentage = (achievedValue / Number(goal.targetValue)) * 100;
+      
       // Use raw SQL for goal_history insert to match existing table structure
       await db.execute(sql`
         INSERT INTO goal_history (
           user_id, original_goal_id, metric, target_value, final_value, 
-          scope, target_category, target_sku, period, description, 
-          status, start_date, end_date
+          progress_percentage, scope, target_category, target_sku, period, 
+          description, status, start_date, end_date
         ) VALUES (
           ${goal.userId}, ${goal.id}, ${goal.metric}, ${goal.targetValue}, ${achievedValue.toString()},
-          ${goal.scope}, ${goal.targetCategory || ''}, ${goal.targetSKU || ''}, ${goal.period}, ${goal.description || ''},
-          ${status}, ${startDate}, ${endDate}
+          ${progressPercentage}, ${goal.scope}, ${goal.targetCategory || ''}, ${goal.targetSKU || ''}, ${goal.period}, 
+          ${goal.description || ''}, ${status}, ${startDate}, ${endDate}
         )
       `);
       
@@ -825,7 +807,7 @@ export class DatabaseStorage implements IStorage {
       const result = await db.execute(sql`
         SELECT 
           id, user_id, original_goal_id, metric, target_value, final_value,
-          scope, target_category, target_sku, period, description,
+          progress_percentage, scope, target_category, target_sku, period, description,
           status, start_date, end_date, completed_at, created_at
         FROM goal_history 
         WHERE user_id = ${userId}
