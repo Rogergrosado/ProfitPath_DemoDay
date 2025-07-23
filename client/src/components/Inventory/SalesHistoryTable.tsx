@@ -34,6 +34,8 @@ export function SalesHistoryTable({ inventorySku, startDate, endDate }: SalesHis
       if (endDate) params.append("endDate", endDate.toISOString());
       if (inventorySku) params.append("sku", inventorySku);
       
+      console.log(`🔄 Fetching sales history with params:`, { inventorySku, startDate, endDate });
+      
       const authHeaders = await getAuthHeaders();
       const response = await fetch(`/api/sales/history?${params}`, {
         headers: authHeaders,
@@ -42,6 +44,7 @@ export function SalesHistoryTable({ inventorySku, startDate, endDate }: SalesHis
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
+      console.log(`📦 Sales history data received:`, data);
       return Array.isArray(data) ? data : [];
     },
   });

@@ -339,37 +339,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Sales History endpoint
-  app.get('/api/sales/history', requireAuth, async (req, res) => {
-    try {
-      const authReq = req as AuthenticatedRequest;
-      const { sku, startDate, endDate } = req.query;
-      const userId = authReq.userId;
-
-      console.log(`📊 Fetching sales history for user ${userId}:`, { sku, startDate, endDate });
-
-      // Use the dedicated getSalesHistory method which includes more detailed information
-      let start: Date | undefined;
-      let end: Date | undefined;
-      
-      if (startDate) start = new Date(startDate as string);
-      if (endDate) end = new Date(endDate as string);
-
-      const salesHistory = await storage.getSalesHistory(userId, start, end);
-      
-      // Filter by SKU if provided
-      let filteredHistory = salesHistory;
-      if (sku) {
-        filteredHistory = salesHistory.filter(sale => sale.sku === sku);
-      }
-
-      console.log(`✅ Returning ${filteredHistory.length} sales history records`);
-      res.json(filteredHistory);
-    } catch (error) {
-      console.error('❌ Sales history error:', error);
-      res.status(500).json({ message: 'Failed to fetch sales history' });
-    }
-  });
+  // Sales History endpoint (removed duplicate - keeping the one further down with proper getSalesHistory method)
 
   // Calendar endpoints for sales and reorder data
   app.get('/api/sales/calendar', requireAuth, async (req, res) => {
@@ -1321,12 +1291,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/sales/history", requireAuth, async (req, res) => {
     try {
       const authReq = req as AuthenticatedRequest;
-      const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
-      const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
+      const { sku, startDate, endDate } = req.query;
+      const userId = authReq.userId;
+
+      console.log(`📊 Fetching sales history for user ${userId}:`, { sku, startDate, endDate });
+
+      // Use the dedicated getSalesHistory method with date filtering
+      let start: Date | undefined;
+      let end: Date | undefined;
       
-      const salesHistory = await storage.getSalesHistory(authReq.userId, startDate, endDate);
-      res.json(salesHistory);
+      if (startDate) start = new Date(startDate as string);
+      if (endDate) end = new Date(endDate as string);
+
+      const salesHistory = await storage.getSalesHistory(userId, start, end);
+      
+      // Filter by SKU if provided
+      let filteredHistory = salesHistory;
+      if (sku) {
+        filteredHistory = salesHistory.filter(sale => sale.sku === sku);
+      }
+
+      console.log(`✅ Returning ${filteredHistory.length} sales history records:`, 
+        filteredHistory.map(s => ({ sku: s.sku, date: s.saleDate })));
+      res.json(filteredHistory);
     } catch (error: any) {
+      console.error('❌ Sales history error:', error);
       res.status(500).json({ message: error.message });
     }
   });
