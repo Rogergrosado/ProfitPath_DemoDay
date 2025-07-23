@@ -1,0 +1,100 @@
+ Here's what we'll do:
+1. Convert the Sidebar into a Mobile Drawer
+Hide Sidebar on mobile (e.g., below md: breakpoint)
+
+Add a hamburger menu that toggles the Sidebar as a slide-in drawer
+
+2. Update the Layout Responsively
+Make sure the main dashboard content shifts beneath the drawer and stacks vertically.
+
+💻 Implementation Steps
+1. Create a MobileSidebarToggle.tsx
+tsx
+Copiar
+Editar
+// components/Navigation/MobileSidebarToggle.tsx
+import { Menu } from "lucide-react";
+import { useState } from "react";
+import { Sidebar } from "./Sidebar";
+
+export default function MobileSidebarToggle() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className="md:hidden fixed top-4 left-4 z-50 bg-[#fd7014] text-white p-2 rounded shadow"
+      >
+        <Menu className="h-6 w-6" />
+      </button>
+
+      {open && (
+        <div className="fixed inset-0 z-40 bg-black bg-opacity-50" onClick={() => setOpen(false)}>
+          <div
+            className="bg-white dark:bg-[#0d0f13] w-64 h-full p-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Sidebar />
+            <button
+              onClick={() => setOpen(false)}
+              className="mt-4 text-sm text-gray-400 hover:text-white"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+2. Update Your Dashboard Page (dashboard.tsx)
+In your dashboard.tsx, replace:
+
+tsx
+Copiar
+Editar
+<Sidebar />
+With:
+
+tsx
+Copiar
+Editar
+{/* Mobile Toggle */}
+<MobileSidebarToggle />
+
+{/* Sidebar for Desktop */}
+<div className="hidden md:block">
+  <Sidebar />
+</div>
+And make sure the <main> has padding that adjusts:
+
+tsx
+Copiar
+Editar
+<main className="flex-1 md:ml-64 p-4 pt-20 md:pt-6">
+  {/* Dashboard content */}
+</main>
+3. Add Breakpoints for Main Dashboard Cards
+Make your dashboard grid responsive:
+
+tsx
+Copiar
+Editar
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+  {/* Stat cards */}
+</div>
+4. Add MobileSidebarToggle to Replit
+Make sure to create the file MobileSidebarToggle.tsx, and then import it into your dashboard.tsx like this:
+
+tsx
+Copiar
+Editar
+import MobileSidebarToggle from "@/components/Navigation/MobileSidebarToggle";
+📱 Final Result:
+✅ Sidebar hidden on phones
+✅ Hamburger menu top-left opens it
+✅ Main dashboard adapts to screen size
+✅ Seamless experience across desktop and mobile
+
+Let me know if you'd like an animation on the sidebar drawer or want it to slide from the right!

@@ -23,6 +23,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import BackButton from "@/components/ui/BackButton";
+import MobileSidebarToggle from "@/components/Navigation/MobileSidebarToggle";
 
 interface UserSettings {
   id: number;
@@ -88,8 +89,9 @@ export default function Settings() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white dark:bg-black text-black dark:text-white p-8 pl-64">
-        <div className="max-w-5xl mx-auto">
+      <div className="min-h-screen bg-white dark:bg-black text-black dark:text-white p-4 md:p-8 md:pl-64">
+        <MobileSidebarToggle />
+        <div className="max-w-5xl mx-auto pt-16 md:pt-0">
           <div className="animate-pulse space-y-6">
             <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded w-1/4"></div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -105,8 +107,9 @@ export default function Settings() {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-black text-black dark:text-white p-8 pl-64">
-      <div className="max-w-5xl mx-auto space-y-6">
+    <div className="min-h-screen bg-white dark:bg-black text-black dark:text-white p-4 md:p-8 md:pl-64">
+      <MobileSidebarToggle />
+      <div className="max-w-5xl mx-auto space-y-6 pt-16 md:pt-0">
         <BackButton to="/dashboard" label="Back to Dashboard" />
         {/* Header */}
         <div className="flex items-center justify-between">

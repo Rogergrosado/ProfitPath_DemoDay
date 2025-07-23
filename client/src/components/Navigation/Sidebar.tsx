@@ -22,9 +22,10 @@ interface SidebarLinkProps {
   path: string;
   locked?: boolean;
   lockReason?: string;
+  onNavigate?: () => void;
 }
 
-function SidebarLink({ icon: Icon, label, path, locked = false, lockReason = "" }: SidebarLinkProps) {
+function SidebarLink({ icon: Icon, label, path, locked = false, lockReason = "", onNavigate }: SidebarLinkProps) {
   const [location] = useLocation();
   const isActive = location === path;
 
@@ -49,6 +50,7 @@ function SidebarLink({ icon: Icon, label, path, locked = false, lockReason = "" 
             ? "bg-[#fd7014] text-white font-medium" 
             : "hover:bg-[#37414f] text-gray-300"
         )}
+        onClick={onNavigate}
       >
         <Icon className="h-4 w-4" />
         <span className="text-sm">{label}</span>
@@ -57,7 +59,11 @@ function SidebarLink({ icon: Icon, label, path, locked = false, lockReason = "" 
   );
 }
 
-export function Sidebar() {
+interface SidebarProps {
+  onNavigate?: () => void;
+}
+
+export function Sidebar({ onNavigate }: SidebarProps = {}) {
   const { logout } = useAuth();
   // For now, features are always unlocked for onboarding purposes
   const unlockAdvancedFeatures = true;
@@ -97,15 +103,17 @@ export function Sidebar() {
               path="/dashboard" 
               locked={!unlockAdvancedFeatures}
               lockReason={lockReason}
+              onNavigate={onNavigate}
             />
-            <SidebarLink icon={Search} label="Product Workspace" path="/products" />
-            <SidebarLink icon={Package} label="Inventory" path="/inventory" />
+            <SidebarLink icon={Search} label="Product Workspace" path="/products" onNavigate={onNavigate} />
+            <SidebarLink icon={Package} label="Inventory" path="/inventory" onNavigate={onNavigate} />
             <SidebarLink 
               icon={Target} 
               label="Goals" 
               path="/goals" 
               locked={!unlockAdvancedFeatures}
               lockReason={lockReason}
+              onNavigate={onNavigate}
             />
             <SidebarLink 
               icon={TrendingUp} 
@@ -113,6 +121,7 @@ export function Sidebar() {
               path="/goals/trophy-room" 
               locked={!unlockAdvancedFeatures}
               lockReason={lockReason}
+              onNavigate={onNavigate}
             />
           </div>
         </div>
@@ -127,8 +136,9 @@ export function Sidebar() {
               path="/analytics" 
               locked={!unlockAdvancedFeatures}
               lockReason={lockReason}
+              onNavigate={onNavigate}
             />
-            <SidebarLink icon={FileText} label="Reports" path="/reports" />
+            <SidebarLink icon={FileText} label="Reports" path="/reports" onNavigate={onNavigate} />
           </div>
         </div>
 
@@ -136,8 +146,8 @@ export function Sidebar() {
         <div>
           <p className="text-gray-400 uppercase text-xs px-2 mb-2">Account</p>
           <div className="space-y-1">
-            <SidebarLink icon={User} label="Profile" path="/profile" />
-            <SidebarLink icon={Settings} label="Settings" path="/settings" />
+            <SidebarLink icon={User} label="Profile" path="/profile" onNavigate={onNavigate} />
+            <SidebarLink icon={Settings} label="Settings" path="/settings" onNavigate={onNavigate} />
           </div>
         </div>
       </nav>

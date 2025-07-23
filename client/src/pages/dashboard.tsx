@@ -14,6 +14,7 @@ import { InventoryDataIntegration } from "@/components/Dashboard/InventoryDataIn
 import { GoalProgressSection } from "@/components/Dashboard/GoalProgressSection";
 import { RecentActivity } from "@/components/Dashboard/RecentActivity";
 import { WhatIfSimulator } from "@/components/Dashboard/WhatIfSimulator";
+import MobileSidebarToggle from "@/components/Navigation/MobileSidebarToggle";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -119,10 +120,17 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex">
-      <Sidebar />
+      {/* Mobile Sidebar Toggle */}
+      <MobileSidebarToggle />
+
+      {/* Desktop Sidebar */}
+      <div className="hidden md:block">
+        <Sidebar />
+      </div>
+      
       <ThemeToggle />
       
-      <main className="flex-1 ml-60 p-6">
+      <main className="flex-1 md:ml-60 p-4 pt-20 md:pt-6">
         <div className="fade-in">
           {/* Header */}
           <div className="mb-8 flex justify-between items-start">
@@ -141,7 +149,7 @@ export default function Dashboard() {
           </div>
 
           {/* KPI Cards with Animation - Real Data */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
             <AnimatedKPICard
               title="Total Revenue"
               value={Math.round(kpis.overallRevenue)}
@@ -184,7 +192,7 @@ export default function Dashboard() {
             <SalesChart />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8 mb-8">
             {/* Real-Time Inventory Data Integration */}
             <div >
               <InventoryDataIntegration />
