@@ -182,18 +182,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Products (Watchlist) with pagination
+  // Products (Watchlist)
   app.get("/api/products/watchlist", requireAuth, async (req, res) => {
     try {
       const authReq = req as AuthenticatedRequest;
-      const { sortBy, order, page, limit } = req.query;
-      
-      const products = await storage.getWatchlistProducts(authReq.userId, {
-        sortBy: sortBy as string,
-        order: order as 'asc' | 'desc',
-        page: page ? parseInt(page as string) : undefined,
-        limit: limit ? parseInt(limit as string) : undefined
-      });
+      const products = await storage.getWatchlistProducts(authReq.userId);
       res.json(products);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -353,9 +346,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { sku, startDate, endDate } = req.query;
       const userId = authReq.userId;
 
-      // Get paginated sales data
-      const salesResponse = await storage.getSales(userId);
-      const sales = salesResponse.results || [];
+      // For now, return existing sales data filtered by SKU if provided
+      const sales = await storage.getSales(userId);
       let filteredSales = sales;
 
       if (sku) {
@@ -386,8 +378,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = authReq.userId;
 
       // Get sales data for the specified month/year
-      const salesResponse = await storage.getSales(userId);
-      const sales = salesResponse.results || [];
+      const sales = await storage.getSales(userId);
       const filteredSales = sales.filter(sale => {
         const saleDate = new Date(sale.saleDate);
         return saleDate.getMonth() === parseInt(month as string) - 1 && 
@@ -408,8 +399,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = authReq.userId;
 
       // Get inventory items that need reordering
-      const inventoryResponse = await storage.getInventory(userId);
-      const inventory = inventoryResponse.results || [];
+      const inventory = await storage.getInventory(userId);
       const reorderItems = inventory.filter(item => 
         (item.currentStock || 0) <= (item.reorderPoint || 0)
       ).map(item => ({
@@ -486,18 +476,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Inventory with pagination
+  // Inventory
   app.get("/api/inventory", requireAuth, async (req, res) => {
     try {
       const authReq = req as AuthenticatedRequest;
-      const { sortBy, order, page, limit } = req.query;
-      
-      const inventory = await storage.getInventory(authReq.userId, {
-        sortBy: sortBy as string,
-        order: order as 'asc' | 'desc',
-        page: page ? parseInt(page as string) : undefined,
-        limit: limit ? parseInt(limit as string) : undefined
-      });
+      const inventory = await storage.getInventory(authReq.userId);
       res.json(inventory);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -553,12 +536,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Sales with pagination
+  // Sales
   app.get("/api/sales", requireAuth, async (req, res) => {
     try {
       const authReq = req as AuthenticatedRequest;
       const range = req.query.range as string;
-      const { sortBy, order, page, limit } = req.query;
       
       let startDate: Date | undefined;
       let endDate: Date | undefined;
@@ -584,12 +566,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
       }
       
-      const sales = await storage.getSales(authReq.userId, startDate, endDate, {
-        sortBy: sortBy as string,
-        order: order as 'asc' | 'desc',
-        page: page ? parseInt(page as string) : undefined,
-        limit: limit ? parseInt(limit as string) : undefined
-      });
+      const sales = await storage.getSales(authReq.userId, startDate, endDate);
       res.json(sales);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -862,18 +839,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // NEW: SKU Leaderboard API with pagination
+  // NEW: SKU Leaderboard API
   app.get("/api/analytics/sku-leaderboard", requireAuth, async (req, res) => {
     try {
       const authReq = req as AuthenticatedRequest;
-      const { sortBy, order, category, page, limit } = req.query;
+      const { sortBy, order, category } = req.query;
 
       const leaderboard = await storage.getSKULeaderboard(authReq.userId, {
         sortBy: sortBy as 'unitsSold' | 'revenue' | 'profit' | 'margin',
         order: order as 'asc' | 'desc',
-        category: category as string,
-        page: page ? parseInt(page as string) : undefined,
-        limit: limit ? parseInt(limit as string) : undefined
+        category: category as string
       });
       
       res.json(leaderboard);

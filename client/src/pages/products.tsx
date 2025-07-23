@@ -48,18 +48,15 @@ export default function Products() {
     enabled: !!user,
   });
 
-  const { data: watchlistResponse } = useQuery({
+  const { data: watchlistProducts = [] } = useQuery({
     queryKey: ["/api/products/watchlist"],
     enabled: !!user,
   });
 
-  const { data: inventoryResponse } = useQuery({
+  const { data: inventoryItems = [] } = useQuery({
     queryKey: ["/api/inventory"],
     enabled: !!user,
   });
-
-  const watchlistProducts = (watchlistResponse as any)?.results || [];
-  const inventoryItems = (inventoryResponse as any)?.results || [];
 
   if (loading) {
     return (
@@ -86,11 +83,11 @@ export default function Products() {
             <div className="flex justify-between items-center">
               <div>
                 <h1 className="text-3xl font-bold mb-2">
-                  {(userProfile as any)?.businessName ? `${(userProfile as any).businessName} Product Workshop` : 'Product Workshop'}
+                  {userProfile?.businessName ? `${userProfile.businessName} Product Workshop` : 'Product Workshop'}
                 </h1>
                 <p className="text-gray-600 dark:text-slate-400">
-                  {(userProfile as any)?.businessName 
-                    ? `Research, validate, and track ${(userProfile as any).businessName} products before launching to inventory`
+                  {userProfile?.businessName 
+                    ? `Research, validate, and track ${userProfile.businessName} products before launching to inventory`
                     : "Research, validate, and track products before launching to inventory"
                   }
                 </p>

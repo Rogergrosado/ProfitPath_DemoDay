@@ -19,25 +19,20 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
   const [hasCompletedWelcome, setHasCompletedWelcome] = useState(false);
 
   // Check user progress data
-  const { data: salesResponse } = useQuery({
+  const { data: salesData = [] } = useQuery({
     queryKey: ['/api/sales'],
     enabled: !!user
   });
 
-  const { data: productsResponse } = useQuery({
+  const { data: productsData = [] } = useQuery({
     queryKey: ['/api/products'],
     enabled: !!user
   });
 
-  const { data: inventoryResponse } = useQuery({
+  const { data: inventoryData = [] } = useQuery({
     queryKey: ['/api/inventory'],
     enabled: !!user
   });
-
-  // Extract data from paginated responses
-  const salesData = (salesResponse as any)?.results || [];
-  const productsData = (productsResponse as any)?.results || [];
-  const inventoryData = (inventoryResponse as any)?.results || [];
 
   // Calculate user progress
   const hasSalesData = salesData.length > 0;

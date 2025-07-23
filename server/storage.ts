@@ -28,7 +28,7 @@ import {
   type InsertReorderCalendar,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, gte, lte, sql, asc, notInArray } from "drizzle-orm";
+import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -51,30 +51,10 @@ export interface IStorage {
   createProduct(product: InsertProduct): Promise<Product>;
   updateProduct(id: number, product: Partial<InsertProduct>): Promise<Product>;
   deleteProduct(id: number): Promise<void>;
-  getWatchlistProducts(userId: number, options?: {
-    sortBy?: string;
-    order?: 'asc' | 'desc';
-    page?: number;
-    limit?: number;
-  }): Promise<{
-    results: Product[];
-    nextPage: boolean;
-    totalPages: number;
-    currentPage: number;
-  } | Product[]>;
+  getWatchlistProducts(userId: number): Promise<Product[]>;
 
   // Inventory
-  getInventory(userId: number, options?: {
-    sortBy?: string;
-    order?: 'asc' | 'desc';
-    page?: number;
-    limit?: number;
-  }): Promise<{
-    results: Inventory[];
-    nextPage: boolean;
-    totalPages: number;
-    currentPage: number;
-  } | Inventory[]>;
+  getInventory(userId: number): Promise<Inventory[]>;
   getInventoryItem(id: number): Promise<Inventory | undefined>;
   getInventoryItemBySku(sku: string, userId: number): Promise<Inventory | undefined>;
   createInventoryItem(item: InsertInventory): Promise<Inventory>;
@@ -84,17 +64,7 @@ export interface IStorage {
   restockInventoryItem(sku: string, userId: number, quantity: number, notes?: string): Promise<Inventory>;
 
   // Sales
-  getSales(userId: number, startDate?: Date, endDate?: Date, options?: {
-    sortBy?: string;
-    order?: 'asc' | 'desc';
-    page?: number;
-    limit?: number;
-  }): Promise<{
-    results: Sale[];
-    nextPage: boolean;
-    totalPages: number;
-    currentPage: number;
-  } | Sale[]>;
+  getSales(userId: number, startDate?: Date, endDate?: Date): Promise<Sale[]>;
   createSale(sale: InsertSale): Promise<Sale>;
   getSalesMetrics(userId: number, dateRange?: string): Promise<{
     totalRevenue: number;
@@ -285,19 +255,7 @@ export class DatabaseStorage implements IStorage {
     await db.delete(products).where(eq(products.id, id));
   }
 
-  async getWatchlistProducts(userId: number, options?: {
-    sortBy?: string;
-    order?: 'asc' | 'desc';
-    page?: number;
-    limit?: number;
-  }): Promise<{
-    results: Product[];
-    nextPage: boolean;
-    totalPages: number;
-    currentPage: number;
-  }> {
-    const { sortBy = 'name', order = 'asc', page = 1, limit = 10 } = options || {};
-    
+  async getWatchlistProducts(userId: number): Promise<Product[]> {
     // Get products that haven't been promoted to inventory yet
     const existingInventoryProductIds = await db
       .select({ productId: inventory.productId })
@@ -308,104 +266,18 @@ export class DatabaseStorage implements IStorage {
       .map(item => item.productId)
       .filter(id => id !== null);
 
-    // Validate sortBy to prevent injection
-    const validSortFields = ['name', 'category', 'currentPrice', 'researchNotes'];
-    const safeSortBy = validSortFields.includes(sortBy) ? sortBy : 'name';
-    
-    // Build base query with proper typing
-    let query = db
-      .select()
-      .from(products)
-      .where(eq(products.userId, userId));
-
-    // Filter by watchlist (exclude inventory products)  
-    const allProducts = await query;
-    const watchlistProducts = allProducts.filter(product => !excludedIds.includes(product.id));
-    
-    // Apply sorting
-    watchlistProducts.sort((a, b) => {
-      const aVal = a[safeSortBy as keyof Product] as any;
-      const bVal = b[safeSortBy as keyof Product] as any;
-      
-      if (order === 'desc') {
-        return bVal > aVal ? 1 : bVal < aVal ? -1 : 0;
-      } else {
-        return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
-      }
-    });
-    
-    // Apply pagination
-    const totalCount = watchlistProducts.length;
-    const totalPages = Math.ceil(totalCount / limit);
-    const offset = (page - 1) * limit;
-    const results = watchlistProducts.slice(offset, offset + limit);
-    
-    return {
-      results,
-      nextPage: page < totalPages,
-      totalPages,
-      currentPage: page
-    };
-  }
-
-  // Inventory with pagination
-  async getInventory(userId: number, options?: {
-    sortBy?: string;
-    order?: 'asc' | 'desc';
-    page?: number;
-    limit?: number;
-  }): Promise<{
-    results: Inventory[];
-    nextPage: boolean;
-    totalPages: number;
-    currentPage: number;
-  }> {
-    const { sortBy = 'lastUpdated', order = 'desc', page = 1, limit = 10 } = options || {};
-    
-    // Validate sortBy to prevent injection
-    const validSortFields = ['sku', 'name', 'category', 'currentStock', 'costPrice', 'sellingPrice', 'lastUpdated'];
-    const safeSortBy = validSortFields.includes(sortBy) ? sortBy : 'lastUpdated';
-    
-    // Get total count
-    const [{ count }] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(inventory)
-      .where(eq(inventory.userId, userId));
-    
-    const totalCount = Number(count);
-    const totalPages = Math.ceil(totalCount / limit);
-    const offset = (page - 1) * limit;
-    
-    // Get paginated results
-    let query = db
-      .select()
-      .from(inventory)
-      .where(eq(inventory.userId, userId))
-      .limit(limit)
-      .offset(offset);
-    
-    // Apply sorting with proper column mapping
-    const sortColumn = inventory[safeSortBy as keyof typeof inventory];
-    if (sortColumn) {
-      if (order === 'desc') {
-        query = query.orderBy(desc(sortColumn));
-      } else {
-        query = query.orderBy(asc(sortColumn));
-      }
+    if (excludedIds.length === 0) {
+      // If no products are in inventory, return all products
+      return this.getProducts(userId);
     }
-    
-    const results = await query;
-    
-    return {
-      results,
-      nextPage: page < totalPages,
-      totalPages,
-      currentPage: page
-    };
+
+    // Return products not in inventory
+    const allProducts = await this.getProducts(userId);
+    return allProducts.filter(product => !excludedIds.includes(product.id));
   }
 
-  // Inventory (legacy method for backward compatibility)
-  async getInventoryLegacy(userId: number): Promise<Inventory[]> {
+  // Inventory
+  async getInventory(userId: number): Promise<Inventory[]> {
     return db.select().from(inventory).where(eq(inventory.userId, userId)).orderBy(desc(inventory.lastUpdated));
   }
 
@@ -481,69 +353,8 @@ export class DatabaseStorage implements IStorage {
     await db.delete(inventory).where(eq(inventory.id, id));
   }
 
-  // Sales with pagination
-  async getSales(userId: number, startDate?: Date, endDate?: Date, options?: {
-    sortBy?: string;
-    order?: 'asc' | 'desc';
-    page?: number;
-    limit?: number;
-  }): Promise<{
-    results: Sale[];
-    nextPage: boolean;
-    totalPages: number;
-    currentPage: number;
-  }> {
-    const { sortBy = 'saleDate', order = 'desc', page = 1, limit = 10 } = options || {};
-    
-    // Validate sortBy to prevent injection
-    const validSortFields = ['saleDate', 'sku', 'quantity', 'totalRevenue', 'profit'];
-    const safeSortBy = validSortFields.includes(sortBy) ? sortBy : 'saleDate';
-    
-    // Build base conditions
-    const conditions = [eq(sales.userId, userId)];
-    if (startDate) conditions.push(gte(sales.saleDate, startDate));
-    if (endDate) conditions.push(lte(sales.saleDate, endDate));
-    
-    // Get total count
-    const [{ count }] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(sales)
-      .where(and(...conditions));
-    
-    const totalCount = Number(count);
-    const totalPages = Math.ceil(totalCount / limit);
-    const offset = (page - 1) * limit;
-    
-    // Get paginated results
-    let query = db
-      .select()
-      .from(sales)
-      .where(and(...conditions))
-      .limit(limit)
-      .offset(offset);
-    
-    // Apply sorting with proper column mapping
-    const sortColumn = sales[safeSortBy as keyof typeof sales];
-    if (sortColumn) {
-      if (order === 'desc') {
-        query = query.orderBy(desc(sortColumn));
-      } else {
-        query = query.orderBy(asc(sortColumn));
-      }
-    }
-    
-    const results = await query;
-    
-    return {
-      results,
-      nextPage: page < totalPages,
-      totalPages,
-      currentPage: page
-    };
-  }
-
-  // Sales (legacy method for backward compatibility)
-  async getSalesLegacy(userId: number, startDate?: Date, endDate?: Date): Promise<Sale[]> {
+  // Sales
+  async getSales(userId: number, startDate?: Date, endDate?: Date): Promise<Sale[]> {
     let baseQuery = db.select().from(sales);
     
     if (startDate && endDate) {
@@ -1219,22 +1030,15 @@ export class DatabaseStorage implements IStorage {
     sortBy?: 'unitsSold' | 'revenue' | 'profit' | 'margin';
     order?: 'asc' | 'desc';
     category?: string;
-    page?: number;
-    limit?: number;
   }): Promise<{
-    results: {
-      sku: string;
-      product: string;
-      unitsSold: number;
-      revenue: number;
-      profit: number;
-      avgOrderValue: number;
-      margin: number;
-    }[];
-    nextPage: boolean;
-    totalPages: number;
-    currentPage: number;
-  }> {
+    sku: string;
+    product: string;
+    unitsSold: number;
+    revenue: number;
+    profit: number;
+    avgOrderValue: number;
+    margin: number;
+  }[]> {
     try {
       let query = db
         .select({
@@ -1266,7 +1070,7 @@ export class DatabaseStorage implements IStorage {
         
         return {
           sku: result.sku,
-          product: result.product || 'Unknown Product',
+          product: result.product,
           unitsSold,
           revenue,
           profit,
@@ -1285,28 +1089,10 @@ export class DatabaseStorage implements IStorage {
         return order === 'desc' ? bVal - aVal : aVal - bVal;
       });
 
-      // Apply pagination
-      const page = filters.page || 1;
-      const limit = filters.limit || 10;
-      const offset = (page - 1) * limit;
-      const totalItems = leaderboard.length;
-      const totalPages = Math.ceil(totalItems / limit);
-      const paginatedResults = leaderboard.slice(offset, offset + limit);
-
-      return {
-        results: paginatedResults,
-        nextPage: page < totalPages,
-        totalPages,
-        currentPage: page
-      };
+      return leaderboard;
     } catch (error) {
       console.error('Error fetching SKU leaderboard:', error);
-      return {
-        results: [],
-        nextPage: false,
-        totalPages: 0,
-        currentPage: 1
-      };
+      return [];
     }
   }
 }

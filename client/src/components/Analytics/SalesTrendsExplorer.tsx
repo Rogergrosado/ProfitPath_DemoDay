@@ -66,19 +66,14 @@ export function SalesTrendsExplorer() {
         if (filters.category) params.append("category", filters.category);
         if (filters.sku) params.append("sku", filters.sku);
 
-        console.log('🔍 Fetching sales trends with filters:', filters);
-        console.log('🔍 API URL:', `/api/analytics/sales-trend?${params.toString()}`);
-
         const response = await fetch(`/api/analytics/sales-trend?${params.toString()}`, {
           headers: authHeaders
         });
         
         if (!response.ok) throw new Error('Failed to fetch sales trends');
-        const data = await response.json();
-        console.log('📊 Sales trends data received:', data);
-        return Array.isArray(data) ? data : [];
+        return response.json() as SalesTrendsData[];
       } catch (error) {
-        console.error('❌ Error fetching sales trends:', error);
+        console.error('Error fetching sales trends:', error);
         return [];
       }
     }
@@ -272,12 +267,9 @@ export function SalesTrendsExplorer() {
             <div className="h-96 flex items-center justify-center">
               <div className="text-gray-500 dark:text-gray-400">Loading chart data...</div>
             </div>
-          ) : !trendsData || trendsData.length === 0 ? (
+          ) : trendsData.length === 0 ? (
             <div className="h-96 flex items-center justify-center">
-              <div className="text-center">
-                <div className="text-gray-500 dark:text-gray-400 mb-2">No sales trends data available</div>
-                <div className="text-sm text-gray-400">Add sales data to see trends visualization</div>
-              </div>
+              <div className="text-gray-500 dark:text-gray-400">No sales data found for the selected filters</div>
             </div>
           ) : (
             <ResponsiveContainer width="100%" height={400}>

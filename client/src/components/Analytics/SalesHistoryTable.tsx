@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,47 +22,24 @@ export function SalesHistoryTable({ className }: SalesHistoryTableProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: salesResponse, isLoading } = useQuery({
+  const { data: salesResponse = [], isLoading } = useQuery({
     queryKey: ["/api/sales", dateRange],
     queryFn: async () => {
-      console.log('📈 Fetching sales data for range:', dateRange);
       const response = await apiRequest(`/api/sales?range=${dateRange}`);
-      const data = await response.json();
-      console.log('📊 Sales response received:', data);
-      return data;
+      return response.json();
     },
   });
 
-  // Extract sales data from paginated response
-  const salesHistory = (salesResponse as any)?.results || [];
-  console.log('📋 Sales history extracted:', salesHistory);
+  // Ensure we always have an array to work with
+  const salesHistory = Array.isArray(salesResponse) ? salesResponse : [];
 
-  // Calculate metrics directly from sales data
-  const salesMetrics = useMemo(() => {
-    if (!salesHistory.length) {
-      return {
-        totalRevenue: 0,
-        totalProfit: 0,
-        totalUnits: 0,
-        averageOrderValue: 0
-      };
-    }
-
-    const totalRevenue = salesHistory.reduce((sum: number, sale: any) => 
-      sum + (parseFloat(sale.totalRevenue) || 0), 0);
-    const totalProfit = salesHistory.reduce((sum: number, sale: any) => 
-      sum + (parseFloat(sale.profit) || 0), 0);
-    const totalUnits = salesHistory.reduce((sum: number, sale: any) => 
-      sum + (parseInt(sale.quantity) || 0), 0);
-    const averageOrderValue = salesHistory.length > 0 ? totalRevenue / salesHistory.length : 0;
-
-    return {
-      totalRevenue,
-      totalProfit,
-      totalUnits,
-      averageOrderValue
-    };
-  }, [salesHistory]);
+  const { data: salesMetrics } = useQuery({
+    queryKey: ["/api/performance/metrics", dateRange],
+    queryFn: async () => {
+      const response = await apiRequest(`/api/performance/metrics/${dateRange}`);
+      return response.json();
+    },
+  });
 
   const recalculateMutation = useMutation({
     mutationFn: async () => {
