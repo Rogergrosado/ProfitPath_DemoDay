@@ -6,9 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Calendar, Filter, Download, TrendingUp, DollarSign, Package, RefreshCw } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
+import { Calendar, Filter, Download, TrendingUp, DollarSign, Package, RefreshCw, AlertCircle, History } from "lucide-react";
+import { apiRequest, getAuthHeaders } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { useAuthReady } from "@/hooks/useAuthReady";
+import { format } from "date-fns";
 
 interface SalesHistoryTableProps {
   className?: string;
@@ -21,17 +24,66 @@ export function SalesHistoryTable({ className }: SalesHistoryTableProps) {
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const authReady = useAuthReady();
 
-  const { data: salesResponse = [], isLoading } = useQuery({
-    queryKey: ["/api/sales", dateRange],
+  // Get date range boundaries based on selection
+  const getDateRangeBoundaries = (range: string) => {
+    const now = new Date();
+    let startDate: Date;
+    
+    switch (range) {
+      case "7d":
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case "30d":
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      case "90d":
+        startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+        break;
+      case "1y":
+        startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+        break;
+      default:
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    }
+    
+    return { startDate, endDate: now };
+  };
+
+  const { startDate, endDate } = getDateRangeBoundaries(dateRange);
+
+  const { data: salesHistory = [], isLoading, error, refetch } = useQuery({
+    queryKey: ["/api/sales/history", dateRange, startDate.toISOString(), endDate.toISOString()],
+    enabled: !!user && authReady,
+    staleTime: 0, // Always fetch fresh data
+    cacheTime: 0, // Don't cache the data
     queryFn: async () => {
-      const response = await apiRequest(`/api/sales?range=${dateRange}`);
-      return response.json();
+      const params = new URLSearchParams();
+      params.append("startDate", startDate.toISOString());
+      params.append("endDate", endDate.toISOString());
+      
+      console.log(`🔄 [Performance] Fetching sales history with params:`, { 
+        dateRange, 
+        startDate: startDate.toISOString(), 
+        endDate: endDate.toISOString() 
+      });
+      
+      const authHeaders = await getAuthHeaders();
+      const response = await fetch(`/api/sales/history?${params}`, {
+        headers: authHeaders,
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log(`📦 [Performance] Sales history data received (${Array.isArray(data) ? data.length : 0} entries):`, data);
+      return Array.isArray(data) ? data : [];
     },
   });
-
-  // Ensure we always have an array to work with
-  const salesHistory = Array.isArray(salesResponse) ? salesResponse : [];
 
   const { data: salesMetrics } = useQuery({
     queryKey: ["/api/performance/kpis", dateRange],
@@ -72,6 +124,11 @@ export function SalesHistoryTable({ className }: SalesHistoryTableProps) {
     },
   });
 
+  const handleManualRefresh = async () => {
+    console.log("🔄 [Performance] Manual refresh triggered for Sales History");
+    await refetch();
+  };
+
   // Filter sales based on category and SKU
   const filteredSales = salesHistory.filter((sale: any) => {
     const categoryMatch = categoryFilter === "all" || sale.category === categoryFilter;
@@ -95,7 +152,7 @@ export function SalesHistoryTable({ className }: SalesHistoryTableProps) {
   };
 
   const downloadCSV = () => {
-    const headers = ['Date', 'SKU', 'Product Name', 'Category', 'Units Sold', 'Unit Price', 'Total Revenue', 'Profit', 'Marketplace'];
+    const headers = ['Date', 'SKU', 'Product Name', 'Category', 'Units Sold', 'Unit Price', 'Total Revenue', 'Profit', 'Notes'];
     const csvContent = [
       headers.join(','),
       ...filteredSales.map((sale: any) => [
@@ -103,11 +160,11 @@ export function SalesHistoryTable({ className }: SalesHistoryTableProps) {
         sale.sku,
         `"${sale.productName || sale.sku}"`,
         sale.category || 'N/A',
-        sale.quantity,
+        sale.quantitySold || sale.quantity,
         sale.unitPrice,
         sale.totalRevenue,
         sale.profit || '0.00',
-        sale.marketplace || 'amazon'
+        `"${sale.notes || ''}"`
       ].join(','))
     ].join('\n');
 
@@ -125,9 +182,58 @@ export function SalesHistoryTable({ className }: SalesHistoryTableProps) {
   if (isLoading) {
     return (
       <Card className={className}>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <History className="h-5 w-5 text-[#fd7014]" />
+              Sales History & Analytics Log
+            </div>
+            <Button
+              variant="outline"
+              size="sm" 
+              disabled={true}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className="h-4 w-4 animate-spin" />
+              Loading...
+            </Button>
+          </CardTitle>
+        </CardHeader>
         <CardContent className="p-6">
-          <div className="flex items-center justify-center h-32">
-            <div className="animate-pulse text-gray-500">Loading sales history...</div>
+          <div className="animate-pulse space-y-4">
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <Card className={className}>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-red-500" />
+              Sales History - Error
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleManualRefresh}
+              className="flex items-center gap-2 hover:bg-[#fd7014] hover:text-white transition-colors"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Retry
+            </Button>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-red-600 dark:text-red-400">
+            Failed to load sales history: {error.message}
           </div>
         </CardContent>
       </Card>
@@ -200,7 +306,7 @@ export function SalesHistoryTable({ className }: SalesHistoryTableProps) {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
+              <History className="h-5 w-5 text-[#fd7014]" />
               Sales History & Analytics Log
             </CardTitle>
             <div className="flex items-center space-x-2">
@@ -216,12 +322,22 @@ export function SalesHistoryTable({ className }: SalesHistoryTableProps) {
               <Button
                 variant="outline"
                 size="sm"
+                onClick={handleManualRefresh}
+                disabled={isLoading}
+                className="flex items-center gap-2 hover:bg-[#fd7014] hover:text-white transition-colors"
+              >
+                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                Refresh Data
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => recalculateMutation.mutate()}
                 disabled={recalculateMutation.isPending}
                 className="bg-blue-600 hover:bg-blue-700 text-white border-blue-600"
               >
                 <RefreshCw className={`w-4 h-4 ${recalculateMutation.isPending ? 'animate-spin' : ''}`} />
-                {recalculateMutation.isPending ? 'Recalculating...' : 'Refresh'}
+                {recalculateMutation.isPending ? 'Recalculating...' : 'Recalc KPIs'}
               </Button>
             </div>
           </div>
@@ -272,10 +388,25 @@ export function SalesHistoryTable({ className }: SalesHistoryTableProps) {
 
           {/* Sales Table */}
           {filteredSales.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No sales records found for the selected period</p>
-              <p className="text-sm">Record your first sale to see analytics data here</p>
+            <div className="text-center py-12">
+              <History className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                No Sales History Found
+              </h3>
+              <p className="text-gray-500 dark:text-gray-400 mb-2">
+                No sales have been recorded for the selected {dateRange} period
+              </p>
+              <p className="text-sm text-gray-400 dark:text-gray-500 mb-4">
+                Record your first sale to see analytics data here
+              </p>
+              <Button 
+                variant="outline" 
+                onClick={handleManualRefresh}
+                className="hover:bg-[#fd7014] hover:text-white"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Check Again
+              </Button>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -290,43 +421,38 @@ export function SalesHistoryTable({ className }: SalesHistoryTableProps) {
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">Unit Price</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">Revenue</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">Profit</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">Platform</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">Notes</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {filteredSales.map((sale: any) => (
                     <tr key={sale.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                      <td className="px-4 py-4 text-sm">
-                        <div>
-                          <div className="font-medium">{formatDate(sale.saleDate)}</div>
-                          {sale.importBatch && (
-                            <div className="text-xs text-gray-500">Batch Import</div>
-                          )}
-                        </div>
+                      <td className="px-4 py-3 text-sm font-medium">
+                        {format(new Date(sale.saleDate), "MMM dd, yyyy")}
                       </td>
-                      <td className="px-4 py-4">
-                        <span className="font-mono text-sm font-medium">{sale.sku}</span>
+                      <td className="px-4 py-3 text-sm">
+                        <Badge variant="outline">{sale.sku}</Badge>
                       </td>
-                      <td className="px-4 py-4">
-                        <div className="max-w-48 truncate font-medium">{sale.productName || sale.sku}</div>
+                      <td className="px-4 py-3 text-sm font-medium">
+                        {sale.productName || 'Unknown Product'}
                       </td>
-                      <td className="px-4 py-4">
-                        <Badge variant="outline" className="text-xs">
-                          {sale.category || 'Uncategorized'}
-                        </Badge>
+                      <td className="px-4 py-3 text-sm">
+                        <Badge variant="secondary">{sale.category || 'N/A'}</Badge>
                       </td>
-                      <td className="px-4 py-4 text-center font-medium">{isNaN(sale.quantity) ? 0 : sale.quantity}</td>
-                      <td className="px-4 py-4 font-medium">{formatCurrency(isNaN(sale.unitPrice) ? 0 : sale.unitPrice)}</td>
-                      <td className="px-4 py-4 font-bold text-green-600 dark:text-green-400">
-                        {formatCurrency(isNaN(sale.totalRevenue) ? 0 : sale.totalRevenue)}
+                      <td className="px-4 py-3 text-sm font-medium">
+                        {sale.quantitySold || sale.quantity}
                       </td>
-                      <td className="px-4 py-4 font-bold text-blue-600 dark:text-blue-400">
-                        {formatCurrency(isNaN(sale.profit) ? 0 : (sale.profit || 0))}
+                      <td className="px-4 py-3 text-sm">
+                        ${parseFloat(sale.unitPrice || 0).toFixed(2)}
                       </td>
-                      <td className="px-4 py-4">
-                        <Badge variant="secondary" className="text-xs">
-                          {sale.marketplace || 'Amazon'}
-                        </Badge>
+                      <td className="px-4 py-3 text-sm text-green-600 dark:text-green-400 font-semibold">
+                        ${parseFloat(sale.totalRevenue || 0).toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-purple-600 dark:text-purple-400 font-semibold">
+                        ${parseFloat(sale.profit || 0).toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                        {sale.notes || '-'}
                       </td>
                     </tr>
                   ))}
