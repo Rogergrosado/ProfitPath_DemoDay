@@ -1,0 +1,96 @@
+Root Causes to Check
+1. ✅ Toast/Alert Fires Prematurely
+You're triggering a "Success" toast before confirming the action actually worked.
+
+Fix:
+
+js
+Copiar
+Editar
+try {
+  await deleteReport(id); // or any other async function
+  toast.success("Deleted successfully!");
+} catch (error) {
+  toast.error("Failed to delete.");
+}
+2. ✅ Function Is Called, But Logic Is Missing Inside
+You’re triggering the handler, but the action inside isn’t implemented or returns silently.
+
+Fix:
+Check your button like:
+
+jsx
+Copiar
+Editar
+<Button onClick={() => console.log("Delete clicked")}>Delete</Button>
+If the log fires, but the actual deletion fails, then check the handler itself:
+
+js
+Copiar
+Editar
+const handleDelete = async () => {
+  console.log("Trying to delete...");
+  const res = await fetch(`/api/reports/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Delete failed");
+};
+3. ✅ Wrong Element or ID Targeted (PDF/CSV)
+If your button uses an ID like report-${id} but your report DOM doesn’t match that ID, html2pdf() or CSV generation may silently fail.
+
+Fix for PDF:
+Ensure the element exists:
+
+js
+Copiar
+Editar
+const el = document.getElementById(`report-${id}`);
+if (!el) return toast.error("PDF export failed: no matching report element.");
+4. ✅ Missing Frontend State Updates
+You might be deleting or downloading, but not updating state/UI to reflect the action.
+
+js
+Copiar
+Editar
+// after delete
+await fetch(`/api/reports/${id}`, { method: "DELETE" });
+setReports((prev) => prev.filter((r) => r.id !== id));
+5. ✅ Async Functions Aren’t Awaited
+If you don’t await a download or export function, the toast will show before anything happens—or nothing happens at all.
+
+Bad:
+
+js
+Copiar
+Editar
+onClick={() => {
+  exportToCSV();
+  toast.success("Exported!");
+}}
+Fix:
+
+js
+Copiar
+Editar
+onClick={async () => {
+  await exportToCSV(); // if it returns a promise
+  toast.success("Exported!");
+}}
+✅ Suggested Debug Plan
+Log everything inside each handler.
+
+js
+Copiar
+Editar
+console.log("Delete clicked");
+console.log("Report ID:", report.id);
+Verify success with conditions:
+
+js
+Copiar
+Editar
+if (res.ok) {
+  toast.success("Success!");
+} else {
+  toast.error("Something went wrong.");
+}
+Temporarily disable the toast and show a modal or alert with the result. This confirms if the backend call or export logic is silent-failing.
+

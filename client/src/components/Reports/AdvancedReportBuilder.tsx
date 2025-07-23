@@ -206,12 +206,14 @@ export function AdvancedReportBuilder() {
   };
 
   const handleDownloadPDF = async (report: any) => {
+    console.log('🔍 PDF Download - Starting for report:', report.id, report.name);
+    
     try {
-      console.log('Starting PDF download for report:', report.name);
       const element = document.getElementById(`report-preview-${report.id}`);
+      console.log('🔍 PDF Download - Preview element found:', !!element);
       
       if (!element) {
-        // If preview isn't open, create a temporary element with report content
+        console.log('🔍 PDF Download - Creating temporary element');
         const widgets = JSON.parse(report.widgets || '[]');
         const tempDiv = document.createElement('div');
         tempDiv.style.cssText = 'position: absolute; left: -9999px; top: -9999px; width: 800px;';
@@ -248,7 +250,8 @@ export function AdvancedReportBuilder() {
         `;
         document.body.appendChild(tempDiv);
         
-        await html2pdf()
+        console.log('🔍 PDF Download - Starting html2pdf generation');
+        const result = await html2pdf()
           .from(tempDiv)
           .set({
             margin: [10, 10, 10, 10],
@@ -267,8 +270,10 @@ export function AdvancedReportBuilder() {
           .save();
           
         document.body.removeChild(tempDiv);
+        console.log('✅ PDF Download - Successfully generated and saved');
       } else {
-        await html2pdf()
+        console.log('🔍 PDF Download - Using preview element');
+        const result = await html2pdf()
           .from(element)
           .set({
             margin: [10, 10, 10, 10],
@@ -285,6 +290,7 @@ export function AdvancedReportBuilder() {
             }
           })
           .save();
+        console.log('✅ PDF Download - Successfully generated and saved from preview');
       }
       
       toast({
@@ -292,7 +298,7 @@ export function AdvancedReportBuilder() {
         description: `${report.name} has been downloaded successfully.`,
       });
     } catch (error) {
-      console.error('PDF Download Error:', error);
+      console.error('❌ PDF Download Error:', error);
       toast({
         title: "Download Failed",
         description: "Failed to generate PDF. Please try again.",
