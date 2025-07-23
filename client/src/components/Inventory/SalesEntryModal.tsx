@@ -38,7 +38,8 @@ export function SalesEntryModal({ inventory, open, onOpenChange }: SalesEntryMod
       method: "POST",
       body: JSON.stringify(data),
     }),
-    onSuccess: () => {
+    onSuccess: (response) => {
+      console.log("✅ Sale recorded successfully:", response);
       toast({
         title: "Sale recorded successfully",
         description: "The sale has been added and inventory updated.",
@@ -50,13 +51,26 @@ export function SalesEntryModal({ inventory, open, onOpenChange }: SalesEntryMod
         saleDate: new Date().toISOString().split('T')[0],
         notes: "",
       });
+      
+      // Force refetch sales history queries with a small delay to ensure backend is updated
+      setTimeout(() => {
+        queryClient.invalidateQueries({ 
+          predicate: (query) => query.queryKey[0] === "/api/sales/history"
+        });
+        queryClient.refetchQueries({ 
+          predicate: (query) => query.queryKey[0] === "/api/sales/history"
+        });
+      }, 100);
+      
       // Invalidate all related queries for comprehensive updates
       queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
       queryClient.invalidateQueries({ queryKey: ["/api/inventory/kpis"] });
       queryClient.invalidateQueries({ queryKey: ["/api/sales"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/sales/history"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/sales/calendar"] });
+      queryClient.invalidateQueries({ 
+        predicate: (query) => query.queryKey[0] === "/api/sales/calendar"
+      });
       queryClient.invalidateQueries({ queryKey: ["/api/performance/metrics"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/performance/kpis"] });
     },
     onError: (error: any) => {
       console.error("❌ Error recording manual sale:", error.response?.data || error.message);

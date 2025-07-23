@@ -346,26 +346,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { sku, startDate, endDate } = req.query;
       const userId = authReq.userId;
 
-      // For now, return existing sales data filtered by SKU if provided
-      const sales = await storage.getSales(userId);
-      let filteredSales = sales;
+      console.log(`📊 Fetching sales history for user ${userId}:`, { sku, startDate, endDate });
 
+      // Use the dedicated getSalesHistory method which includes more detailed information
+      let start: Date | undefined;
+      let end: Date | undefined;
+      
+      if (startDate) start = new Date(startDate as string);
+      if (endDate) end = new Date(endDate as string);
+
+      const salesHistory = await storage.getSalesHistory(userId, start, end);
+      
+      // Filter by SKU if provided
+      let filteredHistory = salesHistory;
       if (sku) {
-        filteredSales = sales.filter(sale => sale.sku === sku);
+        filteredHistory = salesHistory.filter(sale => sale.sku === sku);
       }
 
-      if (startDate && endDate) {
-        const start = new Date(startDate as string);
-        const end = new Date(endDate as string);
-        filteredSales = filteredSales.filter(sale => {
-          const saleDate = new Date(sale.saleDate);
-          return saleDate >= start && saleDate <= end;
-        });
-      }
-
-      res.json(filteredSales);
+      console.log(`✅ Returning ${filteredHistory.length} sales history records`);
+      res.json(filteredHistory);
     } catch (error) {
-      console.error('Sales history error:', error);
+      console.error('❌ Sales history error:', error);
       res.status(500).json({ message: 'Failed to fetch sales history' });
     }
   });

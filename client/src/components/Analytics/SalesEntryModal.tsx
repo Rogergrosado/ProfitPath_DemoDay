@@ -81,6 +81,15 @@ export function SalesEntryModal({ children }: SalesEntryModalProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/sales"] });
       queryClient.invalidateQueries({ queryKey: ["/api/performance/metrics"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/performance/kpis"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+      // Use predicate to invalidate all sales history queries regardless of parameters
+      queryClient.invalidateQueries({ 
+        predicate: (query) => query.queryKey[0] === "/api/sales/history"
+      });
+      queryClient.invalidateQueries({ 
+        predicate: (query) => query.queryKey[0] === "/api/sales/calendar"
+      });
       toast({ title: "Sale added successfully" });
       setOpen(false);
       form.reset();
