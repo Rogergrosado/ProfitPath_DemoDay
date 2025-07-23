@@ -50,18 +50,8 @@ export default function Goals() {
     enabled: !!user,
   });
 
-  const { data: goals = [] } = useQuery({
-    queryKey: ["/api/goals"],
-    enabled: !!user,
-  });
-
-  const { data: salesData = [] } = useQuery({
-    queryKey: ["/api/sales"],
-    enabled: !!user,
-  });
-
-  const { data: inventoryData = [] } = useQuery({
-    queryKey: ["/api/inventory"],
+  const { data: goals = [] } = useQuery<any[]>({
+    queryKey: ["/api/goals/with-progress"],
     enabled: !!user,
   });
 
@@ -78,73 +68,22 @@ export default function Goals() {
     return null;
   }
 
-  // Calculate goal progress based on real data
-  const calculateGoalProgress = (goal: any) => {
-    const now = new Date();
-    const createdAt = new Date(goal.createdAt);
-    const periodDays = parseInt(goal.period.replace('d', ''));
-    const endDate = new Date(createdAt.getTime() + periodDays * 24 * 60 * 60 * 1000);
-    
-    let currentValue = 0;
-    
-    switch (goal.metric) {
-      case 'revenue':
-        if (goal.scope === 'global') {
-          currentValue = salesData.reduce((sum: number, sale: any) => 
-            sum + (parseFloat(sale.totalPrice) || 0), 0);
-        } else if (goal.scope === 'category') {
-          currentValue = salesData
-            .filter((sale: any) => sale.inventory?.category === goal.targetCategory)
-            .reduce((sum: number, sale: any) => sum + (parseFloat(sale.totalPrice) || 0), 0);
-        }
-        break;
-      
-      case 'unitsSold':
-        if (goal.scope === 'global') {
-          currentValue = salesData.reduce((sum: number, sale: any) => 
-            sum + (sale.quantity || 0), 0);
-        } else if (goal.scope === 'sku' && goal.targetSKU) {
-          currentValue = salesData
-            .filter((sale: any) => sale.inventory?.sku === goal.targetSKU)
-            .reduce((sum: number, sale: any) => sum + (sale.quantity || 0), 0);
-        }
-        break;
-      
-      case 'profit':
-        currentValue = salesData.reduce((sum: number, sale: any) => {
-          const revenue = parseFloat(sale.totalPrice) || 0;
-          const cost = (sale.quantity || 0) * (parseFloat(sale.inventory?.costPrice) || 0);
-          return sum + (revenue - cost);
-        }, 0);
-        break;
-      
-      case 'profitMargin':
-        const totalRevenue = salesData.reduce((sum: number, sale: any) => 
-          sum + (parseFloat(sale.totalPrice) || 0), 0);
-        const totalCost = salesData.reduce((sum: number, sale: any) => 
-          sum + ((sale.quantity || 0) * (parseFloat(sale.inventory?.costPrice) || 0)), 0);
-        currentValue = totalRevenue > 0 ? ((totalRevenue - totalCost) / totalRevenue) * 100 : 0;
-        break;
-    }
-    
-    const progress = Math.min((currentValue / goal.targetValue) * 100, 100);
-    const timeElapsed = Math.min((now.getTime() - createdAt.getTime()) / (endDate.getTime() - createdAt.getTime()), 1);
-    
-    let status = 'on_track';
-    if (progress >= 100) {
-      status = 'met';
-    } else if (now > endDate) {
-      status = 'unmet';
-    } else if (progress < timeElapsed * 100 * 0.8) {
-      status = 'off_track';
-    }
-    
-    return { currentValue, progress, status, timeElapsed: timeElapsed * 100 };
+  // Use backend calculated progress data (no manual calculation needed)
+  const getGoalProgress = (goal: any) => {
+    // Backend provides accurate currentValue, progressPercentage, and status
+    return {
+      currentValue: Number(goal.currentValue) || 0,
+      progressPercentage: Number(goal.progressPercentage) || 0,
+      status: goal.status || 'off_track',
+      daysRemaining: Number(goal.daysRemaining) || 0,
+      isExpired: Boolean(goal.isExpired)
+    };
   };
 
+  // Goals already come with progress data from backend
   const goalsWithProgress = goals.map((goal: any) => ({
     ...goal,
-    ...calculateGoalProgress(goal)
+    ...getGoalProgress(goal)
   }));
 
   const activeGoals = goalsWithProgress.filter((goal: any) => goal.isActive);
@@ -189,8 +128,8 @@ export default function Goals() {
   };
 
   const formatMetricValue = (metric: string, value: string | number) => {
-    const numValue = typeof value === 'string' ? parseFloat(value) : value;
-    if (isNaN(numValue)) return '0';
+    const numValue = typeof value === 'string' ? parseFloat(value) : Number(value);
+    if (isNaN(numValue) || numValue === null || numValue === undefined) return '0';
     
     switch (metric) {
       case 'revenue':
@@ -201,7 +140,7 @@ export default function Goals() {
       case 'profitMargin':
         return `${numValue.toFixed(1)}%`;
       default:
-        return numValue.toLocaleString();
+        return Math.round(numValue).toLocaleString();
     }
   };
 
@@ -409,20 +348,20 @@ export default function Goals() {
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600 dark:text-gray-400">Progress</span>
-                        <span className="font-medium text-black dark:text-white">{goal.progress.toFixed(1)}%</span>
+                        <span className="font-medium text-black dark:text-white">{(goal.progressPercentage || 0).toFixed(1)}%</span>
                       </div>
                       <div className="relative">
-                        <Progress value={goal.progress} className="h-3" />
+                        <Progress value={goal.progressPercentage || 0} className="h-3" />
                         <div 
                           className="absolute top-0 h-3 bg-gray-300 dark:bg-gray-600 opacity-50 rounded-full"
-                          style={{ width: `${goal.timeElapsed}%` }}
+                          style={{ width: `${Math.min((goal.progressPercentage || 0) * 0.8, 100)}%` }}
                         />
                       </div>
                       <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
-                        <span>Time elapsed: {goal.timeElapsed.toFixed(1)}%</span>
+                        <span>{(goal.daysRemaining || 0) > 0 ? `${goal.daysRemaining} days remaining` : 'Goal period ended'}</span>
                         <span>
-                          {goal.progress >= 100 ? "🎉 Goal achieved!" : 
-                           goal.progress >= goal.timeElapsed * 0.8 ? "📈 On track" : 
+                          {(goal.progressPercentage || 0) >= 100 ? "🎉 Goal achieved!" : 
+                           goal.status === 'on_track' ? "📈 On track" : 
                            "⚠️ Behind schedule"}
                         </span>
                       </div>
