@@ -630,6 +630,24 @@ export class DatabaseStorage implements IStorage {
         currentValue = Number(result.total);
       } else if (goal.metric === 'unitsSold') {
         console.log(`📊 Executing unitsSold query with ${baseConditions.length} conditions`);
+        console.log(`📊 Query conditions:`, {
+          userId,
+          startDate: startDate.toISOString(),
+          effectiveEndDate: effectiveEndDate.toISOString(),
+          targetSKU: goal.targetSKU,
+          scope: goal.scope
+        });
+        
+        // Debug: Check all sales for this user and SKU
+        const allSalesForSKU = await db
+          .select()
+          .from(sales)
+          .where(and(
+            eq(sales.userId, userId),
+            eq(sales.sku, goal.targetSKU)
+          ));
+        console.log(`📊 All sales for SKU ${goal.targetSKU}:`, allSalesForSKU);
+        
         const [result] = await db
           .select({ total: sql<number>`COALESCE(SUM(${sales.quantity}), 0)` })
           .from(sales)
