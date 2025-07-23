@@ -43,8 +43,14 @@ function Router() {
         <Route path="/simple-analytics" component={Analytics} />
         <Route path="/reports" component={Reports} />
         <Route path="/goals" component={Goals} />
-        <Route path="/goals/trophy-room" component={() => import("./pages/trophies-room")} />
-        <Route path="/goals/trophies-progress" component={() => import("./pages/trophies-progress")} />
+        <Route path="/goals/trophy-room" component={async () => {
+          const { default: TrophyRoomPage } = await import("./pages/trophies-room");
+          return TrophyRoomPage;
+        }} />
+        <Route path="/goals/trophies-progress" component={async () => {
+          const { default: TrophyProgressPage } = await import("./pages/trophies-progress");  
+          return TrophyProgressPage;
+        }} />
         <Route path="/settings" component={Settings} />
         <Route path="/profile" component={Profile} />
         <Route path="/test" component={TestPage} />

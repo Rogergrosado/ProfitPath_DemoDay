@@ -106,6 +106,13 @@ export function Sidebar() {
               locked={!unlockAdvancedFeatures}
               lockReason={lockReason}
             />
+            <SidebarLink 
+              icon={TrendingUp} 
+              label="Trophy Room" 
+              path="/goals/trophy-room" 
+              locked={!unlockAdvancedFeatures}
+              lockReason={lockReason}
+            />
           </div>
         </div>
 

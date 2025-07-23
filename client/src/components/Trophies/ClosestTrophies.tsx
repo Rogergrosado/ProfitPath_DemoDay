@@ -72,16 +72,6 @@ export function ClosestTrophies() {
     );
   }
 
-  const formatMetric = (metric: string) => {
-    switch (metric) {
-      case 'revenue': return '$';
-      case 'profit': return '$';
-      case 'units': return '';
-      case 'profit_margin': return '%';
-      default: return '';
-    }
-  };
-
   const formatValue = (value: number, metric: string) => {
     if (metric === 'revenue' || metric === 'profit') {
       return `$${value.toLocaleString()}`;
@@ -91,6 +81,7 @@ export function ClosestTrophies() {
     }
     return value.toLocaleString();
   };
+
 
   return (
     <Card>

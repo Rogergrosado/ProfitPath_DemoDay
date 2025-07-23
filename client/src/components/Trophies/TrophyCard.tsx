@@ -1,6 +1,4 @@
-import { Trophy, Award, Crown, Medal } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 
 interface TrophyData {
@@ -22,28 +20,32 @@ interface TrophyCardProps {
   showProgress?: boolean;
 }
 
-export function TrophyCard({ data, showProgress = false }: TrophyCardProps) {
-  const { trophy, completed, percentComplete, earnedAt } = data;
-  
-  const getTierIcon = (tier: string) => {
-    switch (tier) {
-      case 'bronze': return <Medal className="h-5 w-5 text-amber-600" />;
-      case 'silver': return <Award className="h-5 w-5 text-gray-500" />;
-      case 'gold': return <Trophy className="h-5 w-5 text-yellow-500" />;
-      case 'platinum': return <Crown className="h-5 w-5 text-purple-500" />;
-      default: return <Medal className="h-5 w-5 text-gray-400" />;
-    }
+const TrophyBadge = ({ tier, name, unlocked }: { tier: string; name: string; unlocked: boolean }) => {
+  const tierStyles = {
+    bronze: 'bg-[#cd7f32] text-white',
+    silver: 'bg-[#c0c0c0] text-black',
+    gold: 'bg-[#ffd700] text-black',
+    platinum: 'bg-[#e5e4e2] text-black border-2 border-blue-300',
   };
 
-  const getTierColor = (tier: string) => {
-    switch (tier) {
-      case 'bronze': return 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200';
-      case 'silver': return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
-      case 'gold': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
-      case 'platinum': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
-    }
+  const icons = {
+    bronze: '🥉',
+    silver: '🥈',
+    gold: '🥇',
+    platinum: '💎',
   };
+
+  return (
+    <div className={`flex items-center gap-2 px-3 py-1 rounded-full shadow-md ${tierStyles[tier as keyof typeof tierStyles]} ${!unlocked && 'opacity-40 grayscale'}`}>
+      <span className="text-lg">{icons[tier as keyof typeof icons]}</span>
+      <span className="text-sm font-semibold">{name}</span>
+      {!unlocked && <span className="ml-auto text-xs italic">Locked</span>}
+    </div>
+  );
+};
+
+export function TrophyCard({ data, showProgress = false }: TrophyCardProps) {
+  const { trophy, completed, percentComplete, earnedAt } = data;
 
   const formatDate = (date: Date | null) => {
     if (!date) return '';
@@ -51,30 +53,15 @@ export function TrophyCard({ data, showProgress = false }: TrophyCardProps) {
   };
 
   return (
-    <Card className={`transition-all duration-200 hover:shadow-md ${completed ? 'ring-2 ring-green-200 dark:ring-green-800' : 'opacity-75'}`}>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {getTierIcon(trophy.tier)}
-            <Badge className={getTierColor(trophy.tier)}>
-              {trophy.tier.toUpperCase()}
-            </Badge>
-          </div>
-          {completed && (
-            <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-              ✓ Completed
-            </Badge>
-          )}
-        </div>
-        <CardTitle className={`text-lg ${completed ? 'text-green-700 dark:text-green-300' : ''}`}>
-          {trophy.name}
-        </CardTitle>
-        <CardDescription className="text-sm">
+    <Card className={`bg-card p-4 rounded-lg shadow-md transition-all hover:scale-[1.02] ${!completed ? 'opacity-70' : ''}`}>
+      <CardHeader className="pb-3 px-0 pt-0">
+        <TrophyBadge tier={trophy.tier} name={trophy.name} unlocked={completed} />
+        <CardDescription className="text-sm mt-2 text-muted-foreground">
           {trophy.description}
         </CardDescription>
       </CardHeader>
       
-      <CardContent>
+      <CardContent className="px-0 pb-0">
         {showProgress && !completed && (
           <div className="space-y-2">
             <div className="flex justify-between items-center text-sm">
@@ -86,13 +73,13 @@ export function TrophyCard({ data, showProgress = false }: TrophyCardProps) {
         )}
         
         {completed && earnedAt && (
-          <div className="text-sm text-muted-foreground">
-            Earned on {formatDate(earnedAt)}
+          <div className="text-xs text-green-400">
+            Unlocked: {formatDate(earnedAt)}
           </div>
         )}
         
         {!completed && (
-          <div className="text-sm text-muted-foreground">
+          <div className="text-xs text-muted-foreground">
             Target: {Number(trophy.threshold).toLocaleString()} {trophy.metric.replace('_', ' ')}
           </div>
         )}
