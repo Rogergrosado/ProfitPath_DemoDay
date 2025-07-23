@@ -655,6 +655,13 @@ export class DatabaseStorage implements IStorage {
           .where(and(...baseConditions));
         console.log(`📊 Query result for unitsSold:`, result);
         currentValue = Number(result.total);
+        
+        // Debug: Show matched sales for verification  
+        const matchedSales = await db
+          .select({ id: sales.id, quantity: sales.quantity, saleDate: sales.saleDate })
+          .from(sales)
+          .where(and(...baseConditions));
+        console.log(`📊 Matched sales for calculation:`, matchedSales);
       } else if (goal.metric === 'profit') {
         const [result] = await db
           .select({ total: sql<number>`COALESCE(SUM(CAST(${sales.profit} AS DECIMAL)), 0)` })
@@ -712,6 +719,12 @@ export class DatabaseStorage implements IStorage {
       console.log(`📅 Goal period: ${startDate.toISOString()} to ${goalEndDate.toISOString()}`);
       console.log(`⏰ Days remaining: ${daysRemaining}, Expired: ${isGoalExpired}`);
       console.log(`🔍 Goal scope: ${goal.scope}, target SKU: ${goal.targetSKU}, metric: ${goal.metric}`);
+
+      // Move completed goals to history table if they're met and expired
+      if (isGoalExpired && progressPercentage >= 100) {
+        console.log(`🏆 Goal ${goal.id} completed and expired, should move to history`);
+        // TODO: Move to goal_history table and remove from active goals
+      }
 
       goalsWithProgress.push({
         ...goal,
