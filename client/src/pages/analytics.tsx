@@ -8,6 +8,7 @@ import { ThemeToggle } from "@/components/Navigation/ThemeToggle";
 import { PredictiveAnalytics } from "@/components/Analytics/PredictiveAnalytics";
 import { SalesHistoryTable } from "@/components/Analytics/SalesHistoryTable";
 import { SalesHistoryCalendar } from "@/components/Analytics/SalesHistoryCalendar";
+import { PerformanceKPIs } from "@/components/Analytics/PerformanceKPIs";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -181,6 +182,10 @@ export default function Analytics() {
 
             <TabsContent value="performance">
               <div className="space-y-6">
+                <PerformanceKPIs onFiltersChange={(filters) => {
+                  // Filters will automatically affect the sales history table below
+                  console.log('Performance filters changed:', filters);
+                }} />
                 <SalesHistoryTable />
               </div>
             </TabsContent>

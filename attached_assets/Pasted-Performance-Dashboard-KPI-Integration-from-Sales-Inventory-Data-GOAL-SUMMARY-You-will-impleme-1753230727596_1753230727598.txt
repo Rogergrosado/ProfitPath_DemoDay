@@ -1,0 +1,185 @@
+Performance & Dashboard KPI Integration from Sales & Inventory Data
+🎯 GOAL SUMMARY
+You will implement two new dynamic KPI systems:
+
+Performance KPIs (focus: individual product performance with filters)
+
+Dashboard KPIs (focus: overall career analytics aggregated from all products)
+
+These KPIs are powered by data already stored in the Inventory, sales_history, and calendar_sales tables.
+
+Additionally:
+
+Performance KPIs need filter capabilities
+
+Dashboard KPIs must aggregate everything for trophy system tracking
+
+✅ 1. PERFORMANCE SUB-PAGE – Per-Product KPI Tracking
+🔄 Replace Existing Top-Level KPIs
+Remove the old static KPI block. Replace it with dynamic, filterable KPIs tied directly to the Sale History List and Analytics Logs.
+
+📊 New KPI Metrics (Per Product)
+Total Revenue
+
+Total Profit
+
+Units Sold
+
+Avg Order Value (Total Revenue / Total Orders)
+
+🔍 KPI Filter Logic
+The KPI block should include:
+
+Date Range Picker
+
+Category Selector (dropdown)
+
+Search by SKU
+
+These filters should:
+
+Affect KPIs AND sale history list below
+
+Trigger a new API call to get filtered metrics
+
+Use debounce (for search) and loading states
+
+🧠 Frontend State Flow (Performance Page)
+User applies filters
+
+Trigger GET /api/performance/kpis with filter query
+
+Re-render KPIs and Sale History Log
+
+Update:
+
+Total Revenue = sum of unit_price × qty
+
+Total Profit = sum of (unit_price – cost) × qty
+
+Units Sold = sum of qty
+
+Avg Order Value = Total Revenue / distinct order count
+
+🛠 Backend Route
+Route: GET /api/performance/kpis
+Query Parameters:
+
+ts
+Copiar
+Editar
+?startDate=YYYY-MM-DD
+&endDate=YYYY-MM-DD
+&sku=HEA-6844
+&category=automotive
+Return:
+
+json
+Copiar
+Editar
+{
+  totalRevenue: 564.32,
+  totalProfit: 327.11,
+  unitsSold: 23,
+  avgOrderValue: 24.53
+}
+Backend Logic:
+
+Fetch from sales_history
+
+Apply WHERE filters for:
+
+sale_date BETWEEN
+
+SKU (optional)
+
+JOIN with inventory for category (optional)
+
+Aggregate results as shown above
+
+✅ 2. DASHBOARD SUB-PAGE – Career-Wide KPIs
+The dashboard should provide a complete overview of the seller’s entire performance history, with no filters. These values will also fuel the trophy system.
+
+📈 New Dashboard KPIs (All-Time Aggregates)
+Rename as:
+Overall Revenue
+
+Overall Units Sold
+
+Overall Profit Margin = (Total Profit / Total Revenue) × 100
+
+Overall Conversion Rate (Optional: if data is available)
+
+📌 Conversion Rate requires total product views or visits, which may not yet exist. If unavailable, use a placeholder or hide until ready.
+
+🔄 Logic: Extract Data From All Sub-pages
+Aggregate all data from:
+
+sales_history for revenue, qty, cost
+
+Inventory cost data for accurate profit
+
+(Future: add view data for conversion)
+
+🛠 Backend Route
+Route: GET /api/dashboard/kpis
+Return Example:
+
+json
+Copiar
+Editar
+{
+  overallRevenue: 12456.00,
+  overallUnitsSold: 456,
+  overallProfitMargin: 43.21,
+  overallConversionRate: 12.5
+}
+Backend Logic:
+
+Query all sales from sales_history
+
+Join with inventory to get cost values
+
+Profit = (unit_price – cost) × quantity
+
+Profit Margin = profit / revenue * 100
+
+Optionally include:
+
+Total product views
+
+Unique customers (if tracked)
+
+🧠 Frontend Integration (Dashboard Page)
+Replace old zeroed KPI block with real-time fetch from GET /api/dashboard/kpis
+
+Load KPIs on page mount
+
+Store in context or state for use in:
+
+Trophy tracking system
+
+Career graphs (if added later)
+
+🗃 DATABASE REQUIREMENTS
+✅ Existing Tables
+sales_history: for quantity, unit price, cost, sale date
+
+inventory: for cost per product
+
+calendar_sales: can be used to build charts if needed
+
+❌ No new schema changes required at this time
+🔄 OPTIONAL ENHANCEMENTS (Later)
+Add “Compare Products” mode on Performance page
+
+Add Time Series Charts from calendar_sales
+
+Sync trophy system backend to listen to updated KPIs (WebSocket or polling)
+
+📌 SUMMARY OF ROUTES TO IMPLEMENT
+Route	Purpose
+GET /api/performance/kpis	Filtered KPIs per product/date/category
+GET /api/dashboard/kpis	Overall career KPI summary
+(Optional)	Tie conversion to product views if tracking
+

@@ -9,6 +9,7 @@ import { ThemeToggle } from "@/components/Navigation/ThemeToggle";
 import { AnimatedKPICard } from "@/components/Dashboard/AnimatedKPICard";
 import { SalesChart } from "@/components/Dashboard/SalesChart";
 import { InventorySnapshot } from "@/components/Dashboard/InventorySnapshot";
+import { DashboardKPIs } from "@/components/Dashboard/DashboardKPIs";
 import { InventoryDataIntegration } from "@/components/Dashboard/InventoryDataIntegration";
 import { GoalProgressSection } from "@/components/Dashboard/GoalProgressSection";
 import { WhatIfSimulator } from "@/components/Dashboard/WhatIfSimulator";

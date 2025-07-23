@@ -791,6 +791,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // NEW: Performance KPIs with filters
+  app.get("/api/performance/kpis", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const { startDate, endDate, sku, category } = req.query;
+
+      const kpis = await storage.getPerformanceKPIs(authReq.userId, {
+        startDate: startDate as string,
+        endDate: endDate as string,
+        sku: sku as string,
+        category: category as string
+      });
+      
+      res.json(kpis);
+    } catch (error: any) {
+      console.error('Error fetching performance KPIs:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // NEW: Dashboard KPIs (career-wide aggregates)
+  app.get("/api/dashboard/kpis", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const kpis = await storage.getDashboardKPIs(authReq.userId);
+      res.json(kpis);
+    } catch (error: any) {
+      console.error('Error fetching dashboard KPIs:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Helper function for performance recalculation
   async function triggerPerformanceRecalculation(userId: number): Promise<void> {
     console.log(`🔄 Triggering performance recalculation for user ${userId}`);

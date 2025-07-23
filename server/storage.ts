@@ -127,6 +127,25 @@ export interface IStorage {
       outOfStockItems: number;
     };
   }>;
+
+  // NEW: KPI methods
+  getPerformanceKPIs(userId: number, filters: {
+    startDate?: string;
+    endDate?: string;
+    sku?: string;
+    category?: string;
+  }): Promise<{
+    totalRevenue: number;
+    totalProfit: number;
+    unitsSold: number;
+    avgOrderValue: number;
+  }>;
+  getDashboardKPIs(userId: number): Promise<{
+    overallRevenue: number;
+    overallUnitsSold: number;
+    overallProfitMargin: number;
+    overallConversionRate: number;
+  }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -850,6 +869,103 @@ export class DatabaseStorage implements IStorage {
       calendarEntry,
       kpis,
     };
+  }
+  // NEW: Performance KPIs with filters
+  async getPerformanceKPIs(userId: number, filters: {
+    startDate?: string;
+    endDate?: string;
+    sku?: string;
+    category?: string;
+  }): Promise<{
+    totalRevenue: number;
+    totalProfit: number;
+    unitsSold: number;
+    avgOrderValue: number;
+  }> {
+    try {
+      let query = db
+        .select({
+          revenue: sql<number>`COALESCE(SUM(${salesHistory.unitPrice} * ${salesHistory.quantity}), 0)`,
+          profit: sql<number>`COALESCE(SUM((${salesHistory.unitPrice} - ${salesHistory.cost}) * ${salesHistory.quantity}), 0)`,
+          units: sql<number>`COALESCE(SUM(${salesHistory.quantity}), 0)`,
+          orderCount: sql<number>`COUNT(DISTINCT ${salesHistory.id})`
+        })
+        .from(salesHistory);
+
+      // Apply filters
+      const conditions: any[] = [eq(salesHistory.userId, userId)];
+
+      if (filters.startDate) {
+        conditions.push(gte(salesHistory.saleDate, new Date(filters.startDate)));
+      }
+      if (filters.endDate) {
+        conditions.push(lte(salesHistory.saleDate, new Date(filters.endDate)));
+      }
+      if (filters.sku) {
+        conditions.push(eq(salesHistory.sku, filters.sku));
+      }
+      if (filters.category) {
+        // Join with inventory to filter by category
+        query = query.innerJoin(inventory, eq(salesHistory.sku, inventory.sku));
+        conditions.push(eq(inventory.category, filters.category));
+      }
+
+      const [result] = await query.where(and(...conditions));
+
+      const avgOrderValue = result.orderCount > 0 ? result.revenue / result.orderCount : 0;
+
+      return {
+        totalRevenue: result.revenue,
+        totalProfit: result.profit,
+        unitsSold: result.units,
+        avgOrderValue: Number(avgOrderValue.toFixed(2))
+      };
+    } catch (error) {
+      console.error('Error fetching performance KPIs:', error);
+      return {
+        totalRevenue: 0,
+        totalProfit: 0,
+        unitsSold: 0,
+        avgOrderValue: 0
+      };
+    }
+  }
+
+  // NEW: Dashboard KPIs (career-wide aggregates)
+  async getDashboardKPIs(userId: number): Promise<{
+    overallRevenue: number;
+    overallUnitsSold: number;
+    overallProfitMargin: number;
+    overallConversionRate: number;
+  }> {
+    try {
+      const [result] = await db
+        .select({
+          revenue: sql<number>`COALESCE(SUM(${salesHistory.unitPrice} * ${salesHistory.quantity}), 0)`,
+          profit: sql<number>`COALESCE(SUM((${salesHistory.unitPrice} - ${salesHistory.cost}) * ${salesHistory.quantity}), 0)`,
+          units: sql<number>`COALESCE(SUM(${salesHistory.quantity}), 0)`
+        })
+        .from(salesHistory)
+        .where(eq(salesHistory.userId, userId));
+
+      const profitMargin = result.revenue > 0 ? (result.profit / result.revenue) * 100 : 0;
+      const conversionRate = 2.4; // Mock conversion rate until we track product views
+
+      return {
+        overallRevenue: result.revenue,
+        overallUnitsSold: result.units,
+        overallProfitMargin: Number(profitMargin.toFixed(2)),
+        overallConversionRate: conversionRate
+      };
+    } catch (error) {
+      console.error('Error fetching dashboard KPIs:', error);
+      return {
+        overallRevenue: 0,
+        overallUnitsSold: 0,
+        overallProfitMargin: 0,
+        overallConversionRate: 0
+      };
+    }
   }
 }
 
