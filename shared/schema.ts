@@ -277,6 +277,8 @@ export const insertGoalSchema = createInsertSchema(goals).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  targetValue: z.string().transform(val => Number(val)) // Fix: convert string to number
 });
 
 export const insertReportSchema = createInsertSchema(reports).omit({
@@ -343,3 +345,50 @@ export type CalendarSales = typeof calendarSales.$inferSelect;
 export type InsertCalendarSales = z.infer<typeof insertCalendarSalesSchema>;
 export type ReorderCalendar = typeof reorderCalendar.$inferSelect;
 export type InsertReorderCalendar = z.infer<typeof insertReorderCalendarSchema>;
+
+// Trophy System Tables
+export const trophies = pgTable("trophies", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  metric: text("metric").notNull(), // "revenue", "units", "profit_margin", "conversion_rate"
+  threshold: decimal("threshold", { precision: 12, scale: 2 }).notNull(),
+  tier: text("tier").notNull(), // "bronze", "silver", "gold", "platinum"
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const userTrophies = pgTable("user_trophies", {
+  id: serial("id").primaryKey(),
+  trophyId: integer("trophy_id").references(() => trophies.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  completed: boolean("completed").default(false).notNull(),
+  percentComplete: decimal("percent_complete", { precision: 5, scale: 2 }).default("0").notNull(),
+  earnedAt: timestamp("earned_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Trophy System Relations
+export const trophiesRelations = relations(trophies, ({ many }) => ({
+  userTrophies: many(userTrophies),
+}));
+
+export const userTrophiesRelations = relations(userTrophies, ({ one }) => ({
+  user: one(users, {
+    fields: [userTrophies.userId],
+    references: [users.id],
+  }),
+  trophy: one(trophies, {
+    fields: [userTrophies.trophyId],
+    references: [trophies.id],
+  }),
+}));
+
+// Trophy System Insert Schemas
+export const insertTrophySchema = createInsertSchema(trophies).omit({ id: true, createdAt: true });
+export const insertUserTrophySchema = createInsertSchema(userTrophies).omit({ id: true, createdAt: true });
+
+// Trophy System Types
+export type Trophy = typeof trophies.$inferSelect;
+export type InsertTrophy = z.infer<typeof insertTrophySchema>;
+export type UserTrophy = typeof userTrophies.$inferSelect;
+export type InsertUserTrophy = z.infer<typeof insertUserTrophySchema>;

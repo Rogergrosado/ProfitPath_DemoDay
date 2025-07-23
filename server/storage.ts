@@ -8,6 +8,8 @@ import {
   salesHistory,
   calendarSales,
   reorderCalendar,
+  trophies,
+  userTrophies,
   type User,
   type InsertUser,
   type Product,
@@ -26,6 +28,10 @@ import {
   type InsertCalendarSales,
   type ReorderCalendar,
   type InsertReorderCalendar,
+  type Trophy,
+  type InsertTrophy,
+  type UserTrophy,
+  type InsertUserTrophy
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
@@ -552,6 +558,8 @@ export class DatabaseStorage implements IStorage {
 
   async createGoal(goal: InsertGoal): Promise<Goal> {
     const [newGoal] = await db.insert(goals).values(goal).returning();
+    // Trigger trophy progress update after creating a goal
+    this.updateTrophyProgress(goal.userId).catch(console.error);
     return newGoal;
   }
 
@@ -1070,7 +1078,7 @@ export class DatabaseStorage implements IStorage {
         
         return {
           sku: result.sku,
-          product: result.product,
+          product: result.product || 'Unknown Product',
           unitsSold,
           revenue,
           profit,
@@ -1092,6 +1100,312 @@ export class DatabaseStorage implements IStorage {
       return leaderboard;
     } catch (error) {
       console.error('Error fetching SKU leaderboard:', error);
+      return [];
+    }
+  }
+
+  // TROPHY SYSTEM METHODS
+  async initializeTrophies(): Promise<void> {
+    try {
+      // Check if trophies are already seeded
+      const existingTrophies = await db.select().from(trophies).limit(1);
+      if (existingTrophies.length > 0) {
+        return; // Already initialized
+      }
+
+      // Seed 30 trophies (10 bronze, 10 silver, 10 gold, 1 platinum)
+      const trophyData = [
+        // Bronze Trophies (10)
+        { name: "First Steps", description: "Reach $100 in total revenue", metric: "revenue", threshold: "100", tier: "bronze" },
+        { name: "Getting Started", description: "Sell your first 10 units", metric: "units", threshold: "10", tier: "bronze" },
+        { name: "Profit Hunter", description: "Achieve $50 in total profit", metric: "profit", threshold: "50", tier: "bronze" },
+        { name: "Margin Seeker", description: "Maintain 10% profit margin", metric: "profit_margin", threshold: "10", tier: "bronze" },
+        { name: "Small Win", description: "Reach $500 in total revenue", metric: "revenue", threshold: "500", tier: "bronze" },
+        { name: "Unit Pusher", description: "Sell 25 units total", metric: "units", threshold: "25", tier: "bronze" },
+        { name: "Penny Saver", description: "Achieve $100 in total profit", metric: "profit", threshold: "100", tier: "bronze" },
+        { name: "Decent Margin", description: "Maintain 15% profit margin", metric: "profit_margin", threshold: "15", tier: "bronze" },
+        { name: "Growing Business", description: "Reach $1,000 in total revenue", metric: "revenue", threshold: "1000", tier: "bronze" },
+        { name: "Volume Builder", description: "Sell 50 units total", metric: "units", threshold: "50", tier: "bronze" },
+
+        // Silver Trophies (10)
+        { name: "Rising Star", description: "Reach $5,000 in total revenue", metric: "revenue", threshold: "5000", tier: "silver" },
+        { name: "Sales Machine", description: "Sell 100 units total", metric: "units", threshold: "100", tier: "silver" },
+        { name: "Profit Master", description: "Achieve $1,000 in total profit", metric: "profit", threshold: "1000", tier: "silver" },
+        { name: "Healthy Margin", description: "Maintain 20% profit margin", metric: "profit_margin", threshold: "20", tier: "silver" },
+        { name: "Revenue Champion", description: "Reach $10,000 in total revenue", metric: "revenue", threshold: "10000", tier: "silver" },
+        { name: "Volume Expert", description: "Sell 250 units total", metric: "units", threshold: "250", tier: "silver" },
+        { name: "Profit Pro", description: "Achieve $2,500 in total profit", metric: "profit", threshold: "2500", tier: "silver" },
+        { name: "Strong Margins", description: "Maintain 25% profit margin", metric: "profit_margin", threshold: "25", tier: "silver" },
+        { name: "Business Builder", description: "Reach $25,000 in total revenue", metric: "revenue", threshold: "25000", tier: "silver" },
+        { name: "High Volume", description: "Sell 500 units total", metric: "units", threshold: "500", tier: "silver" },
+
+        // Gold Trophies (10)
+        { name: "Revenue Titan", description: "Reach $50,000 in total revenue", metric: "revenue", threshold: "50000", tier: "gold" },
+        { name: "Volume King", description: "Sell 1,000 units total", metric: "units", threshold: "1000", tier: "gold" },
+        { name: "Profit Legend", description: "Achieve $10,000 in total profit", metric: "profit", threshold: "10000", tier: "gold" },
+        { name: "Premium Margins", description: "Maintain 30% profit margin", metric: "profit_margin", threshold: "30", tier: "gold" },
+        { name: "Six-Figure Success", description: "Reach $100,000 in total revenue", metric: "revenue", threshold: "100000", tier: "gold" },
+        { name: "Volume Emperor", description: "Sell 2,500 units total", metric: "units", threshold: "2500", tier: "gold" },
+        { name: "Profit Emperor", description: "Achieve $25,000 in total profit", metric: "profit", threshold: "25000", tier: "gold" },
+        { name: "Elite Margins", description: "Maintain 40% profit margin", metric: "profit_margin", threshold: "40", tier: "gold" },
+        { name: "Quarter Million", description: "Reach $250,000 in total revenue", metric: "revenue", threshold: "250000", tier: "gold" },
+        { name: "Unit Master", description: "Sell 5,000 units total", metric: "units", threshold: "5000", tier: "gold" },
+
+        // Platinum Trophy (1)
+        { name: "Ultimate FBA Master", description: "Unlock all 30 achievements", metric: "trophies_completed", threshold: "30", tier: "platinum" }
+      ];
+
+      await db.insert(trophies).values(trophyData);
+      console.log('✨ Trophies initialized successfully');
+    } catch (error) {
+      console.error('Error initializing trophies:', error);
+    }
+  }
+
+  async getUserTrophies(userId: number): Promise<{
+    trophy: Trophy;
+    completed: boolean;
+    percentComplete: number;
+    earnedAt: Date | null;
+  }[]> {
+    try {
+      const userTrophyData = await db
+        .select({
+          trophy: trophies,
+          userTrophy: userTrophies
+        })
+        .from(trophies)
+        .leftJoin(userTrophies, and(
+          eq(userTrophies.trophyId, trophies.id),
+          eq(userTrophies.userId, userId)
+        ))
+        .orderBy(trophies.tier, trophies.id);
+
+      return userTrophyData.map(row => ({
+        trophy: row.trophy,
+        completed: row.userTrophy?.completed || false,
+        percentComplete: Number(row.userTrophy?.percentComplete || 0),
+        earnedAt: row.userTrophy?.earnedAt || null
+      }));
+    } catch (error) {
+      console.error('Error fetching user trophies:', error);
+      return [];
+    }
+  }
+
+  async updateTrophyProgress(userId: number): Promise<void> {
+    try {
+      // Get current dashboard KPIs
+      const kpis = await this.getDashboardKPIs(userId);
+      
+      // Get all trophies
+      const allTrophies = await db.select().from(trophies);
+      
+      let completedTrophies = 0;
+      
+      for (const trophy of allTrophies) {
+        if (trophy.tier === 'platinum') continue; // Handle platinum separately
+        
+        let currentValue = 0;
+        let threshold = Number(trophy.threshold);
+        
+        // Map trophy metrics to KPI values
+        switch (trophy.metric) {
+          case 'revenue':
+            currentValue = kpis.overallRevenue;
+            break;
+          case 'units':
+            currentValue = kpis.overallUnitsSold;
+            break;
+          case 'profit':
+            currentValue = kpis.overallProfit;
+            break;
+          case 'profit_margin':
+            currentValue = kpis.overallProfitMargin;
+            break;
+        }
+        
+        const percentComplete = Math.min(100, (currentValue / threshold) * 100);
+        const isCompleted = percentComplete >= 100;
+        
+        if (isCompleted) completedTrophies++;
+        
+        // Insert or update user trophy progress
+        await db
+          .insert(userTrophies)
+          .values({
+            trophyId: trophy.id,
+            userId,
+            completed: isCompleted,
+            percentComplete: percentComplete.toFixed(2),
+            earnedAt: isCompleted ? new Date() : null
+          })
+          .onConflictDoUpdate({
+            target: [userTrophies.trophyId, userTrophies.userId],
+            set: {
+              completed: isCompleted,
+              percentComplete: percentComplete.toFixed(2),
+              earnedAt: isCompleted ? sql`COALESCE(${userTrophies.earnedAt}, NOW())` : null
+            }
+          });
+      }
+      
+      // Handle Platinum trophy (all others completed)
+      const platinumTrophy = allTrophies.find(t => t.tier === 'platinum');
+      if (platinumTrophy) {
+        const platinumCompleted = completedTrophies >= 30;
+        await db
+          .insert(userTrophies)
+          .values({
+            trophyId: platinumTrophy.id,
+            userId,
+            completed: platinumCompleted,
+            percentComplete: ((completedTrophies / 30) * 100).toFixed(2),
+            earnedAt: platinumCompleted ? new Date() : null
+          })
+          .onConflictDoUpdate({
+            target: [userTrophies.trophyId, userTrophies.userId],
+            set: {
+              completed: platinumCompleted,
+              percentComplete: ((completedTrophies / 30) * 100).toFixed(2),
+              earnedAt: platinumCompleted ? sql`COALESCE(${userTrophies.earnedAt}, NOW())` : null
+            }
+          });
+      }
+      
+      console.log(`🏆 Trophy progress updated for user ${userId}: ${completedTrophies}/30 completed`);
+    } catch (error) {
+      console.error('Error updating trophy progress:', error);
+    }
+  }
+
+  async getClosestTrophies(userId: number, limit: number = 5): Promise<{
+    trophy: Trophy;
+    percentComplete: number;
+    currentValue: number;
+    targetValue: number;
+  }[]> {
+    try {
+      const kpis = await this.getDashboardKPIs(userId);
+      const userTrophyData = await this.getUserTrophies(userId);
+      
+      const incomplete = userTrophyData
+        .filter(t => !t.completed && t.trophy.tier !== 'platinum')
+        .map(t => {
+          let currentValue = 0;
+          const targetValue = Number(t.trophy.threshold);
+          
+          switch (t.trophy.metric) {
+            case 'revenue': currentValue = kpis.overallRevenue; break;
+            case 'units': currentValue = kpis.overallUnitsSold; break;
+            case 'profit': currentValue = kpis.overallProfit; break;
+            case 'profit_margin': currentValue = kpis.overallProfitMargin; break;
+          }
+          
+          return {
+            trophy: t.trophy,
+            percentComplete: t.percentComplete,
+            currentValue,
+            targetValue
+          };
+        })
+        .sort((a, b) => b.percentComplete - a.percentComplete) // Sort by completion desc
+        .slice(0, limit);
+        
+      return incomplete;
+    } catch (error) {
+      console.error('Error fetching closest trophies:', error);
+      return [];
+    }
+  }
+
+  async getActiveGoalsWithProgress(userId: number): Promise<{
+    id: number;
+    metric: string;
+    scope: string;
+    targetValue: number;
+    currentValue: number;
+    percentComplete: number;
+    status: 'Met' | 'On Track' | 'Off Track' | 'Unmet';
+    timePeriod: string;
+    description: string;
+    sku?: string;
+    category?: string;
+  }[]> {
+    try {
+      const userGoals = await db.select().from(goals).where(eq(goals.userId, userId));
+      const kpis = await this.getDashboardKPIs(userId);
+      
+      return await Promise.all(userGoals.map(async (goal) => {
+        let currentValue = 0;
+        
+        // Get current value based on scope and metric
+        if (goal.scope === 'global') {
+          switch (goal.metric) {
+            case 'revenue': currentValue = kpis.overallRevenue; break;
+            case 'units': currentValue = kpis.overallUnitsSold; break;
+            case 'profit': currentValue = kpis.overallProfit; break;
+            case 'profit_margin': currentValue = kpis.overallProfitMargin; break;
+          }
+        } else if (goal.scope === 'sku' && goal.sku) {
+          // Get SKU-specific metrics
+          const skuMetrics = await db
+            .select({
+              revenue: sql<number>`COALESCE(SUM(CAST(${sales.totalRevenue} AS DECIMAL)), 0)`,
+              profit: sql<number>`COALESCE(SUM(CAST(${sales.profit} AS DECIMAL)), 0)`,
+              units: sql<number>`COALESCE(SUM(${sales.quantity}), 0)`
+            })
+            .from(sales)
+            .where(and(eq(sales.userId, userId), eq(sales.sku, goal.sku)));
+          
+          const [result] = skuMetrics;
+          switch (goal.metric) {
+            case 'revenue': currentValue = Number(result.revenue); break;
+            case 'units': currentValue = Number(result.units); break;
+            case 'profit': currentValue = Number(result.profit); break;
+          }
+        } else if (goal.scope === 'category' && goal.category) {
+          // Get category-specific metrics
+          const categoryMetrics = await db
+            .select({
+              revenue: sql<number>`COALESCE(SUM(CAST(${sales.totalRevenue} AS DECIMAL)), 0)`,
+              profit: sql<number>`COALESCE(SUM(CAST(${sales.profit} AS DECIMAL)), 0)`,
+              units: sql<number>`COALESCE(SUM(${sales.quantity}), 0)`
+            })
+            .from(sales)
+            .where(and(eq(sales.userId, userId), eq(sales.category, goal.category)));
+          
+          const [result] = categoryMetrics;
+          switch (goal.metric) {
+            case 'revenue': currentValue = Number(result.revenue); break;
+            case 'units': currentValue = Number(result.units); break;
+            case 'profit': currentValue = Number(result.profit); break;
+          }
+        }
+        
+        const percentComplete = Math.min(100, (currentValue / goal.targetValue) * 100);
+        let status: 'Met' | 'On Track' | 'Off Track' | 'Unmet' = 'Unmet';
+        
+        if (percentComplete >= 100) status = 'Met';
+        else if (percentComplete >= 75) status = 'On Track';
+        else if (percentComplete >= 25) status = 'Off Track';
+        
+        return {
+          id: goal.id,
+          metric: goal.metric,
+          scope: goal.scope,
+          targetValue: goal.targetValue,
+          currentValue,
+          percentComplete: Number(percentComplete.toFixed(2)),
+          status,
+          timePeriod: goal.timePeriod,
+          description: goal.description || '',
+          sku: goal.sku || undefined,
+          category: goal.category || undefined
+        };
+      }));
+    } catch (error) {
+      console.error('Error fetching active goals with progress:', error);
       return [];
     }
   }

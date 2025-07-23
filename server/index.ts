@@ -38,6 +38,12 @@ app.use((req, res, next) => {
 
 (async () => {
   const server = await registerRoutes(app);
+  
+  // Initialize trophies on server startup
+  const { storage } = await import("./storage");
+  storage.initializeTrophies().then(() => {
+    console.log('✨ Trophy system initialized');
+  });
 
   // Health check endpoints for deployment platforms
   app.get('/health', (req, res) => {

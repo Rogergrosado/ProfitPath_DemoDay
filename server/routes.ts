@@ -858,6 +858,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // TROPHY SYSTEM API ROUTES
+  app.get("/api/trophies", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const userTrophies = await storage.getUserTrophies(authReq.userId);
+      res.json(userTrophies);
+    } catch (error: any) {
+      console.error('Error fetching trophies:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/trophies/closest", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const { limit } = req.query;
+      const closest = await storage.getClosestTrophies(authReq.userId, limit ? parseInt(limit as string) : 5);
+      res.json(closest);
+    } catch (error: any) {
+      console.error('Error fetching closest trophies:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/trophies/update-progress", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      await storage.updateTrophyProgress(authReq.userId);
+      res.json({ success: true, message: "Trophy progress updated successfully" });
+    } catch (error: any) {
+      console.error('Error updating trophy progress:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/goals/active", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const activeGoals = await storage.getActiveGoalsWithProgress(authReq.userId);
+      res.json(activeGoals);
+    } catch (error: any) {
+      console.error('Error fetching active goals:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Helper function for performance recalculation
   async function triggerPerformanceRecalculation(userId: number): Promise<void> {
     console.log(`🔄 Triggering performance recalculation for user ${userId}`);

@@ -43,6 +43,8 @@ function Router() {
         <Route path="/simple-analytics" component={Analytics} />
         <Route path="/reports" component={Reports} />
         <Route path="/goals" component={Goals} />
+        <Route path="/goals/trophy-room" component={() => import("./pages/trophies-room")} />
+        <Route path="/goals/trophies-progress" component={() => import("./pages/trophies-progress")} />
         <Route path="/settings" component={Settings} />
         <Route path="/profile" component={Profile} />
         <Route path="/test" component={TestPage} />
