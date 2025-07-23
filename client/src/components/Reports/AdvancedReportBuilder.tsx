@@ -15,10 +15,14 @@ import {
   TrendingUp,
   Table,
   DollarSign,
-  Package
+  Package,
+  FileText
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ReportBuilderCanvas } from "./ReportBuilderCanvas";
+import { ReportViewer } from "./ReportViewer";
+import { apiRequest } from "@/lib/queryClient";
+import html2pdf from "html2pdf.js";
 
 interface ReportTemplate {
   id: string;
@@ -119,6 +123,7 @@ export function AdvancedReportBuilder() {
   const { toast } = useToast();
   const [showCustomBuilder, setShowCustomBuilder] = useState(false);
   const [reportTypeFilter, setReportTypeFilter] = useState("all");
+  const [previewReport, setPreviewReport] = useState<any>(null);
 
   const { data: reports = [] } = useQuery({
     queryKey: ["/api/reports", reportTypeFilter],
@@ -198,6 +203,93 @@ export function AdvancedReportBuilder() {
     };
 
     createReportMutation.mutate(reportData);
+  };
+
+  const handleDownloadPDF = async (report: any) => {
+    try {
+      const element = document.getElementById(`report-preview-${report.id}`);
+      if (!element) {
+        // If preview isn't open, create a temporary element
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = `
+          <div style="padding: 20px; font-family: Arial, sans-serif;">
+            <h1 style="margin-bottom: 10px;">${report.name}</h1>
+            <p style="color: #666; margin-bottom: 20px;">${report.description}</p>
+            <p style="font-size: 12px; color: #999;">Generated on ${new Date().toLocaleDateString()}</p>
+            <div style="margin-top: 20px;">
+              <p>Report Type: ${report.type}</p>
+              <p>Template: ${report.template || 'custom'}</p>
+              <p>Widgets: ${JSON.parse(report.widgets || '[]').length}</p>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(tempDiv);
+        
+        await html2pdf()
+          .from(tempDiv)
+          .set({
+            margin: 1,
+            filename: `${report.name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
+            html2canvas: { scale: 2 },
+            jsPDF: { orientation: 'portrait' }
+          })
+          .save();
+          
+        document.body.removeChild(tempDiv);
+      } else {
+        await html2pdf()
+          .from(element)
+          .set({
+            margin: 1,
+            filename: `${report.name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
+            html2canvas: { scale: 2 },
+            jsPDF: { orientation: 'portrait' }
+          })
+          .save();
+      }
+      
+      toast({
+        title: "PDF Downloaded",
+        description: `${report.name} has been downloaded as PDF.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Download Failed",
+        description: "Failed to generate PDF. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleExportCSV = async (report: any) => {
+    try {
+      const response = await apiRequest(`/api/reports/${report.id}/export?format=csv`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (response.ok) {
+        const csvText = await response.text();
+        const blob = new Blob([csvText], { type: 'text/csv' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `${report.name.replace(/[^a-zA-Z0-9]/g, '_')}.csv`;
+        link.click();
+        
+        toast({
+          title: "CSV Exported",
+          description: `${report.name} has been exported as CSV.`,
+        });
+      } else {
+        throw new Error('Export failed');
+      }
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "Failed to export CSV. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -308,23 +400,37 @@ export function AdvancedReportBuilder() {
                 </CardHeader>
                 <CardContent>
                   <div className="flex space-x-1">
-                    <Button variant="outline" size="sm" className="flex-1">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={() => setPreviewReport(report)}
+                    >
                       <Eye className="h-4 w-4 mr-1" />
-                      View
+                      Preview
                     </Button>
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => exportReportMutation.mutate({ id: report.id, format: 'pdf' })}
-                      disabled={exportReportMutation.isPending}
+                      onClick={() => handleDownloadPDF(report)}
+                      title="Download as PDF"
                     >
                       <Download className="h-4 w-4" />
                     </Button>
                     <Button 
                       variant="outline" 
                       size="sm"
+                      onClick={() => handleExportCSV(report)}
+                      title="Export as CSV"
+                    >
+                      <FileText className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
                       onClick={() => deleteReportMutation.mutate(report.id)}
                       disabled={deleteReportMutation.isPending}
+                      title="Delete Report"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -335,6 +441,15 @@ export function AdvancedReportBuilder() {
           </div>
         )}
       </div>
+
+      {/* Report Preview Modal */}
+      <ReportViewer 
+        report={previewReport}
+        isOpen={!!previewReport}
+        onClose={() => setPreviewReport(null)}
+        onDownloadPDF={() => previewReport && handleDownloadPDF(previewReport)}
+        onExportCSV={() => previewReport && handleExportCSV(previewReport)}
+      />
     </div>
   );
 }
