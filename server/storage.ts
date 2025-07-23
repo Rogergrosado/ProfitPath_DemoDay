@@ -593,14 +593,18 @@ export class DatabaseStorage implements IStorage {
     for (const goal of userGoals) {
       let currentValue = 0;
       const now = new Date();
+      const goalCreatedAt = new Date(goal.createdAt);
       const periodDays = this.getPeriodDays(goal.period);
-      const startDate = new Date(now.getTime() - (periodDays * 24 * 60 * 60 * 1000));
+      
+      // Use goal creation date as start, extend period forward from creation
+      const startDate = goalCreatedAt;
+      const endDate = new Date(goalCreatedAt.getTime() + (periodDays * 24 * 60 * 60 * 1000));
 
       // Build base conditions for the query
       const baseConditions = [
         eq(sales.userId, userId),
         gte(sales.saleDate, startDate),
-        lte(sales.saleDate, now)
+        lte(sales.saleDate, endDate)
       ];
 
       // Add scope-specific conditions
@@ -662,7 +666,7 @@ export class DatabaseStorage implements IStorage {
       }
 
       console.log(`🎯 Goal ${goal.id} progress: ${currentValue}/${targetValue} (${progressPercentage.toFixed(1)}%) - Status: ${status}`);
-      console.log(`📅 Date range for goal: ${startDate.toISOString()} to ${now.toISOString()}`);
+      console.log(`📅 Date range for goal: ${startDate.toISOString()} to ${endDate.toISOString()}`);
       console.log(`🔍 Goal scope: ${goal.scope}, target SKU: ${goal.targetSKU}, metric: ${goal.metric}`);
 
       goalsWithProgress.push({
