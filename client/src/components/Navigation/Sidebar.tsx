@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
-
+import { useOnboarding } from "@/components/Onboarding/OnboardingProvider";
 import {
   Home,
   Search,
