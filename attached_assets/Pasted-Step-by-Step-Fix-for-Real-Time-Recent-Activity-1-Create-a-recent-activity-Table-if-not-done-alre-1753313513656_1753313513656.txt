@@ -1,0 +1,89 @@
+Step-by-Step Fix for Real-Time Recent Activity
+✅ 1. Create a recent_activity Table (if not done already)
+Example schema:
+
+sql
+Copiar
+Editar
+CREATE TABLE recent_activity (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id),
+  type TEXT NOT NULL, -- e.g. 'goal_created', 'goal_completed', 'product_added'
+  description TEXT,
+  metadata JSONB,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+✅ 2. Insert Events from Backend
+Update your backend in key moments:
+
+ts
+Copiar
+Editar
+// After creating a goal
+await db.insert(recent_activity).values({
+  user_id: user.id,
+  type: "goal_created",
+  description: `Created goal for ${goal.metric}`,
+  metadata: { goalId: goal.id, metric: goal.metric },
+});
+
+// After archiving a goal
+await db.insert(recent_activity).values({
+  user_id: user.id,
+  type: "goal_completed",
+  description: `Completed goal (${goal.metric}) with ${goal.progressPercentage.toFixed(1)}% progress`,
+  metadata: { goalId: goal.id },
+});
+Do this in other endpoints too (product creation, sales update, etc.)
+
+✅ 3. Create /api/activity/recent Route
+ts
+Copiar
+Editar
+// GET /api/activity/recent
+const result = await db
+  .select()
+  .from(recent_activity)
+  .where(eq(recent_activity.user_id, user.id))
+  .orderBy(desc(recent_activity.created_at))
+  .limit(10); // latest 10 actions
+
+return res.json(result);
+✅ 4. Query It on Dashboard Frontend
+In Dashboard.tsx:
+
+ts
+Copiar
+Editar
+const { data: recentActivity = [] } = useQuery({
+  queryKey: ["/api/activity/recent"],
+  enabled: !!user,
+});
+✅ 5. Render It Instead of Mock Data
+Replace mock data with something like:
+
+tsx
+Copiar
+Editar
+<Card className="bg-gray-50 dark:bg-[#222831]">
+  <CardHeader>
+    <CardTitle>Recent Activity</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <ul className="space-y-2 text-sm">
+      {recentActivity.length > 0 ? recentActivity.map((activity) => (
+        <li key={activity.id} className="flex justify-between">
+          <span>{activity.description}</span>
+          <span className="text-gray-400">{new Date(activity.created_at).toLocaleDateString()}</span>
+        </li>
+      )) : (
+        <li className="text-gray-500">No recent activity yet.</li>
+      )}
+    </ul>
+  </CardContent>
+</Card>
+🧪 Bonus: Test by
+Creating a new goal → should show “Created goal for …”
+
+Completing a goal → should show “Completed goal…”
+

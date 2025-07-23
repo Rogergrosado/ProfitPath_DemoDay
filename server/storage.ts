@@ -386,6 +386,21 @@ export class DatabaseStorage implements IStorage {
 
   async createSale(sale: InsertSale): Promise<Sale> {
     const [newSale] = await db.insert(sales).values(sale).returning();
+    
+    // Create activity log entry for sale
+    await this.createActivityLog({
+      userId: sale.userId,
+      action: 'sale',
+      details: `Recorded sale: ${sale.quantity} × ${sale.productName} ($${sale.totalRevenue})`,
+      metadata: { 
+        saleId: newSale.id,
+        sku: sale.sku,
+        quantity: sale.quantity,
+        revenue: sale.totalRevenue,
+        profit: sale.profit
+      }
+    });
+    
     return newSale;
   }
 
@@ -406,7 +421,25 @@ export class DatabaseStorage implements IStorage {
       importBatch: batchId,
     }));
 
-    return db.insert(sales).values(importData).returning();
+    const newSales = await db.insert(sales).values(importData).returning();
+    
+    // Create activity log entry for CSV import
+    const totalRevenue = importData.reduce((sum, sale) => sum + Number(sale.totalRevenue), 0);
+    const totalUnits = importData.reduce((sum, sale) => sum + sale.quantity, 0);
+    
+    await this.createActivityLog({
+      userId,
+      action: 'csv_import',
+      details: `Imported ${importData.length} sales records ($${totalRevenue.toFixed(2)} revenue, ${totalUnits} units)`,
+      metadata: { 
+        batchId,
+        recordCount: importData.length,
+        totalRevenue: totalRevenue.toFixed(2),
+        totalUnits
+      }
+    });
+    
+    return newSales;
   }
 
   async updateInventoryFromSales(userId: number, sku: string, quantitySold: number): Promise<void> {
@@ -569,6 +602,21 @@ export class DatabaseStorage implements IStorage {
       targetValue: goal.targetValue.toString()
     };
     const [newGoal] = await db.insert(goals).values(goalData).returning();
+    
+    // Create activity log entry for goal creation
+    await this.createActivityLog({
+      userId: goal.userId,
+      action: 'goal_created',
+      details: `Created new goal: "${goal.description}" (Target: ${goal.targetValue} ${goal.metric})`,
+      metadata: { 
+        goalId: newGoal.id, 
+        metric: goal.metric, 
+        targetValue: goal.targetValue,
+        scope: goal.scope,
+        period: goal.period
+      }
+    });
+    
     // Trigger trophy progress update after creating a goal
     this.updateTrophyProgress(goal.userId).catch(console.error);
     return newGoal;
@@ -797,6 +845,20 @@ export class DatabaseStorage implements IStorage {
       await db.delete(goals).where(eq(goals.id, goal.id));
       
       console.log(`✅ Goal ${goal.id} successfully archived to history with status: ${status}`);
+      
+      // Create activity log entry for goal completion
+      await this.createActivityLog({
+        userId: goal.userId,
+        action: 'goal_achieved',
+        details: `Completed goal "${goal.description}" with ${progressPercentage.toFixed(1)}% progress (${achievedValue}/${goal.targetValue} ${goal.metric})`,
+        metadata: { 
+          goalId: goal.id, 
+          metric: goal.metric, 
+          targetValue: goal.targetValue,
+          achievedValue,
+          progressPercentage: progressPercentage.toFixed(1)
+        }
+      });
     } catch (error) {
       console.error(`❌ Failed to archive goal ${goal.id}:`, error);
     }
