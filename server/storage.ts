@@ -600,11 +600,11 @@ export class DatabaseStorage implements IStorage {
       const startDate = goalCreatedAt;
       const goalEndDate = new Date(goalCreatedAt.getTime() + (periodDays * 24 * 60 * 60 * 1000));
       
-      // Determine the effective end date for tracking
-      // If goal period has ended, use goal end date; otherwise use current date
-      const effectiveEndDate = now > goalEndDate ? goalEndDate : now;
+      // Always track within the full goal period - goals track all sales within their period
+      // regardless of current date (allows for future-dated sales entries)
+      const effectiveEndDate = goalEndDate;
 
-      // Build base conditions for the query - only track sales within goal's active period
+      // Build base conditions for the query - track all sales within goal period
       const baseConditions = [
         eq(sales.userId, userId),
         gte(sales.saleDate, startDate),
@@ -634,6 +634,7 @@ export class DatabaseStorage implements IStorage {
           userId,
           startDate: startDate.toISOString(),
           effectiveEndDate: effectiveEndDate.toISOString(),
+          goalEndDate: goalEndDate.toISOString(),
           targetSKU: goal.targetSKU,
           scope: goal.scope
         });
