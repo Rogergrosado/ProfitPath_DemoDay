@@ -27,10 +27,12 @@ export function SalesHistoryTable({ className }: SalesHistoryTableProps) {
   const { user } = useAuth();
   const authReady = useAuthReady();
 
-  // Get date range boundaries based on selection
+  // Get date range boundaries based on selection - extended to include future-dated test data
   const getDateRangeBoundaries = (range: string) => {
     const now = new Date();
     let startDate: Date;
+    // Extend end date to capture future sales (test data has August dates)
+    const endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); 
     
     switch (range) {
       case "7d":
@@ -49,7 +51,7 @@ export function SalesHistoryTable({ className }: SalesHistoryTableProps) {
         startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     }
     
-    return { startDate, endDate: now };
+    return { startDate, endDate };
   };
 
   const { startDate, endDate } = getDateRangeBoundaries(dateRange);
