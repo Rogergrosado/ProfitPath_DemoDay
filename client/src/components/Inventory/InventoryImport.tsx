@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import Papa from "papaparse";
 import {
   Dialog,
   DialogContent,
@@ -116,80 +117,94 @@ export function InventoryImport({ open, onOpenChange }: InventoryImportProps) {
 
     setFile(selectedFile);
     
-    try {
-      const text = await selectedFile.text();
-      const lines = text.split('\n').filter(line => line.trim());
-      const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-      
-      // Validate headers
-      const missingRequired = requiredColumns
-        .filter(col => col.required && !headers.includes(col.key.toLowerCase()))
-        .map(col => col.label);
-      
-      if (missingRequired.length > 0) {
-        setValidationErrors([`Missing required columns: ${missingRequired.join(', ')}`]);
-        return;
-      }
-
-      // Parse data
-      const data: PreviewItem[] = [];
-      const errors: string[] = [];
-      
-      for (let i = 1; i < lines.length; i++) {
-        const values = lines[i].split(',').map(v => v.trim());
-        const item: any = {};
-        const itemErrors: string[] = [];
+    Papa.parse(selectedFile, {
+      header: true,
+      skipEmptyLines: true,
+      transformHeader: (header) => header.trim().toLowerCase(),
+      complete: (results: any) => {
+        console.log("CSV Parse Results:", results);
         
-        headers.forEach((header, index) => {
-          const value = values[index] || '';
-          
-          switch (header) {
-            case 'name':
-            case 'sku':
-            case 'category':
-            case 'suppliername':
-            case 'suppliersku':
-            case 'notes':
-              item[header] = value;
-              break;
-            case 'currentstock':
-            case 'reorderpoint':
-            case 'leadtimedays':
-              item[header.replace('timedays', 'TimeDays')] = parseInt(value) || 0;
-              break;
-            case 'costprice':
-            case 'sellingprice':
-              item[header.replace('price', 'Price')] = parseFloat(value) || 0;
-              break;
-            default:
-              item[header] = value;
-          }
-        });
-
-        // Validation
-        if (!item.name) itemErrors.push("Missing product name");
-        if (!item.sku) itemErrors.push("Missing SKU");
-        if (!item.category) itemErrors.push("Missing category");
-        
-        if (itemErrors.length > 0) {
-          item.errors = itemErrors;
-          errors.push(`Row ${i + 1}: ${itemErrors.join(', ')}`);
+        if (results.errors.length > 0) {
+          console.error("CSV Parse Errors:", results.errors);
+          toast({
+            title: "CSV parsing errors",
+            description: "Please check your file format and try again.",
+            variant: "destructive",
+          });
+          return;
         }
+
+        const rawData = results.data;
+        if (!rawData || rawData.length === 0) {
+          toast({
+            title: "Empty CSV file",
+            description: "The CSV file contains no data.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Check for required columns
+        const headers = Object.keys(rawData[0]).map(h => h.toLowerCase());
+        console.log("CSV Headers:", headers);
         
-        data.push(item);
+        const missingRequired = requiredColumns
+          .filter(col => col.required && !headers.includes(col.key.toLowerCase()))
+          .map(col => col.label);
+        
+        if (missingRequired.length > 0) {
+          setValidationErrors([`Missing required columns: ${missingRequired.join(', ')}`]);
+          return;
+        }
+
+        // Transform and validate data
+        const data: PreviewItem[] = [];
+        const errors: string[] = [];
+        
+        rawData.forEach((row: any, index: number) => {
+          const item: any = {};
+          const itemErrors: string[] = [];
+          
+          // Map CSV columns to our schema
+          item.name = row.name || row.productname || '';
+          item.sku = row.sku || '';
+          item.category = row.category || '';
+          item.currentStock = parseInt(row.currentstock || row.stock || row.quantity || '0') || 0;
+          item.costPrice = parseFloat(row.costprice || row.cost || '0') || 0;
+          item.sellingPrice = parseFloat(row.sellingprice || row.price || row.selling_price || '0') || 0;
+          item.reorderPoint = parseInt(row.reorderpoint || row.reorder_point || '0') || 0;
+          item.supplierName = row.suppliername || row.supplier || '';
+          item.supplierSKU = row.suppliersku || row.supplier_sku || '';
+          item.leadTimeDays = parseInt(row.leadtimedays || row.lead_time || '14') || 14;
+          item.notes = row.notes || '';
+
+          // Validation
+          if (!item.name) itemErrors.push("Missing product name");
+          if (!item.sku) itemErrors.push("Missing SKU");
+          if (!item.category) itemErrors.push("Missing category");
+          
+          if (itemErrors.length > 0) {
+            item.errors = itemErrors;
+            errors.push(`Row ${index + 2}: ${itemErrors.join(', ')}`);
+          }
+          
+          data.push(item);
+        });
+        
+        console.log("Parsed CSV Data:", data);
+        setPreviewData(data);
+        setValidationErrors(errors);
+        setCurrentStep("preview");
+      },
+      error: (error: any) => {
+        console.error("CSV Parse Error:", error);
+        toast({
+          title: "Failed to parse CSV",
+          description: "Please check your file format and try again.",
+          variant: "destructive",
+        });
       }
-      
-      setPreviewData(data);
-      setValidationErrors(errors);
-      setCurrentStep("preview");
-      
-    } catch (error) {
-      toast({
-        title: "Failed to parse CSV",
-        description: "Please check your file format and try again.",
-        variant: "destructive",
-      });
-    }
+    });
   };
 
   const downloadTemplate = () => {

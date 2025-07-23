@@ -536,6 +536,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Inventory CSV Import endpoint
+  app.post("/api/inventory/import", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const { items } = req.body;
+      
+      if (!items || !Array.isArray(items)) {
+        return res.status(400).json({ message: "No items provided for import" });
+      }
+
+      let imported = 0;
+      let skipped = 0;
+      const errors: string[] = [];
+
+      for (const item of items) {
+        try {
+          // Check if inventory item with this SKU already exists
+          const existingItems = await storage.getInventory(authReq.userId);
+          const existing = existingItems.find(inv => inv.sku === item.sku);
+          
+          if (existing) {
+            // Update existing inventory item
+            const updateData = {
+              name: item.name || existing.name,
+              category: item.category || existing.category,
+              currentStock: parseInt(item.currentStock) || existing.currentStock,
+              costPrice: item.costPrice ? item.costPrice.toString() : existing.costPrice,
+              sellingPrice: item.sellingPrice ? item.sellingPrice.toString() : existing.sellingPrice,
+              reorderPoint: parseInt(item.reorderPoint) || existing.reorderPoint,
+              supplierName: item.supplierName || existing.supplierName,
+              supplierSKU: item.supplierSKU || existing.supplierSKU,
+              leadTimeDays: parseInt(item.leadTimeDays) || existing.leadTimeDays,
+              notes: item.notes || existing.notes,
+            };
+            
+            await storage.updateInventoryItem(existing.id, updateData);
+            imported++;
+          } else {
+            // Create new inventory item
+            const inventoryData = {
+              userId: authReq.userId,
+              name: item.name,
+              sku: item.sku,
+              category: item.category,
+              currentStock: parseInt(item.currentStock) || 0,
+              reservedStock: 0,
+              reorderPoint: parseInt(item.reorderPoint) || 0,
+              costPrice: item.costPrice ? item.costPrice.toString() : null,
+              sellingPrice: item.sellingPrice ? item.sellingPrice.toString() : null,
+              supplierName: item.supplierName || null,
+              supplierSKU: item.supplierSKU || null,
+              leadTimeDays: parseInt(item.leadTimeDays) || 14,
+              notes: item.notes || null,
+            };
+            
+            await storage.createInventoryItem(inventoryData);
+            imported++;
+          }
+        } catch (error: any) {
+          console.warn(`Failed to process inventory item ${item.sku}:`, error);
+          errors.push(`Failed to import ${item.sku}: ${error.message}`);
+          skipped++;
+        }
+      }
+
+      res.json({
+        message: `Successfully imported ${imported} items. ${skipped} items were ${skipped > 0 ? 'skipped due to errors' : 'skipped'}.`,
+        imported,
+        skipped,
+        errors: errors.length > 0 ? errors : undefined
+      });
+      
+    } catch (error: any) {
+      console.error('Inventory import error:', error);
+      res.status(500).json({ message: error.message || 'Failed to import inventory' });
+    }
+  });
+
   // Sales
   app.get("/api/sales", requireAuth, async (req, res) => {
     try {
