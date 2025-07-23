@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SortableTableHeader, PaginationControls } from "@/components/ui/pagination";
 import { usePagination } from "@/hooks/usePagination";
+import { getAuthHeaders } from "@/lib/queryClient";
 
 interface SKULeaderboardItem {
   sku: string;
@@ -34,7 +35,10 @@ export function SKULeaderboardTable({ dateRange = '30d' }: SKULeaderboardTablePr
       const params = pagination.getQueryParams();
       params.set('dateRange', dateRange);
       
-      const response = await fetch(`/api/analytics/sku-leaderboard?${params.toString()}`);
+      const authHeaders = await getAuthHeaders();
+      const response = await fetch(`/api/analytics/sku-leaderboard?${params.toString()}`, {
+        headers: authHeaders
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch SKU leaderboard');
       }

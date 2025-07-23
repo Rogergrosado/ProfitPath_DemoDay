@@ -353,8 +353,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { sku, startDate, endDate } = req.query;
       const userId = authReq.userId;
 
-      // For now, return existing sales data filtered by SKU if provided
-      const sales = await storage.getSales(userId);
+      // Get paginated sales data
+      const salesResponse = await storage.getSales(userId);
+      const sales = salesResponse.results || [];
       let filteredSales = sales;
 
       if (sku) {
@@ -385,7 +386,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = authReq.userId;
 
       // Get sales data for the specified month/year
-      const sales = await storage.getSales(userId);
+      const salesResponse = await storage.getSales(userId);
+      const sales = salesResponse.results || [];
       const filteredSales = sales.filter(sale => {
         const saleDate = new Date(sale.saleDate);
         return saleDate.getMonth() === parseInt(month as string) - 1 && 
@@ -406,7 +408,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = authReq.userId;
 
       // Get inventory items that need reordering
-      const inventory = await storage.getInventory(userId);
+      const inventoryResponse = await storage.getInventory(userId);
+      const inventory = inventoryResponse.results || [];
       const reorderItems = inventory.filter(item => 
         (item.currentStock || 0) <= (item.reorderPoint || 0)
       ).map(item => ({
