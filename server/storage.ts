@@ -819,7 +819,16 @@ export class DatabaseStorage implements IStorage {
 
   async getGoalHistory(userId: number): Promise<any[]> {
     try {
-      const history = await db.select().from(goalHistory).where(eq(goalHistory.userId, userId));
+      const result = await db.execute(sql`
+        SELECT 
+          id, user_id, original_goal_id, metric, target_value, final_value,
+          scope, target_category, target_sku, period, description,
+          status, start_date, end_date, completed_at, created_at
+        FROM goal_history 
+        WHERE user_id = ${userId}
+        ORDER BY completed_at DESC
+      `);
+      const history = result.rows;
       console.log(`📊 Retrieved ${history.length} goal history records for user ${userId}`);
       return history;
     } catch (error) {
