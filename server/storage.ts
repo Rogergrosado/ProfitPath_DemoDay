@@ -604,9 +604,12 @@ export class DatabaseStorage implements IStorage {
       ];
 
       // Add scope-specific conditions
+      console.log(`🔍 Checking scope conditions - scope: ${goal.scope}, targetSKU: '${goal.targetSKU}', targetCategory: '${goal.targetCategory}'`);
       if (goal.scope === 'sku' && goal.targetSKU) {
+        console.log(`🎯 Adding SKU filter: ${goal.targetSKU}`);
         baseConditions.push(eq(sales.sku, goal.targetSKU));
       } else if (goal.scope === 'category' && goal.targetCategory) {
+        console.log(`🎯 Adding category filter: ${goal.targetCategory}`);
         baseConditions.push(eq(sales.category, goal.targetCategory));
       }
 
@@ -618,10 +621,12 @@ export class DatabaseStorage implements IStorage {
           .where(and(...baseConditions));
         currentValue = Number(result.total);
       } else if (goal.metric === 'unitsSold') {
+        console.log(`📊 Executing unitsSold query with ${baseConditions.length} conditions`);
         const [result] = await db
           .select({ total: sql<number>`COALESCE(SUM(${sales.quantity}), 0)` })
           .from(sales)
           .where(and(...baseConditions));
+        console.log(`📊 Query result for unitsSold:`, result);
         currentValue = Number(result.total);
       } else if (goal.metric === 'profit') {
         const [result] = await db
@@ -657,6 +662,8 @@ export class DatabaseStorage implements IStorage {
       }
 
       console.log(`🎯 Goal ${goal.id} progress: ${currentValue}/${targetValue} (${progressPercentage.toFixed(1)}%) - Status: ${status}`);
+      console.log(`📅 Date range for goal: ${startDate.toISOString()} to ${now.toISOString()}`);
+      console.log(`🔍 Goal scope: ${goal.scope}, target SKU: ${goal.targetSKU}, metric: ${goal.metric}`);
 
       goalsWithProgress.push({
         ...goal,
