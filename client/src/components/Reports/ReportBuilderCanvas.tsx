@@ -353,9 +353,19 @@ export function ReportBuilderCanvas({ isOpen, onClose }: ReportBuilderCanvasProp
       return;
     }
 
+    // Determine report type based on widgets
+    const widgetTypes = widgets.map(w => w.config.dataSource);
+    let reportType = "custom";
+    
+    if (widgetTypes.every(t => t === "inventory")) reportType = "inventory";
+    else if (widgetTypes.every(t => t === "sales")) reportType = "sales";
+    else if (widgetTypes.every(t => t === "goals")) reportType = "goals";
+    else if (widgetTypes.every(t => t === "performance")) reportType = "finance";
+
     const reportData = {
       name: reportName,
       description: reportDescription,
+      type: reportType, // Required by backend schema
       widgets: widgets.map(w => ({
         ...w,
         position: { x: 0, y: w.position },

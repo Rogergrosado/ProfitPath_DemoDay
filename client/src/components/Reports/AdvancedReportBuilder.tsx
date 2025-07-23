@@ -118,10 +118,16 @@ const PREDEFINED_TEMPLATES: ReportTemplate[] = [
 export function AdvancedReportBuilder() {
   const { toast } = useToast();
   const [showCustomBuilder, setShowCustomBuilder] = useState(false);
+  const [reportTypeFilter, setReportTypeFilter] = useState("all");
 
   const { data: reports = [] } = useQuery({
-    queryKey: ["/api/reports"],
+    queryKey: ["/api/reports", reportTypeFilter],
   });
+
+  // Filter reports on frontend as backup
+  const filteredReports = Array.isArray(reports) ? reports.filter(report => 
+    reportTypeFilter === "all" || report.type === reportTypeFilter
+  ) : [];
 
   const createReportMutation = useMutation({
     mutationFn: async (reportData: any) => {
@@ -181,6 +187,7 @@ export function AdvancedReportBuilder() {
     const reportData = {
       name: `${template.name} - ${new Date().toLocaleDateString()}`,
       description: template.description,
+      type: template.category.toLowerCase(), // Required by backend schema
       template: template.id,
       widgets: template.widgets,
       config: {
@@ -258,8 +265,22 @@ export function AdvancedReportBuilder() {
 
       {/* Your Reports */}
       <div>
-        <h3 className="text-lg font-semibold mb-4">Your Reports</h3>
-        {!Array.isArray(reports) || reports.length === 0 ? (
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-semibold">Your Reports</h3>
+          <select
+            value={reportTypeFilter}
+            onChange={(e) => setReportTypeFilter(e.target.value)}
+            className="bg-background border border-gray-300 dark:border-gray-700 text-foreground p-2 rounded-md"
+          >
+            <option value="all">All Reports</option>
+            <option value="inventory">Inventory</option>
+            <option value="sales">Sales</option>
+            <option value="finance">Finance</option>
+            <option value="goals">Goals</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+        {!Array.isArray(filteredReports) || filteredReports.length === 0 ? (
           <Card>
             <CardContent className="text-center py-8">
               <p className="text-muted-foreground">No reports created yet.</p>
@@ -274,7 +295,7 @@ export function AdvancedReportBuilder() {
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {reports.map((report: any) => (
+            {filteredReports.map((report: any) => (
               <Card key={report.id}>
                 <CardHeader>
                   <div className="flex justify-between items-start">

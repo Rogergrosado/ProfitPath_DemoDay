@@ -1056,7 +1056,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/reports", requireAuth, async (req, res) => {
     try {
       const authReq = req as AuthenticatedRequest;
-      const reports = await storage.getReports(authReq.userId);
+      const { type } = req.query;
+      
+      let reports = await storage.getReports(authReq.userId);
+      
+      // Filter by type if specified
+      if (type && type !== "all") {
+        reports = reports.filter((report: any) => report.type === type);
+      }
+      
       res.json(reports);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -1068,10 +1076,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const authReq = req as AuthenticatedRequest;
       
       // Enhanced validation for custom report builder
-      const { name, description, widgets, config } = req.body;
+      const { name, description, type, widgets, config, template } = req.body;
       
       if (!name || typeof name !== 'string' || name.trim().length === 0) {
         return res.status(400).json({ message: "Report name is required" });
+      }
+      
+      if (!type || typeof type !== 'string') {
+        return res.status(400).json({ message: "Report type is required" });
       }
       
       if (!widgets || !Array.isArray(widgets) || widgets.length === 0) {
@@ -1083,7 +1095,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: authReq.userId,
         name: name.trim(),
         description: description || "",
-        template: config?.template || "custom",
+        type: type, // Required field for database schema
+        template: template || config?.template || "custom",
         widgets: JSON.stringify(widgets),
         config: JSON.stringify({
           layout: config?.layout || 'grid',
