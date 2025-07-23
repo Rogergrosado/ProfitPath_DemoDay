@@ -207,19 +207,42 @@ export function AdvancedReportBuilder() {
 
   const handleDownloadPDF = async (report: any) => {
     try {
+      console.log('Starting PDF download for report:', report.name);
       const element = document.getElementById(`report-preview-${report.id}`);
+      
       if (!element) {
-        // If preview isn't open, create a temporary element
+        // If preview isn't open, create a temporary element with report content
+        const widgets = JSON.parse(report.widgets || '[]');
         const tempDiv = document.createElement('div');
+        tempDiv.style.cssText = 'position: absolute; left: -9999px; top: -9999px; width: 800px;';
         tempDiv.innerHTML = `
-          <div style="padding: 20px; font-family: Arial, sans-serif;">
-            <h1 style="margin-bottom: 10px;">${report.name}</h1>
-            <p style="color: #666; margin-bottom: 20px;">${report.description}</p>
-            <p style="font-size: 12px; color: #999;">Generated on ${new Date().toLocaleDateString()}</p>
-            <div style="margin-top: 20px;">
-              <p>Report Type: ${report.type}</p>
-              <p>Template: ${report.template || 'custom'}</p>
-              <p>Widgets: ${JSON.parse(report.widgets || '[]').length}</p>
+          <div style="padding: 40px; font-family: Arial, sans-serif; background: white; color: black;">
+            <div style="border-bottom: 2px solid #fd7014; padding-bottom: 20px; margin-bottom: 30px;">
+              <h1 style="margin: 0 0 10px 0; font-size: 28px; color: #333;">${report.name}</h1>
+              <p style="margin: 0 0 10px 0; color: #666; font-size: 16px;">${report.description || 'Custom Business Report'}</p>
+              <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <span style="background: #f0f0f0; padding: 4px 8px; border-radius: 4px; font-size: 12px;">Type: ${report.type}</span>
+                <span style="background: #f0f0f0; padding: 4px 8px; border-radius: 4px; font-size: 12px;">Template: ${report.template || 'custom'}</span>
+              </div>
+            </div>
+            <div style="margin-bottom: 20px;">
+              <p style="font-size: 12px; color: #999;">Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</p>
+            </div>
+            <div style="grid: 1fr 1fr / 1fr 1fr; gap: 20px;">
+              <div style="border: 1px solid #ddd; padding: 20px; border-radius: 8px;">
+                <h3 style="margin: 0 0 15px 0; color: #333;">Report Summary</h3>
+                <p><strong>Widgets:</strong> ${widgets.length} components</p>
+                <p><strong>Data Sources:</strong> ${[...new Set(widgets.map((w: any) => w.config?.dataSource || 'unknown'))].join(', ')}</p>
+                <p><strong>Layout:</strong> Grid-based responsive design</p>
+              </div>
+              ${widgets.map((widget: any, index: number) => `
+                <div style="border: 1px solid #ddd; padding: 20px; border-radius: 8px; margin-top: 20px;">
+                  <h4 style="margin: 0 0 10px 0; color: #fd7014;">Widget ${index + 1}: ${widget.type}</h4>
+                  <p><strong>Title:</strong> ${widget.config?.title || 'Untitled'}</p>
+                  <p><strong>Data Source:</strong> ${widget.config?.dataSource || 'unknown'}</p>
+                  <p><strong>Type:</strong> ${widget.type}</p>
+                </div>
+              `).join('')}
             </div>
           </div>
         `;
@@ -228,10 +251,18 @@ export function AdvancedReportBuilder() {
         await html2pdf()
           .from(tempDiv)
           .set({
-            margin: 1,
+            margin: [10, 10, 10, 10],
             filename: `${report.name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
-            html2canvas: { scale: 2 },
-            jsPDF: { orientation: 'portrait' }
+            html2canvas: { 
+              scale: 2,
+              useCORS: true,
+              backgroundColor: '#ffffff'
+            },
+            jsPDF: { 
+              orientation: 'portrait',
+              unit: 'mm',
+              format: 'a4'
+            }
           })
           .save();
           
@@ -240,19 +271,28 @@ export function AdvancedReportBuilder() {
         await html2pdf()
           .from(element)
           .set({
-            margin: 1,
+            margin: [10, 10, 10, 10],
             filename: `${report.name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
-            html2canvas: { scale: 2 },
-            jsPDF: { orientation: 'portrait' }
+            html2canvas: { 
+              scale: 2,
+              useCORS: true,
+              backgroundColor: '#ffffff'
+            },
+            jsPDF: { 
+              orientation: 'portrait',
+              unit: 'mm',
+              format: 'a4'
+            }
           })
           .save();
       }
       
       toast({
         title: "PDF Downloaded",
-        description: `${report.name} has been downloaded as PDF.`,
+        description: `${report.name} has been downloaded successfully.`,
       });
     } catch (error) {
+      console.error('PDF Download Error:', error);
       toast({
         title: "Download Failed",
         description: "Failed to generate PDF. Please try again.",
@@ -263,9 +303,14 @@ export function AdvancedReportBuilder() {
 
   const handleExportCSV = async (report: any) => {
     try {
-      const response = await apiRequest(`/api/reports/${report.id}/export?format=csv`, {
+      // Use fetch directly for CSV export since apiRequest expects JSON
+      const token = localStorage.getItem('firebaseToken');
+      const response = await fetch(`/api/reports/${report.id}/export?format=csv`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json' 
+        }
       });
 
       if (response.ok) {
@@ -274,16 +319,22 @@ export function AdvancedReportBuilder() {
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
         link.download = `${report.name.replace(/[^a-zA-Z0-9]/g, '_')}.csv`;
+        document.body.appendChild(link);
         link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
         
         toast({
           title: "CSV Exported",
           description: `${report.name} has been exported as CSV.`,
         });
       } else {
-        throw new Error('Export failed');
+        const errorText = await response.text();
+        console.error('CSV Export Error:', errorText);
+        throw new Error(`Export failed: ${response.status}`);
       }
     } catch (error) {
+      console.error('CSV Export Error:', error);
       toast({
         title: "Export Failed",
         description: "Failed to export CSV. Please try again.",
