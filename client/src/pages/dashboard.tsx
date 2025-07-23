@@ -12,6 +12,7 @@ import { InventorySnapshot } from "@/components/Dashboard/InventorySnapshot";
 import { DashboardKPIs } from "@/components/Dashboard/DashboardKPIs";
 import { InventoryDataIntegration } from "@/components/Dashboard/InventoryDataIntegration";
 import { GoalProgressSection } from "@/components/Dashboard/GoalProgressSection";
+import { RecentActivity } from "@/components/Dashboard/RecentActivity";
 import { WhatIfSimulator } from "@/components/Dashboard/WhatIfSimulator";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -194,37 +195,8 @@ export default function Dashboard() {
               <GoalProgressSection />
             </Card>
 
-            {/* Recent Activity Feed */}
-            <Card className="bg-card text-card-foreground">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <BarChart3 className="h-5 w-5 mr-2" />
-                  Recent Activity
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {recentActivities.map((activity) => (
-                    <div key={activity.id} className="flex items-start space-x-3">
-                      <div className={`${activity.iconBg} p-2 rounded-lg`}>
-                        <activity.icon className={`h-4 w-4 ${activity.iconColor}`} />
-                      </div>
-                      <div className="flex-1 space-y-1">
-                        <p className="text-sm font-medium text-foreground">
-                          {activity.message}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {activity.details}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {activity.time}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            {/* Recent Activity */}
+            <RecentActivity />
           </div>
 
           {/* What-If Simulator - Branded as Demo for Future Forecasting */}

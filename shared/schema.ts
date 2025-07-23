@@ -125,6 +125,16 @@ export const reports = pgTable("reports", {
 });
 
 // New tables for inventory system overhaul
+// Activity Log for Recent Activity tracking
+export const activityLog = pgTable("activity_log", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  action: text("action").notNull(), // "sale", "goal_created", "goal_achieved", "inventory_update", "csv_import"
+  details: text("details").notNull(), // Human-readable description
+  metadata: jsonb("metadata"), // Additional structured data
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const salesHistory = pgTable("sales_history", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
@@ -359,6 +369,11 @@ export const insertReorderCalendarSchema = createInsertSchema(reorderCalendar).o
   ),
 });
 
+export const insertActivityLogSchema = createInsertSchema(activityLog).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -382,6 +397,10 @@ export type CalendarSales = typeof calendarSales.$inferSelect;
 export type InsertCalendarSales = z.infer<typeof insertCalendarSalesSchema>;
 export type ReorderCalendar = typeof reorderCalendar.$inferSelect;
 export type InsertReorderCalendar = z.infer<typeof insertReorderCalendarSchema>;
+
+// Activity Log types
+export type ActivityLog = typeof activityLog.$inferSelect;
+export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
 
 // Trophy System Tables
 export const trophies = pgTable("trophies", {

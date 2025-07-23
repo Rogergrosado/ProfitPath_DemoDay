@@ -1062,6 +1062,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ACTIVITY LOG API ROUTES
+  app.get("/api/activity-log", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const { limit } = req.query;
+      const activities = await storage.getActivityLog(authReq.userId, limit ? parseInt(limit as string) : 10);
+      res.json(activities);
+    } catch (error: any) {
+      console.error('Error fetching activity log:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // TROPHY SYSTEM API ROUTES
   app.get("/api/trophies", requireAuth, async (req, res) => {
     try {

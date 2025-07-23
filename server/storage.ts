@@ -9,6 +9,7 @@ import {
   salesHistory,
   calendarSales,
   reorderCalendar,
+  activityLog,
   trophies,
   userTrophies,
   type User,
@@ -34,7 +35,9 @@ import {
   type Trophy,
   type InsertTrophy,
   type UserTrophy,
-  type InsertUserTrophy
+  type InsertUserTrophy,
+  ActivityLog,
+  InsertActivityLog
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
@@ -1662,6 +1665,28 @@ export class DatabaseStorage implements IStorage {
       console.error('Error fetching active goals with progress:', error);
       return [];
     }
+  }
+
+  // Activity Log Methods
+  async getActivityLog(userId: number, limit: number = 10): Promise<ActivityLog[]> {
+    try {
+      const result = await db.execute(sql`
+        SELECT id, user_id, action, details, metadata, created_at
+        FROM activity_log 
+        WHERE user_id = ${userId}
+        ORDER BY created_at DESC
+        LIMIT ${limit}
+      `);
+      return result.rows as ActivityLog[];
+    } catch (error) {
+      console.error("Error fetching activity log:", error);
+      return [];
+    }
+  }
+
+  async createActivityLog(entry: InsertActivityLog): Promise<ActivityLog> {
+    const [newEntry] = await db.insert(activityLog).values(entry).returning();
+    return newEntry;
   }
 }
 
