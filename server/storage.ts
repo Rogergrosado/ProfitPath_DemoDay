@@ -589,6 +589,10 @@ export class DatabaseStorage implements IStorage {
     await db.delete(goals).where(eq(goals.id, id));
   }
 
+  async getGoalHistory(userId: number): Promise<any[]> {
+    return db.select().from(goalHistory).where(eq(goalHistory.userId, userId)).orderBy(desc(goalHistory.completedAt));
+  }
+
   async getGoalsWithProgress(userId: number): Promise<any[]> {
     const userGoals = await this.getGoals(userId);
     const goalsWithProgress = [];
@@ -723,10 +727,13 @@ export class DatabaseStorage implements IStorage {
       console.log(`⏰ Days remaining: ${daysRemaining}, Expired: ${isGoalExpired}`);
       console.log(`🔍 Goal scope: ${goal.scope}, target SKU: ${goal.targetSKU}, metric: ${goal.metric}`);
 
-      // Auto-archive completed goals that are met before expiration OR expired goals
-      if ((progressPercentage >= 100 && !isGoalExpired) || (isGoalExpired && progressPercentage >= 100)) {
+      // Auto-archive completed goals only if they've been active for more than 1 minute
+      const goalAge = now.getTime() - goal.createdAt.getTime();
+      const oneMinute = 60 * 1000;
+      
+      if (progressPercentage >= 100 && status === 'met' && goalAge > oneMinute) {
         console.log(`🏆 Goal ${goal.id} completed (${progressPercentage.toFixed(1)}%), archiving to history`);
-        await this.archiveGoal(goal, currentValue, startDate, goalEndDate, status === 'met' ? 'met' : 'unmet');
+        await this.archiveGoal(goal, currentValue, startDate, goalEndDate, 'met');
         continue; // Skip adding to active goals list
       }
 

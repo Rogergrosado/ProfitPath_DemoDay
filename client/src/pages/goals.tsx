@@ -50,9 +50,19 @@ export default function Goals() {
     enabled: !!user,
   });
 
-  const { data: goals = [] } = useQuery<any[]>({
+  const { data: goals = [], refetch: refetchGoals } = useQuery<any[]>({
     queryKey: ["/api/goals/with-progress"],
     enabled: !!user,
+    staleTime: 0, // Always fetch fresh data
+    cacheTime: 0, // Don't cache results
+  });
+
+  // Fetch goal history for completed goals tab
+  const { data: goalHistory = [] } = useQuery<any[]>({
+    queryKey: ["/api/goals/history"],
+    enabled: !!user && activeTab === "completed",
+    staleTime: 0,
+    cacheTime: 0,
   });
 
   if (loading) {
@@ -86,8 +96,9 @@ export default function Goals() {
     ...getGoalProgress(goal)
   }));
 
-  const activeGoals = goalsWithProgress.filter((goal: any) => goal.isActive);
-  const completedGoals = goalsWithProgress.filter((goal: any) => !goal.isActive || goal.status === 'met' || goal.status === 'unmet');
+  const activeGoals = goalsWithProgress.filter((goal: any) => goal.status !== 'met' && goal.status !== 'unmet');
+  // Combine active goals with completed goals from history
+  const completedGoals = [...goalHistory, ...goalsWithProgress.filter((goal: any) => goal.status === 'met' || goal.status === 'unmet')];
 
   const filteredGoals = (activeTab === "active" ? activeGoals : completedGoals).filter((goal: any) => {
     const metricMatch = selectedMetric === "all" || goal.metric === selectedMetric;

@@ -60,6 +60,8 @@ export function CreateGoalModal({ open, onOpenChange }: CreateGoalModalProps) {
       onOpenChange(false);
       resetForm();
       queryClient.invalidateQueries({ queryKey: ["/api/goals"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/goals/with-progress"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/goals/history"] });
     },
     onError: (error: any) => {
       toast({
