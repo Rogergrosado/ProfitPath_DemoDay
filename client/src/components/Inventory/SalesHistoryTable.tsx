@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { getAuthHeaders } from "@/lib/queryClient";
 import { useAuth } from "@/contexts/AuthContext";
@@ -13,7 +13,8 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { History, TrendingUp, DollarSign, Package } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { History, TrendingUp, DollarSign, Package, RefreshCw } from "lucide-react";
 
 interface SalesHistoryTableProps {
   inventorySku?: string;
@@ -24,8 +25,9 @@ interface SalesHistoryTableProps {
 export function SalesHistoryTable({ inventorySku, startDate, endDate }: SalesHistoryTableProps) {
   const { user } = useAuth();
   const authReady = useAuthReady();
+  const queryClient = useQueryClient();
 
-  const { data: salesHistory, isLoading } = useQuery({
+  const { data: salesHistory, isLoading, refetch } = useQuery({
     queryKey: ["/api/sales/history", inventorySku, startDate, endDate],
     enabled: !!user && authReady,
     queryFn: async () => {
@@ -48,6 +50,11 @@ export function SalesHistoryTable({ inventorySku, startDate, endDate }: SalesHis
       return Array.isArray(data) ? data : [];
     },
   });
+
+  const handleRefresh = async () => {
+    console.log("🔄 Manual refresh triggered for Sales History");
+    await refetch();
+  };
 
   if (isLoading) {
     return (
@@ -127,9 +134,26 @@ export function SalesHistoryTable({ inventorySku, startDate, endDate }: SalesHis
       {/* Sales History Table */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <History className="h-5 w-5" />
-            Detailed Sales History
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <History className="h-5 w-5 text-[#fd7014]" />
+              Detailed Sales History
+              {inventorySku && (
+                <Badge variant="outline" className="ml-2">
+                  {inventorySku}
+                </Badge>
+              )}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isLoading}
+              className="flex items-center gap-2 hover:bg-[#fd7014] hover:text-white transition-colors"
+            >
+              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
           </CardTitle>
         </CardHeader>
         <CardContent>
