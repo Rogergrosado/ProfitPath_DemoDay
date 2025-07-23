@@ -14,7 +14,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { History, TrendingUp, DollarSign, Package, RefreshCw } from "lucide-react";
+import { History, TrendingUp, DollarSign, Package, RefreshCw, AlertCircle } from "lucide-react";
 
 interface SalesHistoryTableProps {
   inventorySku?: string;
@@ -27,26 +27,34 @@ export function SalesHistoryTable({ inventorySku, startDate, endDate }: SalesHis
   const authReady = useAuthReady();
   const queryClient = useQueryClient();
 
-  const { data: salesHistory, isLoading, refetch } = useQuery({
-    queryKey: ["/api/sales/history", inventorySku, startDate, endDate],
+  const { data: salesHistory, isLoading, error, refetch } = useQuery({
+    queryKey: ["/api/sales/history", inventorySku, startDate?.toISOString(), endDate?.toISOString()],
     enabled: !!user && authReady,
+    staleTime: 0, // Always fetch fresh data
+    cacheTime: 0, // Don't cache the data
     queryFn: async () => {
       const params = new URLSearchParams();
       if (startDate) params.append("startDate", startDate.toISOString());
       if (endDate) params.append("endDate", endDate.toISOString());
       if (inventorySku) params.append("sku", inventorySku);
       
-      console.log(`🔄 Fetching sales history with params:`, { inventorySku, startDate, endDate });
+      console.log(`🔄 Fetching sales history with params:`, { 
+        inventorySku, 
+        startDate: startDate?.toISOString(), 
+        endDate: endDate?.toISOString() 
+      });
       
       const authHeaders = await getAuthHeaders();
       const response = await fetch(`/api/sales/history?${params}`, {
         headers: authHeaders,
       });
+      
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
       }
+      
       const data = await response.json();
-      console.log(`📦 Sales history data received:`, data);
+      console.log(`📦 Sales history data received (${Array.isArray(data) ? data.length : 0} entries):`, data);
       return Array.isArray(data) ? data : [];
     },
   });
@@ -56,19 +64,72 @@ export function SalesHistoryTable({ inventorySku, startDate, endDate }: SalesHis
     await refetch();
   };
 
+  // Loading state
   if (isLoading) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <History className="h-5 w-5" />
-            Sales History
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <History className="h-5 w-5 text-[#fd7014]" />
+              Sales History
+              {inventorySku && (
+                <Badge variant="outline" className="ml-2">
+                  {inventorySku}
+                </Badge>
+              )}
+            </div>
+            <Button
+              variant="outline"
+              size="sm" 
+              disabled={true}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className="h-4 w-4 animate-spin" />
+              Loading...
+            </Button>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="animate-pulse space-y-4">
             <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
             <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-red-500" />
+              Sales History - Error
+              {inventorySku && (
+                <Badge variant="outline" className="ml-2">
+                  {inventorySku}
+                </Badge>
+              )}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              className="flex items-center gap-2 hover:bg-[#fd7014] hover:text-white transition-colors"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Retry
+            </Button>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-red-600 dark:text-red-400">
+            Failed to load sales history: {error.message}
           </div>
         </CardContent>
       </Card>
@@ -91,7 +152,7 @@ export function SalesHistoryTable({ inventorySku, startDate, endDate }: SalesHis
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
-              <DollarSign className="h-4 w-4" />
+              <DollarSign className="h-4 w-4 text-green-600 dark:text-green-400" />
               Total Revenue
             </CardTitle>
           </CardHeader>
@@ -99,13 +160,16 @@ export function SalesHistoryTable({ inventorySku, startDate, endDate }: SalesHis
             <div className="text-2xl font-bold text-green-600 dark:text-green-400">
               ${totalRevenue.toFixed(2)}
             </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              From {safeHistory.length} sales
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
-              <Package className="h-4 w-4" />
+              <Package className="h-4 w-4 text-blue-600 dark:text-blue-400" />
               Units Sold
             </CardTitle>
           </CardHeader>
@@ -113,13 +177,16 @@ export function SalesHistoryTable({ inventorySku, startDate, endDate }: SalesHis
             <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
               {totalUnits}
             </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Total quantity
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
-              <TrendingUp className="h-4 w-4" />
+              <TrendingUp className="h-4 w-4 text-purple-600 dark:text-purple-400" />
               Total Profit
             </CardTitle>
           </CardHeader>
@@ -127,6 +194,9 @@ export function SalesHistoryTable({ inventorySku, startDate, endDate }: SalesHis
             <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
               ${totalProfit.toFixed(2)}
             </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Net profit
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -158,47 +228,72 @@ export function SalesHistoryTable({ inventorySku, startDate, endDate }: SalesHis
         </CardHeader>
         <CardContent>
           {safeHistory && safeHistory.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Product</TableHead>
-                  <TableHead>SKU</TableHead>
-                  <TableHead>Quantity</TableHead>
-                  <TableHead>Unit Price</TableHead>
-                  <TableHead>Revenue</TableHead>
-                  <TableHead>Profit</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {safeHistory.map((sale: any) => (
-                  <TableRow key={sale.id}>
-                    <TableCell>
-                      {format(new Date(sale.saleDate), "MMM dd, yyyy")}
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {sale.productName}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{sale.sku}</Badge>
-                    </TableCell>
-                    <TableCell>{sale.quantitySold}</TableCell>
-                    <TableCell>${parseFloat(sale.unitPrice || 0).toFixed(2)}</TableCell>
-                    <TableCell className="text-green-600 dark:text-green-400 font-semibold">
-                      ${parseFloat(sale.totalRevenue || 0).toFixed(2)}
-                    </TableCell>
-                    <TableCell className="text-purple-600 dark:text-purple-400 font-semibold">
-                      ${parseFloat(sale.profit || 0).toFixed(2)}
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Product</TableHead>
+                    <TableHead>SKU</TableHead>
+                    <TableHead className="text-right">Quantity</TableHead>
+                    <TableHead className="text-right">Unit Price</TableHead>
+                    <TableHead className="text-right">Revenue</TableHead>
+                    <TableHead className="text-right">Profit</TableHead>
+                    <TableHead>Notes</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {safeHistory.map((sale: any) => (
+                    <TableRow key={sale.id}>
+                      <TableCell className="font-medium">
+                        {format(new Date(sale.saleDate), "MMM dd, yyyy")}
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {sale.productName || 'Unknown Product'}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{sale.sku}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right font-medium">
+                        {sale.quantitySold}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        ${parseFloat(sale.unitPrice || 0).toFixed(2)}
+                      </TableCell>
+                      <TableCell className="text-right text-green-600 dark:text-green-400 font-semibold">
+                        ${parseFloat(sale.totalRevenue || 0).toFixed(2)}
+                      </TableCell>
+                      <TableCell className="text-right text-purple-600 dark:text-purple-400 font-semibold">
+                        ${parseFloat(sale.profit || 0).toFixed(2)}
+                      </TableCell>
+                      <TableCell className="text-sm text-gray-500 dark:text-gray-400">
+                        {sale.notes || '-'}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           ) : (
-            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-              <History className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No sales history available for the selected period.</p>
-              <p className="text-sm mt-2">Sales will appear here once you record transactions.</p>
+            <div className="text-center py-12">
+              <History className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                No Sales History Found
+              </h3>
+              <p className="text-gray-500 dark:text-gray-400">
+                {inventorySku 
+                  ? `No sales recorded for SKU: ${inventorySku}` 
+                  : 'No sales have been recorded yet'
+                }
+              </p>
+              <Button 
+                variant="outline" 
+                className="mt-4"
+                onClick={handleRefresh}
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Check Again
+              </Button>
             </div>
           )}
         </CardContent>
