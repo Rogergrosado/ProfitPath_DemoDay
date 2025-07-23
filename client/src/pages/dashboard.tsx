@@ -32,9 +32,9 @@ export default function Dashboard() {
     enabled: !!user && authReady,
   });
 
-  // Fetch real performance metrics data - wait for auth to be ready
-  const { data: performanceMetrics } = useQuery({
-    queryKey: ["/api/performance/metrics", "30d"],
+  // Fetch dashboard KPIs - wait for auth to be ready
+  const { data: dashboardKPIs } = useQuery({
+    queryKey: ["/api/dashboard/kpis"],
     enabled: !!user && authReady,
   });
 
@@ -66,22 +66,21 @@ export default function Dashboard() {
     return null; // useValidateSession will handle redirect
   }
 
-  // Calculate real values from data - show real data when available
-  const metrics = performanceMetrics || { totalRevenue: 0, totalProfit: 0, totalUnits: 0, conversionRate: 0 };
+  // Use real dashboard KPI data
+  const kpis = dashboardKPIs || { 
+    overallRevenue: 0, 
+    overallUnitsSold: 0, 
+    overallProfit: 0, 
+    overallProfitMargin: 0, 
+    overallConversionRate: 0 
+  };
   const inventory = inventorySummary || { totalItems: 0, totalValue: 0, lowStockItems: 0, outOfStockItems: 0 };
   
   // Get user info safely
   const displayName = userProfile?.displayName || user?.displayName || 'User';
   const businessName = userProfile?.businessName;
   
-  // Calculate profit margin from real data  
-  const profitMargin = metrics.totalRevenue > 0 ? (metrics.totalProfit / metrics.totalRevenue) * 100 : 0;
-  
-  // Show sample data if no real data exists
-  const hasRealData = metrics.totalRevenue > 0 || inventory.totalItems > 0;
-  const displayMetrics = hasRealData ? metrics : { totalRevenue: 930, totalProfit: 575, totalUnits: 12, conversionRate: 2.4 };
-  const displayInventory = hasRealData ? inventory : { totalItems: 5, totalValue: 24760, lowStockItems: 3, outOfStockItems: 1 };
-  const displayProfitMargin = hasRealData ? profitMargin : 23.4;
+
 
   const recentActivities = [
     {
@@ -139,9 +138,9 @@ export default function Dashboard() {
           {/* KPI Cards with Animation - Real Data */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <AnimatedKPICard
-              title="Monthly Revenue"
-              value={Math.round(metrics.totalRevenue)}
-              previousValue={Math.round(metrics.totalRevenue * 0.85)} // Estimate 15% growth
+              title="Total Revenue"
+              value={Math.round(kpis.overallRevenue)}
+              previousValue={Math.round(kpis.overallRevenue * 0.85)} // Estimate 15% growth
               prefix="$"
               icon={DollarSign}
               iconColor="bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400"
@@ -149,16 +148,16 @@ export default function Dashboard() {
             />
             <AnimatedKPICard
               title="Units Sold"
-              value={metrics.totalUnits}
-              previousValue={Math.round(metrics.totalUnits * 0.82)} // Estimate 18% growth
+              value={kpis.overallUnitsSold}
+              previousValue={Math.round(kpis.overallUnitsSold * 0.82)} // Estimate 18% growth
               icon={Package}
               iconColor="bg-blue-100 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
               delay={200}
             />
             <AnimatedKPICard
               title="Profit Margin"
-              value={Number(displayProfitMargin.toFixed(1))}
-              previousValue={Number((displayProfitMargin * 0.93).toFixed(1))} // Estimate 7% improvement
+              value={Number(kpis.overallProfitMargin.toFixed(1))}
+              previousValue={Number((kpis.overallProfitMargin * 0.93).toFixed(1))} // Estimate 7% improvement
               suffix="%"
               icon={TrendingUp}
               iconColor="bg-primary/20 text-primary"
@@ -166,8 +165,8 @@ export default function Dashboard() {
             />
             <AnimatedKPICard
               title="Conversion Rate"
-              value={Number(metrics.conversionRate.toFixed(1))}
-              previousValue={Number((metrics.conversionRate * 0.88).toFixed(1))} // Estimate 12% improvement
+              value={Number(kpis.overallConversionRate.toFixed(1))}
+              previousValue={Number((kpis.overallConversionRate * 0.88).toFixed(1))} // Estimate 12% improvement
               suffix="%"
               icon={Users}
               iconColor="bg-purple-100 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400"

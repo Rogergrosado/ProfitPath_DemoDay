@@ -105,64 +105,7 @@ export default function Analytics() {
             </div>
           </div>
 
-          {/* Performance Metrics KPIs */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border-green-200 dark:border-green-800">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-green-600 dark:text-green-400 text-sm font-medium">Total Revenue</p>
-                    <p className="text-2xl font-bold text-green-700 dark:text-green-300">
-                      ${isNaN(metrics.totalRevenue) ? '0.00' : metrics.totalRevenue.toFixed(2)}
-                    </p>
-                  </div>
-                  <DollarSign className="h-8 w-8 text-green-500" />
-                </div>
-              </CardContent>
-            </Card>
 
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200 dark:border-blue-800">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-blue-600 dark:text-blue-400 text-sm font-medium">Total Profit</p>
-                    <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">
-                      ${isNaN(metrics.totalProfit) ? '0.00' : metrics.totalProfit.toFixed(2)}
-                    </p>
-                  </div>
-                  <TrendingUp className="h-8 w-8 text-blue-500" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 border-purple-200 dark:border-purple-800">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-purple-600 dark:text-purple-400 text-sm font-medium">Units Sold</p>
-                    <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">
-                      {isNaN(metrics.totalUnits) ? '0' : metrics.totalUnits}
-                    </p>
-                  </div>
-                  <ShoppingCart className="h-8 w-8 text-purple-500" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 border-orange-200 dark:border-orange-800">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-orange-600 dark:text-orange-400 text-sm font-medium">Conversion Rate</p>
-                    <p className="text-2xl font-bold text-orange-700 dark:text-orange-300">
-                      {isNaN(metrics.conversionRate) ? '0.0' : metrics.conversionRate.toFixed(1)}%
-                    </p>
-                  </div>
-                  <Activity className="h-8 w-8 text-orange-500" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
 
           <Tabs defaultValue="performance" className="space-y-6">
             <TabsList className="grid w-full grid-cols-4 bg-gray-100 dark:bg-[#222831]">
@@ -182,6 +125,7 @@ export default function Analytics() {
 
             <TabsContent value="performance">
               <div className="space-y-6">
+                {/* Performance Filters & Dynamic KPIs */}
                 <PerformanceKPIs onFiltersChange={(filters) => {
                   // Filters will automatically affect the sales history table below
                   console.log('Performance filters changed:', filters);
