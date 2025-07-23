@@ -596,15 +596,19 @@ export class DatabaseStorage implements IStorage {
       const goalCreatedAt = new Date(goal.createdAt);
       const periodDays = this.getPeriodDays(goal.period);
       
-      // Use goal creation date as start, extend period forward from creation
+      // Calculate goal tracking window
       const startDate = goalCreatedAt;
-      const endDate = new Date(goalCreatedAt.getTime() + (periodDays * 24 * 60 * 60 * 1000));
+      const goalEndDate = new Date(goalCreatedAt.getTime() + (periodDays * 24 * 60 * 60 * 1000));
+      
+      // Determine the effective end date for tracking
+      // If goal period has ended, use goal end date; otherwise use current date
+      const effectiveEndDate = now > goalEndDate ? goalEndDate : now;
 
-      // Build base conditions for the query
+      // Build base conditions for the query - only track sales within goal's active period
       const baseConditions = [
         eq(sales.userId, userId),
         gte(sales.saleDate, startDate),
-        lte(sales.saleDate, endDate)
+        lte(sales.saleDate, effectiveEndDate)
       ];
 
       // Add scope-specific conditions
@@ -665,8 +669,29 @@ export class DatabaseStorage implements IStorage {
         status = 'at_risk';
       }
 
+      // Determine goal status based on current date vs goal period
+      const isGoalExpired = now > goalEndDate;
+      const timeRemaining = goalEndDate.getTime() - now.getTime();
+      const daysRemaining = Math.max(0, Math.ceil(timeRemaining / (24 * 60 * 60 * 1000)));
+      
+      // Update status to reflect time-based context
+      if (isGoalExpired) {
+        status = progressPercentage >= 100 ? 'met' : 'unmet';
+      } else if (progressPercentage >= 100) {
+        status = 'met';
+      } else if (daysRemaining <= 3 && progressPercentage < 75) {
+        status = 'critical';
+      } else if (progressPercentage >= 80) {
+        status = 'on_track';
+      } else if (progressPercentage >= 50) {
+        status = 'at_risk';
+      } else {
+        status = 'off_track';
+      }
+
       console.log(`🎯 Goal ${goal.id} progress: ${currentValue}/${targetValue} (${progressPercentage.toFixed(1)}%) - Status: ${status}`);
-      console.log(`📅 Date range for goal: ${startDate.toISOString()} to ${endDate.toISOString()}`);
+      console.log(`📅 Goal period: ${startDate.toISOString()} to ${goalEndDate.toISOString()}`);
+      console.log(`⏰ Days remaining: ${daysRemaining}, Expired: ${isGoalExpired}`);
       console.log(`🔍 Goal scope: ${goal.scope}, target SKU: ${goal.targetSKU}, metric: ${goal.metric}`);
 
       goalsWithProgress.push({
@@ -674,7 +699,12 @@ export class DatabaseStorage implements IStorage {
         currentValue,
         targetValue,
         progressPercentage: Number(progressPercentage.toFixed(1)),
-        status
+        status,
+        daysRemaining,
+        isExpired: isGoalExpired,
+        startDate: startDate.toISOString(),
+        endDate: goalEndDate.toISOString(),
+        trackingPeriod: `${startDate.toISOString().split('T')[0]} to ${goalEndDate.toISOString().split('T')[0]}`
       });
     }
 
