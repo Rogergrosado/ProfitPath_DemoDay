@@ -6,6 +6,15 @@ ProfitPath is a comprehensive business intelligence dashboard designed for Amazo
 
 ## Recent Changes (July 23, 2025)
 
+✅ **Smart Onboarding Walkthrough System with Centralized Tooltips**: Complete guided tour system for new users
+  - Implemented comprehensive onboarding system with step-by-step guidance across all major pages
+  - Created OnboardingProvider, OnboardingTooltip, OnboardingTrigger, and OnboardingWrapper components
+  - Added automatic tour initiation for new users and manual "Take Tour" button for existing users
+  - Centralized tooltip positioning for better accessibility and user interaction
+  - Enhanced tooltip styling with smooth animations and improved visual hierarchy
+  - Integrated with existing WelcomeModal for seamless onboarding experience
+  - Added data attributes throughout UI for precise tooltip targeting and element highlighting
+
 ✅ **Complete Functional Report Builder MVP with Action Buttons Implementation**: Full-featured drag-and-drop report system
   - Fixed critical missing 'type' field error that prevented report saving with intelligent auto-type detection
   - Enhanced backend API with comprehensive filtering support for report categories (All, Inventory, Sales, Finance, Goals, Custom)

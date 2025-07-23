@@ -22,31 +22,27 @@ export function OnboardingTooltip({ stepId }: OnboardingTooltipProps) {
       if (target || step.target === 'body') {
         const rect = target?.getBoundingClientRect() || { top: window.innerHeight / 2, left: window.innerWidth / 2, width: 0, height: 0 };
         
-        let top = 0;
-        let left = 0;
-
-        switch (step.position) {
-          case 'top':
-            top = rect.top - 120;
-            left = rect.left + rect.width / 2 - 150;
-            break;
-          case 'bottom':
-            top = rect.bottom + 20;
-            left = rect.left + rect.width / 2 - 150;
-            break;
-          case 'left':
-            top = rect.top + rect.height / 2 - 60;
-            left = rect.left - 320;
-            break;
-          case 'right':
-            top = rect.top + rect.height / 2 - 60;
-            left = rect.right + 20;
-            break;
+        // Center the tooltip on screen for better accessibility
+        const tooltipWidth = 320;
+        const tooltipHeight = 200;
+        const centerX = window.innerWidth / 2;
+        const centerY = window.innerHeight / 2;
+        
+        let top = centerY - tooltipHeight / 2;
+        let left = centerX - tooltipWidth / 2;
+        
+        // Add slight bias toward the target element (20% of the way)
+        const targetCenterX = rect.left + rect.width / 2;
+        const targetCenterY = rect.top + rect.height / 2;
+        
+        if (step.target !== 'body') {
+          left = left + (targetCenterX - centerX) * 0.2;
+          top = top + (targetCenterY - centerY) * 0.2;
         }
 
-        // Ensure tooltip stays within viewport
-        top = Math.max(20, Math.min(top, window.innerHeight - 200));
-        left = Math.max(20, Math.min(left, window.innerWidth - 320));
+        // Ensure tooltip stays within viewport with comfortable margins
+        top = Math.max(50, Math.min(top, window.innerHeight - tooltipHeight - 50));
+        left = Math.max(50, Math.min(left, window.innerWidth - tooltipWidth - 50));
 
         setPosition({ top, left });
         
@@ -54,8 +50,9 @@ export function OnboardingTooltip({ stepId }: OnboardingTooltipProps) {
         if (target && step.target !== 'body') {
           target.style.position = 'relative';
           target.style.zIndex = '1001';
-          target.style.boxShadow = '0 0 0 4px rgba(253, 112, 20, 0.5), 0 0 0 8px rgba(253, 112, 20, 0.2)';
+          target.style.boxShadow = '0 0 0 3px rgba(253, 112, 20, 0.6), 0 0 0 6px rgba(253, 112, 20, 0.3), 0 0 20px rgba(253, 112, 20, 0.2)';
           target.style.borderRadius = '8px';
+          target.style.transition = 'all 0.3s ease-in-out';
         }
 
         setIsVisible(true);
@@ -85,11 +82,12 @@ export function OnboardingTooltip({ stepId }: OnboardingTooltipProps) {
       
       {/* Tooltip */}
       <Card 
-        className="fixed w-80 bg-white dark:bg-gray-800 border-2 border-[#fd7014] shadow-2xl z-1002"
+        className="fixed w-80 bg-white dark:bg-gray-800 border-2 border-[#fd7014] shadow-2xl z-1002 animate-in fade-in-0 zoom-in-95 duration-200"
         style={{ 
           top: position.top, 
           left: position.left,
-          zIndex: 1002
+          zIndex: 1002,
+          transform: 'translateZ(0)' // Force hardware acceleration for smooth positioning
         }}
       >
         <CardContent className="p-6">
