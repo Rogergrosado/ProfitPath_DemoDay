@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,14 +27,14 @@ export function SalesHistoryTable({ className }: SalesHistoryTableProps) {
   const { user } = useAuth();
   const authReady = useAuthReady();
 
-  // Get date range boundaries based on selection - extended to include future-dated test data
-  const getDateRangeBoundaries = (range: string) => {
+  // Get date range boundaries based on selection - use useMemo to prevent infinite re-renders
+  const { startDate, endDate } = useMemo(() => {
     const now = new Date();
     let startDate: Date;
     // Extend end date to capture future sales (test data has August dates)
     const endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); 
     
-    switch (range) {
+    switch (dateRange) {
       case "7d":
         startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
         break;
@@ -52,15 +52,13 @@ export function SalesHistoryTable({ className }: SalesHistoryTableProps) {
     }
     
     return { startDate, endDate };
-  };
-
-  const { startDate, endDate } = getDateRangeBoundaries(dateRange);
+  }, [dateRange]);
 
   const { data: salesHistory = [], isLoading, error, refetch } = useQuery({
-    queryKey: ["/api/sales/history", dateRange, startDate.toISOString(), endDate.toISOString()],
+    queryKey: ["/api/sales/history", dateRange],
     enabled: !!user && authReady,
-    staleTime: 0, // Always fetch fresh data
-    cacheTime: 0, // Don't cache the data
+    staleTime: 30000, // Cache for 30 seconds to prevent excessive requests
+    gcTime: 60000, // Keep in cache for 1 minute
     queryFn: async () => {
       const params = new URLSearchParams();
       params.append("startDate", startDate.toISOString());
