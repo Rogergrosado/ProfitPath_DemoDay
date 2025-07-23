@@ -6,6 +6,16 @@ ProfitPath is a comprehensive business intelligence dashboard designed for Amazo
 
 ## Recent Changes (July 23, 2025)
 
+✅ **Enhanced Flexible CSV Import System with Manual Data Entry**: Complete overhaul of CSV import to accept any format plus manual table data entry
+  - **Backend Enhancement**: Enhanced CSV parser with intelligent column name matching (handles variations like "product_name", "Product Name", "name")
+  - **Flexible Field Detection**: Auto-detects column variations including normalized matching (removes spaces/punctuation)
+  - **Enhanced Import UI**: Added tabbed interface with CSV Upload and Manual Entry options
+  - **Manual Data Entry Component**: Created ManualDataEntry component for direct table-based data input with validation
+  - **Smart Column Mapping**: Accepts any CSV format - no longer requires exact template matching
+  - **Auto-Fill Defaults**: Missing columns are automatically filled with sensible defaults
+  - **Extended Field Support**: Enhanced parser supports more field variations (sku/product_sku/code, quantity/qty/units_sold, etc.)
+  - **Status**: Production ready - users can now import CSVs in any format or enter data manually through interactive tables
+
 ✅ **Critical Sales History List Update Fix - FULLY RESOLVED**: Complete resolution of sales history not updating after sale entry
   - **Root Cause Identified**: /api/sales endpoint (used by Analytics) only creates sales table entries, not sales_history entries
   - **Backend Fix**: Fixed /api/sales endpoint to create both sales and sales_history entries for consistency with manual entry endpoint

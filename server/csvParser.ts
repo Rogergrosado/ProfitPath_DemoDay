@@ -77,10 +77,10 @@ export function parseCSV(csvContent: string): CSVParseResult {
 }
 
 function parseSalesRecord(record: any, rowNumber: number): any | null {
-  const sku = findFieldValue(record, ['sku', 'product sku', 'item sku']);
-  const date = findFieldValue(record, ['date', 'sale date', 'transaction date']);
-  const quantity = findFieldValue(record, ['quantity', 'units sold', 'qty', 'amount']);
-  const price = findFieldValue(record, ['price', 'unit price', 'selling price', 'sale price']);
+  const sku = findFieldValue(record, ['sku', 'product sku', 'item sku', 'product_sku', 'item_sku', 'code', 'product code']);
+  const date = findFieldValue(record, ['date', 'sale date', 'transaction date', 'order date', 'purchase date', 'sold date']);
+  const quantity = findFieldValue(record, ['quantity', 'units sold', 'qty', 'amount', 'units', 'quantity sold', 'sold']);
+  const price = findFieldValue(record, ['price', 'unit price', 'selling price', 'sale price', 'unit_price', 'sell_price']);
 
   if (!sku) {
     throw new Error('SKU is required for sales records');
@@ -121,9 +121,9 @@ function parseSalesRecord(record: any, rowNumber: number): any | null {
 }
 
 function parseProductRecord(record: any, rowNumber: number): any | null {
-  const name = findFieldValue(record, ['product name', 'name', 'item name']);
-  const sku = findFieldValue(record, ['sku', 'product sku', 'item sku']);
-  const category = findFieldValue(record, ['category', 'product category']);
+  const name = findFieldValue(record, ['product name', 'name', 'item name', 'title', 'product', 'item']);
+  const sku = findFieldValue(record, ['sku', 'product sku', 'item sku', 'product_sku', 'item_sku', 'code']);
+  const category = findFieldValue(record, ['category', 'product category', 'type', 'product_category']);
 
   if (!name) {
     throw new Error('Product name is required');
@@ -154,27 +154,45 @@ function parseProductRecord(record: any, rowNumber: number): any | null {
 }
 
 function findFieldValue(record: any, possibleKeys: string[]): string | undefined {
-  for (const key of possibleKeys) {
+  const recordKeys = Object.keys(record);
+  
+  for (const targetKey of possibleKeys) {
+    const normalizedTarget = targetKey.toLowerCase().replace(/[^a-z0-9]/g, '');
+    
     // Try exact match first
-    if (record[key] !== undefined && record[key] !== '') {
-      return record[key];
+    if (record[targetKey] !== undefined && record[targetKey] !== '') {
+      return record[targetKey];
     }
     
-    // Try case-insensitive match
-    const foundKey = Object.keys(record).find(k => 
-      k.toLowerCase().trim() === key.toLowerCase().trim()
-    );
-    if (foundKey && record[foundKey] !== undefined && record[foundKey] !== '') {
-      return record[foundKey];
-    }
-    
-    // Try partial match
-    const partialKey = Object.keys(record).find(k => 
-      k.toLowerCase().includes(key.toLowerCase()) || 
-      key.toLowerCase().includes(k.toLowerCase())
-    );
-    if (partialKey && record[partialKey] !== undefined && record[partialKey] !== '') {
-      return record[partialKey];
+    // Enhanced flexible matching
+    for (const recordKey of recordKeys) {
+      const normalizedRecordKey = recordKey.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const lowerRecordKey = recordKey.toLowerCase().trim();
+      const lowerTargetKey = targetKey.toLowerCase().trim();
+      
+      // Case-insensitive exact match
+      if (lowerRecordKey === lowerTargetKey) {
+        const value = record[recordKey];
+        if (value !== undefined && value !== '' && value !== null) {
+          return value.toString().trim();
+        }
+      }
+      
+      // Normalized match (removes spaces, punctuation)
+      if (normalizedRecordKey === normalizedTarget) {
+        const value = record[recordKey];
+        if (value !== undefined && value !== '' && value !== null) {
+          return value.toString().trim();
+        }
+      }
+      
+      // Contains match (both directions)
+      if (normalizedRecordKey.includes(normalizedTarget) || normalizedTarget.includes(normalizedRecordKey)) {
+        const value = record[recordKey];
+        if (value !== undefined && value !== '' && value !== null) {
+          return value.toString().trim();
+        }
+      }
     }
   }
   

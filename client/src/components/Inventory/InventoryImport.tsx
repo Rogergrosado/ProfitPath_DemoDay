@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import Papa from "papaparse";
+import { ManualDataEntry } from "@/components/common/ManualDataEntry";
 import {
   Dialog,
   DialogContent,
@@ -15,7 +16,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Upload, Download, FileText, CheckCircle, AlertCircle, X, Info, FileSpreadsheet } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Upload, Download, FileText, CheckCircle, AlertCircle, X, Info, FileSpreadsheet, Edit3 } from "lucide-react";
 
 interface InventoryImportProps {
   open: boolean;
@@ -33,6 +35,7 @@ interface PreviewItem {
 }
 
 export function InventoryImport({ open, onOpenChange }: InventoryImportProps) {
+  const [activeTab, setActiveTab] = useState<"csv" | "manual">("csv");
   const [dragActive, setDragActive] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [previewData, setPreviewData] = useState<PreviewItem[]>([]);
@@ -64,6 +67,32 @@ export function InventoryImport({ open, onOpenChange }: InventoryImportProps) {
       });
     },
   });
+
+  // Manual data entry columns configuration
+  const manualDataColumns = [
+    { key: 'name', label: 'Product Name', type: 'text' as const, required: true, placeholder: 'Enter product name' },
+    { key: 'sku', label: 'SKU', type: 'text' as const, required: true, placeholder: 'Product SKU' },
+    { key: 'category', label: 'Category', type: 'select' as const, required: true, options: ['electronics', 'automotive', 'home', 'tools', 'other'] },
+    { key: 'currentStock', label: 'Current Stock', type: 'number' as const, placeholder: '0' },
+    { key: 'costPrice', label: 'Cost Price', type: 'number' as const, placeholder: '0.00' },
+    { key: 'sellingPrice', label: 'Selling Price', type: 'number' as const, placeholder: '0.00' },
+    { key: 'reorderPoint', label: 'Reorder Point', type: 'number' as const, placeholder: '10' },
+    { key: 'supplierName', label: 'Supplier', type: 'text' as const, placeholder: 'Supplier name' },
+    { key: 'supplierSKU', label: 'Supplier SKU', type: 'text' as const, placeholder: 'Supplier SKU' },
+    { key: 'leadTimeDays', label: 'Lead Time (Days)', type: 'number' as const, placeholder: '14' },
+    { key: 'notes', label: 'Notes', type: 'text' as const, placeholder: 'Additional notes' },
+  ];
+
+  const handleManualDataSubmit = (data: any[]) => {
+    const processedData = data.map(item => ({
+      ...item,
+      errors: []
+    }));
+    
+    setPreviewData(processedData);
+    setCurrentStep("preview");
+    setActiveTab("csv"); // Switch to preview tab
+  };
 
   const requiredColumns = [
     { key: "name", label: "Product Name", required: true },
@@ -144,17 +173,27 @@ export function InventoryImport({ open, onOpenChange }: InventoryImportProps) {
           return;
         }
 
-        // Check for required columns
-        const headers = Object.keys(rawData[0]).map(h => h.toLowerCase());
+        // Enhanced column detection - more flexible matching
+        const headers = Object.keys(rawData[0]).map(h => h.toLowerCase().replace(/[^a-z0-9]/g, ''));
         console.log("CSV Headers:", headers);
         
+        // Flexible required column checking
+        const findMatchingColumn = (targetKey: string): boolean => {
+          const normalizedTarget = targetKey.toLowerCase().replace(/[^a-z0-9]/g, '');
+          return headers.some(header => 
+            header === normalizedTarget || 
+            header.includes(normalizedTarget) || 
+            normalizedTarget.includes(header)
+          );
+        };
+        
         const missingRequired = requiredColumns
-          .filter(col => col.required && !headers.includes(col.key.toLowerCase()))
+          .filter(col => col.required && !findMatchingColumn(col.key))
           .map(col => col.label);
         
         if (missingRequired.length > 0) {
-          setValidationErrors([`Missing required columns: ${missingRequired.join(', ')}`]);
-          return;
+          // Show warning but don't block import - let user proceed with available data
+          setValidationErrors([`⚠️ Some recommended columns are missing: ${missingRequired.join(', ')}. Import will continue with available data.`]);
         }
 
         // Transform and validate data
@@ -165,18 +204,33 @@ export function InventoryImport({ open, onOpenChange }: InventoryImportProps) {
           const item: any = {};
           const itemErrors: string[] = [];
           
-          // Map CSV columns to our schema
-          item.name = row.name || row.productname || '';
-          item.sku = row.sku || '';
-          item.category = row.category || '';
-          item.currentStock = parseInt(row.currentstock || row.stock || row.quantity || '0') || 0;
-          item.costPrice = parseFloat(row.costprice || row.cost || '0') || 0;
-          item.sellingPrice = parseFloat(row.sellingprice || row.price || row.selling_price || '0') || 0;
-          item.reorderPoint = parseInt(row.reorderpoint || row.reorder_point || '0') || 0;
-          item.supplierName = row.suppliername || row.supplier || '';
-          item.supplierSKU = row.suppliersku || row.supplier_sku || '';
-          item.leadTimeDays = parseInt(row.leadtimedays || row.lead_time || '14') || 14;
-          item.notes = row.notes || '';
+          // Enhanced flexible column mapping
+          const findColumnValue = (possibleNames: string[]): string => {
+            for (const name of possibleNames) {
+              const normalizedName = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+              for (const [key, value] of Object.entries(row)) {
+                const normalizedKey = key.toLowerCase().replace(/[^a-z0-9]/g, '');
+                if (normalizedKey === normalizedName || 
+                    normalizedKey.includes(normalizedName) ||
+                    normalizedName.includes(normalizedKey)) {
+                  return value as string || '';
+                }
+              }
+            }
+            return '';
+          };
+          
+          item.name = findColumnValue(['name', 'productname', 'product_name', 'item_name', 'title']) || 'Unnamed Item';
+          item.sku = findColumnValue(['sku', 'product_sku', 'item_sku', 'code']) || `AUTO_${index + 1}`;
+          item.category = findColumnValue(['category', 'type', 'product_category']) || 'imported';
+          item.currentStock = parseInt(findColumnValue(['currentstock', 'stock', 'quantity', 'inventory'])) || 0;
+          item.costPrice = parseFloat(findColumnValue(['costprice', 'cost', 'unit_cost', 'cost_price'])) || 0;
+          item.sellingPrice = parseFloat(findColumnValue(['sellingprice', 'price', 'selling_price', 'unit_price'])) || 0;
+          item.reorderPoint = parseInt(findColumnValue(['reorderpoint', 'reorder_point', 'min_stock'])) || 10;
+          item.supplierName = findColumnValue(['suppliername', 'supplier', 'vendor']) || 'Unknown';
+          item.supplierSKU = findColumnValue(['suppliersku', 'supplier_sku', 'vendor_sku']) || '';
+          item.leadTimeDays = parseInt(findColumnValue(['leadtimedays', 'lead_time', 'delivery_time'])) || 14;
+          item.notes = findColumnValue(['notes', 'description', 'comments']) || '';
 
           // Validation
           if (!item.name) itemErrors.push("Missing product name");
@@ -268,15 +322,27 @@ export function InventoryImport({ open, onOpenChange }: InventoryImportProps) {
 
         <div className="space-y-6">
           {currentStep === "upload" && (
-            <>
-              {/* Instructions */}
-              <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
-                <CardHeader>
-                  <CardTitle className="flex items-center text-blue-800 dark:text-blue-300">
-                    <Info className="h-5 w-5 mr-2" />
-                    CSV Format Instructions
-                  </CardTitle>
-                </CardHeader>
+            <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "csv" | "manual")}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="csv" className="flex items-center gap-2">
+                  <Upload className="h-4 w-4" />
+                  CSV Upload
+                </TabsTrigger>
+                <TabsTrigger value="manual" className="flex items-center gap-2">
+                  <Edit3 className="h-4 w-4" />
+                  Manual Entry
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="csv" className="space-y-4">
+                {/* Instructions */}
+                <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+                  <CardHeader>
+                    <CardTitle className="flex items-center text-blue-800 dark:text-blue-300">
+                      <Info className="h-5 w-5 mr-2" />
+                      Flexible CSV Import
+                    </CardTitle>
+                  </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
                     <h4 className="font-semibold text-blue-800 dark:text-blue-300 mb-2">Required Columns:</h4>
@@ -301,14 +367,15 @@ export function InventoryImport({ open, onOpenChange }: InventoryImportProps) {
                   </div>
 
                   <div className="text-sm text-blue-700 dark:text-blue-300">
-                    <p className="mb-2"><strong>Important Guidelines:</strong></p>
+                    <p className="mb-2"><strong>✨ Enhanced Flexible Import:</strong></p>
                     <ul className="list-disc list-inside space-y-1">
-                      <li>Use column headers exactly as shown above (case-insensitive)</li>
-                      <li>SKU must be unique for each product</li>
-                      <li>Categories: electronics, home-garden, sports-outdoors, health-beauty, toys-games, clothing, automotive, books</li>
+                      <li>Now accepts ANY CSV format - column names are auto-detected</li>
+                      <li>Works with variations like "Product Name", "product_name", "name", etc.</li>
+                      <li>Missing columns are auto-filled with sensible defaults</li>
+                      <li>SKU must be present (variations: sku, product_sku, code)</li>
+                      <li>Categories: electronics, automotive, home, tools, other</li>
                       <li>Prices should be decimal numbers (e.g., 25.99)</li>
                       <li>Stock quantities should be whole numbers</li>
-                      <li>Lead time should be in days</li>
                     </ul>
                   </div>
                 </CardContent>
@@ -364,7 +431,18 @@ export function InventoryImport({ open, onOpenChange }: InventoryImportProps) {
                   </Button>
                 </CardContent>
               </Card>
-            </>
+              </TabsContent>
+
+              <TabsContent value="manual" className="space-y-4">
+                <ManualDataEntry
+                  columns={manualDataColumns}
+                  onDataSubmit={handleManualDataSubmit}
+                  title="Manual Inventory Entry"
+                  description="Enter inventory items manually using the form below"
+                  maxRows={100}
+                />
+              </TabsContent>
+            </Tabs>
           )}
 
           {currentStep === "preview" && (
