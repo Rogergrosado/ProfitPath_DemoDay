@@ -59,9 +59,11 @@ export function AdvancedReorderCalendar() {
   const [showDateModal, setShowDateModal] = useState(false);
   const [dateEvents, setDateEvents] = useState<ReorderEvent[]>([]);
 
-  const { data: inventory = [] } = useQuery({
+  const { data: inventoryResponse } = useQuery({
     queryKey: ["/api/inventory"],
   });
+  
+  const inventory = (inventoryResponse as any)?.results || [];
 
   // Calculate reorder events based on inventory levels only
   const reorderEvents = useMemo(() => {
