@@ -13,7 +13,7 @@ import { DashboardKPIs } from "@/components/Dashboard/DashboardKPIs";
 import { InventoryDataIntegration } from "@/components/Dashboard/InventoryDataIntegration";
 import { GoalProgressSection } from "@/components/Dashboard/GoalProgressSection";
 import { WhatIfSimulator } from "@/components/Dashboard/WhatIfSimulator";
-import { OnboardingTrigger } from "@/components/Onboarding/OnboardingTrigger";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowUp, TriangleAlert, BarChart3, DollarSign, Package, TrendingUp, Users } from "lucide-react";
@@ -136,11 +136,11 @@ export default function Dashboard() {
                 }
               </p>
             </div>
-            <OnboardingTrigger />
+
           </div>
 
           {/* KPI Cards with Animation - Real Data */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" data-onboarding="dashboard-kpis">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <AnimatedKPICard
               title="Total Revenue"
               value={Math.round(kpis.overallRevenue)}
@@ -185,7 +185,7 @@ export default function Dashboard() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
             {/* Real-Time Inventory Data Integration */}
-            <div data-onboarding="inventory-snapshot">
+            <div>
               <InventoryDataIntegration />
             </div>
 

@@ -6,6 +6,21 @@ ProfitPath is a comprehensive business intelligence dashboard designed for Amazo
 
 ## Recent Changes (July 23, 2025)
 
+✅ **Onboarding Walkthrough System Removal**: Complete elimination of smart onboarding walkthrough
+  - **Removed Components**: Deleted entire /components/Onboarding directory (OnboardingProvider, OnboardingTooltip, OnboardingTrigger, OnboardingWrapper, WelcomeModal)
+  - **Context Cleanup**: Removed OnboardingContext and all onboarding-related state management
+  - **Auth Context Streamlined**: Eliminated showWelcome state and setShowWelcome logic from AuthProvider
+  - **Data Attributes Cleared**: Removed all data-onboarding attributes from component templates across pages
+  - **Import References**: Cleaned up all import statements referencing onboarding components
+  - **App.tsx Simplified**: Removed OnboardingProvider wrapper and OnboardingWrapper component from routing
+  - **Status**: Complete - application now operates without any onboarding or tour functionality
+
+✅ **Sales History Loading Issue Fixed**: Resolved infinite loading loop in Performance page SalesHistoryTable
+  - **Root Cause**: Date calculations were happening on every render, causing query key changes and infinite API calls
+  - **Solution**: Wrapped date range calculations in useMemo with dateRange dependency to stabilize query keys
+  - **Query Optimization**: Improved caching settings with proper staleTime and gcTime to prevent excessive requests
+  - **Status**: Sales history table now loads properly showing actual sales data without endless loading states
+
 ✅ **Comprehensive Bulk Product Management System**: Complete implementation of bulk operations with advanced action toolbar
   - **BulkActionToolbar Component**: Created comprehensive toolbar with bulk edit, delete, category change, and export functionality
   - **Enhanced Inventory Table**: Added checkbox selection system with individual and select-all functionality, highlighted selected rows

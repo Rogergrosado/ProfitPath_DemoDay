@@ -76,7 +76,7 @@ export default function Products() {
       <Sidebar />
       <ThemeToggle />
       
-      <main className="flex-1 ml-64 p-6" data-onboarding="products-main">
+      <main className="flex-1 ml-64 p-6">
         <div className="fade-in">
           {/* Header */}
           <div className="mb-8">
@@ -94,7 +94,7 @@ export default function Products() {
               </div>
               <div className="flex space-x-2">
                 <AddProductModal>
-                  <Button className="bg-[#fd7014] hover:bg-[#e5640f] text-white" data-onboarding="add-product-btn">
+                  <Button className="bg-[#fd7014] hover:bg-[#e5640f] text-white">
                     <Plus className="h-4 w-4 mr-2" />
                     Add Product
                   </Button>

@@ -224,7 +224,7 @@ export default function Goals() {
       <Sidebar />
       <ThemeToggle />
       
-      <main className="flex-1 ml-64 p-6" data-onboarding="goals-main">
+      <main className="flex-1 ml-64 p-6">
         <div className="fade-in">
           {/* Header */}
           <div className="mb-8">
