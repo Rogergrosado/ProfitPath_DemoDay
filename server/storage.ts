@@ -207,7 +207,7 @@ export class DatabaseStorage implements IStorage {
 
     const [goalStats] = await db
       .select({
-        completedGoals: sql<number>`COUNT(CASE WHEN ${goals.status} = 'completed' THEN 1 END)`,
+        completedGoals: sql<number>`COUNT(CASE WHEN ${goals.isActive} = true THEN 1 END)`,
         totalGoals: sql<number>`COUNT(*)`
       })
       .from(goals)
@@ -694,7 +694,7 @@ export class DatabaseStorage implements IStorage {
     let query = db.select().from(salesHistory).where(eq(salesHistory.userId, userId));
 
     if (startDate && endDate) {
-      query = query.where(and(
+      query = db.select().from(salesHistory).where(and(
         eq(salesHistory.userId, userId),
         gte(salesHistory.saleDate, startDate),
         lte(salesHistory.saleDate, endDate)
@@ -715,7 +715,7 @@ export class DatabaseStorage implements IStorage {
     if (month && year) {
       const startDate = new Date(`${year}-${month}-01`);
       const endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0);
-      query = query.where(and(
+      query = db.select().from(calendarSales).where(and(
         eq(calendarSales.userId, userId),
         gte(calendarSales.saleDate, startDate),
         lte(calendarSales.saleDate, endDate)
@@ -741,7 +741,7 @@ export class DatabaseStorage implements IStorage {
     if (month && year) {
       const startDate = new Date(`${year}-${month}-01`);
       const endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0);
-      query = query.where(and(
+      query = db.select().from(reorderCalendar).where(and(
         eq(reorderCalendar.userId, userId),
         gte(reorderCalendar.reorderDate, startDate),
         lte(reorderCalendar.reorderDate, endDate)
@@ -815,7 +815,6 @@ export class DatabaseStorage implements IStorage {
     // 4. Update inventory stock
     const updatedInventory = await this.updateInventoryItem(inventoryItem.id, {
       currentStock: newStock,
-      lastUpdated: new Date(),
     });
 
     // 5. Create sale entry
@@ -885,9 +884,9 @@ export class DatabaseStorage implements IStorage {
     try {
       let query = db
         .select({
-          revenue: sql<number>`COALESCE(SUM(${salesHistory.unitPrice} * ${salesHistory.quantity}), 0)`,
-          profit: sql<number>`COALESCE(SUM((${salesHistory.unitPrice} - ${salesHistory.cost}) * ${salesHistory.quantity}), 0)`,
-          units: sql<number>`COALESCE(SUM(${salesHistory.quantity}), 0)`,
+          revenue: sql<number>`COALESCE(SUM(${salesHistory.unitPrice} * ${salesHistory.quantitySold}), 0)`,
+          profit: sql<number>`COALESCE(SUM((${salesHistory.unitPrice} - ${salesHistory.totalCost}) * ${salesHistory.quantitySold}), 0)`,
+          units: sql<number>`COALESCE(SUM(${salesHistory.quantitySold}), 0)`,
           orderCount: sql<number>`COUNT(DISTINCT ${salesHistory.id})`
         })
         .from(salesHistory);
@@ -910,7 +909,7 @@ export class DatabaseStorage implements IStorage {
         conditions.push(eq(inventory.category, filters.category));
       }
 
-      const [result] = await query.where(and(...conditions));
+      const [result] = await query.where(and(...conditions)) as any;
 
       const avgOrderValue = result.orderCount > 0 ? result.revenue / result.orderCount : 0;
 
@@ -941,9 +940,9 @@ export class DatabaseStorage implements IStorage {
     try {
       const [result] = await db
         .select({
-          revenue: sql<number>`COALESCE(SUM(${salesHistory.unitPrice} * ${salesHistory.quantity}), 0)`,
-          profit: sql<number>`COALESCE(SUM((${salesHistory.unitPrice} - ${salesHistory.cost}) * ${salesHistory.quantity}), 0)`,
-          units: sql<number>`COALESCE(SUM(${salesHistory.quantity}), 0)`
+          revenue: sql<number>`COALESCE(SUM(${salesHistory.unitPrice} * ${salesHistory.quantitySold}), 0)`,
+          profit: sql<number>`COALESCE(SUM((${salesHistory.unitPrice} - ${salesHistory.totalCost}) * ${salesHistory.quantitySold}), 0)`,
+          units: sql<number>`COALESCE(SUM(${salesHistory.quantitySold}), 0)`
         })
         .from(salesHistory)
         .where(eq(salesHistory.userId, userId));

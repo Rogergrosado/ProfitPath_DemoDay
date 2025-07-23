@@ -228,7 +228,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Promote product to inventory
   app.post("/api/products/:id/promote", requireAuth, async (req, res) => {
     try {
-      const authReq = req as AuthenticatedRequest;
+      const authReq = req as unknown as AuthenticatedRequest;
       const productId = parseInt(req.params.id);
       const { sku, currentStock, costPrice, sellingPrice, reorderPoint } = req.body;
 
@@ -418,7 +418,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Restock endpoint with calendar integration
   app.post('/api/inventory/:sku/restock', requireAuth, async (req, res) => {
     try {
-      const authReq = req as AuthenticatedRequest;
+      const authReq = req as unknown as AuthenticatedRequest;
       const { sku } = req.params;
       const { quantity, reorderDate, notes } = req.body;
       const userId = authReq.userId;
@@ -454,11 +454,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           productName: item.name || "",
           reorderDate: new Date(reorderDate || new Date()),
           quantity: parseInt(quantity),
-          unitCost: parseFloat(item.costPrice || "0"),
-          totalCost: parseInt(quantity) * parseFloat(item.costPrice || "0"),
-          supplierName: item.supplierName || "",
-          notes: notes || "",
-          status: "completed"
+          notes: notes || ""
         });
       } catch (calendarError) {
         console.warn('Failed to record reorder calendar entry:', calendarError);
@@ -675,7 +671,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         for (const productRecord of parseResult.productsData) {
           try {
             // Check if inventory item with this SKU already exists
-            const existingItems = await storage.getInventoryItems(authReq.userId);
+            const existingItems = await storage.getInventory(authReq.userId);
             const existing = existingItems.find(item => item.sku === productRecord.sku);
             
             if (existing) {
@@ -994,7 +990,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Restock inventory item
   app.post("/api/inventory/:sku/restock", requireAuth, async (req, res) => {
     try {
-      const authReq = req as AuthenticatedRequest;
+      const authReq = req as unknown as AuthenticatedRequest;
       const sku = req.params.sku;
       const { quantity, notes } = req.body;
 

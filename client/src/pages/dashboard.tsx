@@ -70,6 +70,10 @@ export default function Dashboard() {
   const metrics = performanceMetrics || { totalRevenue: 0, totalProfit: 0, totalUnits: 0, conversionRate: 0 };
   const inventory = inventorySummary || { totalItems: 0, totalValue: 0, lowStockItems: 0, outOfStockItems: 0 };
   
+  // Get user info safely
+  const displayName = userProfile?.displayName || user?.displayName || 'User';
+  const businessName = userProfile?.businessName;
+  
   // Calculate profit margin from real data  
   const profitMargin = metrics.totalRevenue > 0 ? (metrics.totalProfit / metrics.totalRevenue) * 100 : 0;
   
@@ -122,11 +126,11 @@ export default function Dashboard() {
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold mb-2 text-foreground">
-              Welcome back, {userProfile?.displayName?.split(' ')[0] || user?.displayName?.split(' ')[0] || 'User'}
+              Welcome back, {displayName.split(' ')[0]}
             </h1>
             <p className="text-muted-foreground">
-              {userProfile?.businessName 
-                ? `${userProfile.businessName} business overview - Monitor your Amazon FBA performance` 
+              {businessName 
+                ? `${businessName} business overview - Monitor your Amazon FBA performance` 
                 : "Monitor your Amazon FBA business performance"
               }
             </p>
@@ -136,8 +140,8 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <AnimatedKPICard
               title="Monthly Revenue"
-              value={Math.round(displayMetrics.totalRevenue)}
-              previousValue={Math.round(displayMetrics.totalRevenue * 0.85)} // Estimate 15% growth
+              value={Math.round(metrics.totalRevenue)}
+              previousValue={Math.round(metrics.totalRevenue * 0.85)} // Estimate 15% growth
               prefix="$"
               icon={DollarSign}
               iconColor="bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400"
@@ -145,8 +149,8 @@ export default function Dashboard() {
             />
             <AnimatedKPICard
               title="Units Sold"
-              value={displayMetrics.totalUnits}
-              previousValue={Math.round(displayMetrics.totalUnits * 0.82)} // Estimate 18% growth
+              value={metrics.totalUnits}
+              previousValue={Math.round(metrics.totalUnits * 0.82)} // Estimate 18% growth
               icon={Package}
               iconColor="bg-blue-100 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
               delay={200}
@@ -162,8 +166,8 @@ export default function Dashboard() {
             />
             <AnimatedKPICard
               title="Conversion Rate"
-              value={Number(displayMetrics.conversionRate.toFixed(1))}
-              previousValue={Number((displayMetrics.conversionRate * 0.88).toFixed(1))} // Estimate 12% improvement
+              value={Number(metrics.conversionRate.toFixed(1))}
+              previousValue={Number((metrics.conversionRate * 0.88).toFixed(1))} // Estimate 12% improvement
               suffix="%"
               icon={Users}
               iconColor="bg-purple-100 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400"
