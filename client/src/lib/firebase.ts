@@ -1,9 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { 
   getAuth, 
-  GoogleAuthProvider, 
-  signInWithRedirect, 
-  getRedirectResult, 
   signOut, 
   onAuthStateChanged,
   signInWithEmailAndPassword,
@@ -49,13 +46,8 @@ if (import.meta.env.DEV) {
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const googleProvider = new GoogleAuthProvider();
 
 // Authentication functions
-export const signInWithGoogle = () => {
-  return signInWithRedirect(auth, googleProvider);
-};
-
 export const signInWithEmail = (email: string, password: string) => {
   return signInWithEmailAndPassword(auth, email, password);
 };
@@ -66,10 +58,6 @@ export const signUpWithEmail = async (email: string, password: string, displayNa
     await updateProfile(result.user, { displayName });
   }
   return result;
-};
-
-export const handleRedirectResult = () => {
-  return getRedirectResult(auth);
 };
 
 export const signOutUser = () => {

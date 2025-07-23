@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { User as FirebaseUser } from "firebase/auth";
-import { auth, signInWithGoogle, signInWithEmail, signUpWithEmail, signOutUser, handleRedirectResult, onAuthStateChanged } from "@/lib/firebase";
+import { auth, signInWithEmail, signUpWithEmail, signOutUser, onAuthStateChanged } from "@/lib/firebase";
 import { logout as utilLogout, validateSession, clearStaleSession } from "@/utils/authUtils";
 import type { User } from "@shared/schema";
 
@@ -11,7 +11,6 @@ interface AuthContextType {
   showWelcome: boolean;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
   setShowWelcome: (show: boolean) => void;
-  signIn: () => void;
   signInWithEmailPassword: (email: string, password: string) => Promise<void>;
   signUpWithEmailPassword: (email: string, password: string, displayName: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -26,16 +25,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [showWelcome, setShowWelcome] = useState(false);
 
   useEffect(() => {
-    // Handle redirect result on page load
-    handleRedirectResult().then(async (result) => {
-      if (result?.user) {
-        // User signed in via redirect
-        console.log("User signed in via redirect:", result.user);
-      }
-    }).catch((error) => {
-      console.error("Error handling redirect:", error);
-    });
-
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setFirebaseUser(firebaseUser);
       
@@ -141,9 +130,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => unsubscribe();
   }, []);
 
-  const signIn = () => {
-    signInWithGoogle();
-  };
+
 
   const signInWithEmailPassword = async (email: string, password: string) => {
     try {
@@ -192,7 +179,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       showWelcome,
       setUser,
       setShowWelcome,
-      signIn,
       signInWithEmailPassword,
       signUpWithEmailPassword,
       logout 
