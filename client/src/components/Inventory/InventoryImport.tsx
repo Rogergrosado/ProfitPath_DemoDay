@@ -307,14 +307,15 @@ export function InventoryImport({ open, onOpenChange }: InventoryImportProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-hidden bg-white dark:bg-[#222831] border-gray-200 dark:border-slate-700">
+      <DialogContent className={`${activeTab === 'manual' ? 'sm:max-w-[95vw] max-w-[1200px]' : 'sm:max-w-[800px]'} max-h-[95vh] overflow-hidden bg-white dark:bg-[#222831] border-gray-200 dark:border-slate-700`}>
         <DialogHeader>
           <DialogTitle className="flex items-center text-black dark:text-white">
             <FileSpreadsheet className="h-5 w-5 mr-2 text-[#fd7014]" />
-            Import Inventory from CSV
+            Add Inventory in Bulk
           </DialogTitle>
           <DialogDescription className="text-gray-600 dark:text-gray-400">
-            {currentStep === "upload" && "Upload your CSV file to import inventory items in bulk"}
+            {currentStep === "upload" && activeTab === "csv" && "Upload your CSV file to import inventory items in bulk"}
+            {currentStep === "upload" && activeTab === "manual" && "Enter your inventory items manually using the table below"}
             {currentStep === "preview" && "Review your data before importing"}
             {currentStep === "complete" && "Import completed successfully"}
           </DialogDescription>
@@ -326,7 +327,7 @@ export function InventoryImport({ open, onOpenChange }: InventoryImportProps) {
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="csv" className="flex items-center gap-2">
                   <Upload className="h-4 w-4" />
-                  CSV Upload
+                  Add in Bulk
                 </TabsTrigger>
                 <TabsTrigger value="manual" className="flex items-center gap-2">
                   <Edit3 className="h-4 w-4" />
@@ -433,12 +434,12 @@ export function InventoryImport({ open, onOpenChange }: InventoryImportProps) {
               </Card>
               </TabsContent>
 
-              <TabsContent value="manual" className="space-y-4">
+              <TabsContent value="manual" className="space-y-4 max-h-[70vh] overflow-auto">
                 <ManualDataEntry
                   columns={manualDataColumns}
                   onDataSubmit={handleManualDataSubmit}
                   title="Manual Inventory Entry"
-                  description="Enter inventory items manually using the form below"
+                  description="Enter inventory items manually using the table below. Use bulk add buttons for multiple products."
                   maxRows={100}
                 />
               </TabsContent>
