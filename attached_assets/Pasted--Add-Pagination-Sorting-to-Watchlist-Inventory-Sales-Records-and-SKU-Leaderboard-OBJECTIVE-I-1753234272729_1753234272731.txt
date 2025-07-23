@@ -1,0 +1,128 @@
+ Add Pagination + Sorting to Watchlist, Inventory, Sales Records, and SKU Leaderboard
+📌 OBJECTIVE
+Implement dynamic pagination and column-based sorting to the following views:
+
+Product Watchlist
+
+Inventory Items List
+
+Sales History / Analytics Log
+
+SKU Leaderboard (Market Insights replacement)
+
+✅ 1. FRONTEND TASKS (React)
+🔁 Shared UI Components to Build Once
+Pagination Controls (bottom of table)
+
+jsx
+Copiar
+Editar
+<div className="pagination">
+  <button disabled={page === 1} onClick={() => setPage(page - 1)}>Prev</button>
+  <span>Page {page}</span>
+  <button disabled={!hasNextPage} onClick={() => setPage(page + 1)}>Next</button>
+</div>
+Sortable Table Headers
+
+jsx
+Copiar
+Editar
+<th onClick={() => toggleSort('revenue')}>
+  Revenue {sortBy === 'revenue' && (order === 'asc' ? '↑' : '↓')}
+</th>
+🧠 State Hooks Per Component
+js
+Copiar
+Editar
+const [page, setPage] = useState(1);
+const [limit] = useState(10); // or 25
+const [sortBy, setSortBy] = useState('name'); // or any default column
+const [order, setOrder] = useState('asc');
+const [data, setData] = useState([]);
+const [hasNextPage, setHasNextPage] = useState(false);
+
+useEffect(() => {
+  fetch(`/api/route?sortBy=${sortBy}&order=${order}&page=${page}&limit=${limit}`)
+    .then(res => res.json())
+    .then(({ results, nextPage }) => {
+      setData(results);
+      setHasNextPage(nextPage);
+    });
+}, [page, sortBy, order]);
+✅ 2. BACKEND TASKS (Express)
+🔁 Implement Pagination + Sorting Parameters in API Routes
+All four backend endpoints must accept these query parameters:
+
+ts
+Copiar
+Editar
+?sortBy=column_name&order=asc|desc&page=1&limit=10
+🔄 Update These API Routes:
+🟧 Watchlist:
+ts
+Copiar
+Editar
+GET /api/watchlist
+🟦 Inventory Items:
+ts
+Copiar
+Editar
+GET /api/inventory
+🟨 Sales History Log:
+ts
+Copiar
+Editar
+GET /api/sales/history
+🟪 SKU Leaderboard:
+ts
+Copiar
+Editar
+GET /api/analytics/sku-leaderboard
+🧠 Backend Logic (Shared Pattern)
+Assuming PostgreSQL/SQL DB:
+
+sql
+Copiar
+Editar
+SELECT *
+FROM table
+ORDER BY {sortBy} {order}
+LIMIT {limit}
+OFFSET {(page - 1) * limit}
+Be sure to validate that sortBy is a column that exists (to prevent injection).
+
+📦 API Response Format
+All paginated endpoints should return:
+
+json
+Copiar
+Editar
+{
+  "results": [...],          // current page data
+  "nextPage": true | false,  // for frontend pagination controls
+  "totalPages": 12,          // optional
+  "currentPage": 1           // optional
+}
+✅ 3. TABLE-SPECIFIC SORTABLE FIELDS
+Table	Sortable Fields
+Watchlist	Product Name, Category, Price, Demand Score
+Inventory Items	SKU, Category, Stock, Value, Status
+Sales History Log	Date, SKU, Units, Revenue, Profit
+SKU Leaderboard	Units Sold, Revenue, Profit, Margin %
+
+✅ 4. BONUS: Client-side Table Enhancements
+Optional: add “Rows per page” dropdown
+
+Show loading spinners while fetching new page
+
+Reset page = 1 when sortBy or order changes
+
+📈 Outcome
+Each data view will now:
+
+Display in smaller, faster-loading chunks
+
+Let users sort by any key metric
+
+Scale cleanly as your product and sales history grow
+

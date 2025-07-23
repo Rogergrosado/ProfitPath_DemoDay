@@ -819,6 +819,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // NEW: Sales Trends Explorer API
+  app.get("/api/analytics/sales-trend", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const { startDate, endDate, sku, category } = req.query;
+
+      const trends = await storage.getSalesTrends(authReq.userId, {
+        startDate: startDate as string,
+        endDate: endDate as string,
+        sku: sku as string,
+        category: category as string
+      });
+      
+      res.json(trends);
+    } catch (error: any) {
+      console.error('Error fetching sales trends:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // NEW: SKU Leaderboard API
+  app.get("/api/analytics/sku-leaderboard", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const { sortBy, order, category } = req.query;
+
+      const leaderboard = await storage.getSKULeaderboard(authReq.userId, {
+        sortBy: sortBy as 'unitsSold' | 'revenue' | 'profit' | 'margin',
+        order: order as 'asc' | 'desc',
+        category: category as string
+      });
+      
+      res.json(leaderboard);
+    } catch (error: any) {
+      console.error('Error fetching SKU leaderboard:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Helper function for performance recalculation
   async function triggerPerformanceRecalculation(userId: number): Promise<void> {
     console.log(`🔄 Triggering performance recalculation for user ${userId}`);

@@ -968,6 +968,133 @@ export class DatabaseStorage implements IStorage {
       };
     }
   }
+
+  // NEW: Sales Trends Explorer - Time-series data
+  async getSalesTrends(userId: number, filters: {
+    startDate?: string;
+    endDate?: string;
+    sku?: string;
+    category?: string;
+  }): Promise<{
+    date: string;
+    revenue: number;
+    unitsSold: number;
+    profit: number;
+    avgOrderValue: number;
+  }[]> {
+    try {
+      let query = db
+        .select({
+          date: sql<string>`DATE(${sales.saleDate})`,
+          revenue: sql<number>`COALESCE(SUM(CAST(${sales.totalRevenue} AS DECIMAL)), 0)`,
+          profit: sql<number>`COALESCE(SUM(CAST(${sales.profit} AS DECIMAL)), 0)`,
+          units: sql<number>`COALESCE(SUM(${sales.quantity}), 0)`,
+          orderCount: sql<number>`COUNT(DISTINCT ${sales.id})`
+        })
+        .from(sales)
+        .groupBy(sql`DATE(${sales.saleDate})`);
+
+      // Apply filters
+      const conditions: any[] = [eq(sales.userId, userId)];
+
+      if (filters.startDate) {
+        conditions.push(gte(sales.saleDate, new Date(filters.startDate)));
+      }
+      if (filters.endDate) {
+        conditions.push(lte(sales.saleDate, new Date(filters.endDate)));
+      }
+      if (filters.sku) {
+        conditions.push(eq(sales.sku, filters.sku));
+      }
+      if (filters.category) {
+        conditions.push(eq(sales.category, filters.category));
+      }
+
+      const results = await query.where(and(...conditions)).orderBy(sql`DATE(${sales.saleDate})`);
+
+      return results.map(result => ({
+        date: result.date,
+        revenue: Number(result.revenue),
+        unitsSold: Number(result.units),
+        profit: Number(result.profit),
+        avgOrderValue: result.orderCount > 0 ? Number((Number(result.revenue) / Number(result.orderCount)).toFixed(2)) : 0
+      }));
+    } catch (error) {
+      console.error('Error fetching sales trends:', error);
+      return [];
+    }
+  }
+
+  // NEW: SKU Leaderboard - Performance ranking
+  async getSKULeaderboard(userId: number, filters: {
+    sortBy?: 'unitsSold' | 'revenue' | 'profit' | 'margin';
+    order?: 'asc' | 'desc';
+    category?: string;
+  }): Promise<{
+    sku: string;
+    product: string;
+    unitsSold: number;
+    revenue: number;
+    profit: number;
+    avgOrderValue: number;
+    margin: number;
+  }[]> {
+    try {
+      let query = db
+        .select({
+          sku: sales.sku,
+          product: sales.productName,
+          unitsSold: sql<number>`COALESCE(SUM(${sales.quantity}), 0)`,
+          revenue: sql<number>`COALESCE(SUM(CAST(${sales.totalRevenue} AS DECIMAL)), 0)`,
+          profit: sql<number>`COALESCE(SUM(CAST(${sales.profit} AS DECIMAL)), 0)`,
+          orderCount: sql<number>`COUNT(DISTINCT ${sales.id})`
+        })
+        .from(sales)
+        .groupBy(sales.sku, sales.productName);
+
+      // Apply filters
+      const conditions: any[] = [eq(sales.userId, userId)];
+
+      if (filters.category) {
+        conditions.push(eq(sales.category, filters.category));
+      }
+
+      const results = await query.where(and(...conditions));
+
+      // Calculate derived metrics and sort
+      const leaderboard = results.map(result => {
+        const revenue = Number(result.revenue);
+        const profit = Number(result.profit);
+        const unitsSold = Number(result.unitsSold);
+        const orderCount = Number(result.orderCount);
+        
+        return {
+          sku: result.sku,
+          product: result.product,
+          unitsSold,
+          revenue,
+          profit,
+          avgOrderValue: orderCount > 0 ? Number((revenue / orderCount).toFixed(2)) : 0,
+          margin: revenue > 0 ? Number(((profit / revenue) * 100).toFixed(2)) : 0
+        };
+      });
+
+      // Sort by specified field
+      const sortBy = filters.sortBy || 'revenue';
+      const order = filters.order || 'desc';
+      
+      leaderboard.sort((a, b) => {
+        const aVal = a[sortBy];
+        const bVal = b[sortBy];
+        return order === 'desc' ? bVal - aVal : aVal - bVal;
+      });
+
+      return leaderboard;
+    } catch (error) {
+      console.error('Error fetching SKU leaderboard:', error);
+      return [];
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();

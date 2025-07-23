@@ -5,7 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Sidebar } from "@/components/Navigation/Sidebar";
 import { ThemeToggle } from "@/components/Navigation/ThemeToggle";
-import { PredictiveAnalytics } from "@/components/Analytics/PredictiveAnalytics";
+import { SalesTrendsExplorer } from "@/components/Analytics/SalesTrendsExplorer";
+import { SKULeaderboard } from "@/components/Analytics/SKULeaderboard";
 import { SalesHistoryTable } from "@/components/Analytics/SalesHistoryTable";
 import { SalesHistoryCalendar } from "@/components/Analytics/SalesHistoryCalendar";
 import { PerformanceKPIs } from "@/components/Analytics/PerformanceKPIs";
@@ -112,16 +113,17 @@ export default function Analytics() {
               <TabsTrigger value="performance" className="data-[state=active]:bg-[#fd7014] data-[state=active]:text-white">
                 Sales History
               </TabsTrigger>
-              <TabsTrigger value="predictive" className="data-[state=active]:bg-[#fd7014] data-[state=active]:text-white">
-                Predictive Analytics
+              <TabsTrigger value="trends" className="data-[state=active]:bg-[#fd7014] data-[state=active]:text-white">
+                Sales Trends Explorer
               </TabsTrigger>
-              <TabsTrigger value="forecasting" className="data-[state=active]:bg-[#fd7014] data-[state=active]:text-white">
+              <TabsTrigger value="calendar" className="data-[state=active]:bg-[#fd7014] data-[state=active]:text-white">
                 Sales History Calendar
               </TabsTrigger>
-              <TabsTrigger value="insights" className="data-[state=active]:bg-[#fd7014] data-[state=active]:text-white">
-                Market Insights
+              <TabsTrigger value="leaderboard" className="data-[state=active]:bg-[#fd7014] data-[state=active]:text-white">
+                SKU Leaderboard
               </TabsTrigger>
             </TabsList>
+
 
             <TabsContent value="performance">
               <div className="space-y-6">
@@ -134,36 +136,16 @@ export default function Analytics() {
               </div>
             </TabsContent>
 
-            <TabsContent value="predictive">
-              <PredictiveAnalytics />
+            <TabsContent value="trends">
+              <SalesTrendsExplorer />
             </TabsContent>
 
-            <TabsContent value="forecasting">
+            <TabsContent value="calendar">
               <SalesHistoryCalendar />
             </TabsContent>
 
-            <TabsContent value="insights">
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <Target className="h-5 w-5" />
-                      <span>Market Insights</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground mb-4">
-                      AI-generated market insights and recommendations
-                    </p>
-                    <Button 
-                      onClick={() => {}}
-                      className="bg-[#fd7014] hover:bg-[#e5640f] text-white"
-                    >
-                      View Market Analysis
-                    </Button>
-                  </CardContent>
-                </Card>
-              </div>
+            <TabsContent value="leaderboard">
+              <SKULeaderboard />
             </TabsContent>
           </Tabs>
         </div>
