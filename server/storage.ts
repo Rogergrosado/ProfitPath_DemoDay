@@ -909,12 +909,12 @@ export class DatabaseStorage implements IStorage {
 
       const [result] = await query.where(and(...conditions)) as any;
 
-      const avgOrderValue = result.orderCount > 0 ? result.revenue / result.orderCount : 0;
+      const avgOrderValue = result.orderCount > 0 ? Number(result.revenue) / Number(result.orderCount) : 0;
 
       return {
-        totalRevenue: result.revenue,
-        totalProfit: result.profit,
-        unitsSold: result.units,
+        totalRevenue: Number(result.revenue),
+        totalProfit: Number(result.profit),
+        unitsSold: Number(result.units),
         avgOrderValue: Number(avgOrderValue.toFixed(2))
       };
     } catch (error) {
