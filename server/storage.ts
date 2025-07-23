@@ -590,7 +590,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getGoalHistory(userId: number): Promise<any[]> {
-    return db.select().from(goalHistory).where(eq(goalHistory.userId, userId)).orderBy(desc(goalHistory.completedAt));
+    return db.select().from(goalHistory).where(eq(goalHistory.userId, userId)).orderBy(desc(goalHistory.createdAt));
   }
 
   async getGoalsWithProgress(userId: number): Promise<any[]> {
@@ -811,7 +811,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getGoalHistory(userId: number): Promise<any[]> {
-    return db.select().from(goalHistory).where(eq(goalHistory.userId, userId)).orderBy(desc(goalHistory.completedAt));
+    return db.select().from(goalHistory).where(eq(goalHistory.userId, userId)).orderBy(desc(goalHistory.createdAt));
   }
 
   // Reports

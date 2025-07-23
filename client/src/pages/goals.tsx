@@ -60,7 +60,7 @@ export default function Goals() {
   // Fetch goal history for completed goals tab
   const { data: goalHistory = [] } = useQuery<any[]>({
     queryKey: ["/api/goals/history"],
-    enabled: !!user && activeTab === "completed",
+    enabled: !!user,
     staleTime: 0,
     cacheTime: 0,
   });
