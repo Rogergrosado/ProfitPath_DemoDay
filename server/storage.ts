@@ -596,57 +596,47 @@ export class DatabaseStorage implements IStorage {
       const periodDays = this.getPeriodDays(goal.period);
       const startDate = new Date(now.getTime() - (periodDays * 24 * 60 * 60 * 1000));
 
+      // Build base conditions for the query
+      const baseConditions = [
+        eq(sales.userId, userId),
+        gte(sales.saleDate, startDate),
+        lte(sales.saleDate, now)
+      ];
+
+      // Add scope-specific conditions
+      if (goal.scope === 'sku' && goal.targetSKU) {
+        baseConditions.push(eq(sales.sku, goal.targetSKU));
+      } else if (goal.scope === 'category' && goal.targetCategory) {
+        baseConditions.push(eq(sales.category, goal.targetCategory));
+      }
+
       // Calculate current progress based on metric type
       if (goal.metric === 'revenue') {
         const [result] = await db
-          .select({ total: sql<number>`COALESCE(SUM(${sales.totalRevenue}), 0)` })
+          .select({ total: sql<number>`COALESCE(SUM(CAST(${sales.totalRevenue} AS DECIMAL)), 0)` })
           .from(sales)
-          .where(
-            and(
-              eq(sales.userId, userId),
-              gte(sales.saleDate, startDate),
-              lte(sales.saleDate, now)
-            )
-          );
+          .where(and(...baseConditions));
         currentValue = Number(result.total);
       } else if (goal.metric === 'unitsSold') {
         const [result] = await db
           .select({ total: sql<number>`COALESCE(SUM(${sales.quantity}), 0)` })
           .from(sales)
-          .where(
-            and(
-              eq(sales.userId, userId),
-              gte(sales.saleDate, startDate),
-              lte(sales.saleDate, now)
-            )
-          );
+          .where(and(...baseConditions));
         currentValue = Number(result.total);
       } else if (goal.metric === 'profit') {
         const [result] = await db
-          .select({ total: sql<number>`COALESCE(SUM(${sales.profit}), 0)` })
+          .select({ total: sql<number>`COALESCE(SUM(CAST(${sales.profit} AS DECIMAL)), 0)` })
           .from(sales)
-          .where(
-            and(
-              eq(sales.userId, userId),
-              gte(sales.saleDate, startDate),
-              lte(sales.saleDate, now)
-            )
-          );
+          .where(and(...baseConditions));
         currentValue = Number(result.total);
       } else if (goal.metric === 'profitMargin') {
         const [revenueResult] = await db
           .select({ 
-            revenue: sql<number>`COALESCE(SUM(${sales.totalRevenue}), 0)`,
-            profit: sql<number>`COALESCE(SUM(${sales.profit}), 0)`
+            revenue: sql<number>`COALESCE(SUM(CAST(${sales.totalRevenue} AS DECIMAL)), 0)`,
+            profit: sql<number>`COALESCE(SUM(CAST(${sales.profit} AS DECIMAL)), 0)`
           })
           .from(sales)
-          .where(
-            and(
-              eq(sales.userId, userId),
-              gte(sales.saleDate, startDate),
-              lte(sales.saleDate, now)
-            )
-          );
+          .where(and(...baseConditions));
         
         const revenue = Number(revenueResult.revenue);
         const profit = Number(revenueResult.profit);
@@ -666,11 +656,13 @@ export class DatabaseStorage implements IStorage {
         status = 'at_risk';
       }
 
+      console.log(`🎯 Goal ${goal.id} progress: ${currentValue}/${targetValue} (${progressPercentage.toFixed(1)}%) - Status: ${status}`);
+
       goalsWithProgress.push({
         ...goal,
         currentValue,
         targetValue,
-        progressPercentage,
+        progressPercentage: Number(progressPercentage.toFixed(1)),
         status
       });
     }

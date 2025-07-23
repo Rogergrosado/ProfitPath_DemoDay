@@ -1108,6 +1108,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/goals/with-progress", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      console.log(`🎯 Fetching goals with progress for user ${authReq.userId}`);
+      const goalsWithProgress = await storage.getGoalsWithProgress(authReq.userId);
+      console.log(`📊 Returning ${goalsWithProgress.length} goals with progress`);
+      res.json(goalsWithProgress);
+    } catch (error: any) {
+      console.error('Error fetching goals with progress:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Helper function for performance recalculation
   async function triggerPerformanceRecalculation(userId: number): Promise<void> {
     console.log(`🔄 Triggering performance recalculation for user ${userId}`);
