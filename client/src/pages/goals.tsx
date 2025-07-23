@@ -95,14 +95,25 @@ export default function Goals() {
   })) : [];
 
   const activeGoals = goalsWithProgress.filter((goal: any) => goal.status !== 'met' && goal.status !== 'unmet');
-  // Combine active goals with completed goals from history
-  const completedGoals = [...goalHistory, ...goalsWithProgress.filter((goal: any) => goal.status === 'met' || goal.status === 'unmet')];
+  
+  // Process completed goals from history for display
+  const completedGoals = Array.isArray(goalHistory) ? goalHistory.map((historyGoal: any) => ({
+    ...historyGoal,
+    // Map database fields to display format
+    id: historyGoal.originalGoalId || historyGoal.id,
+    currentValue: historyGoal.finalValue || historyGoal.final_value,
+    targetValue: historyGoal.targetValue || historyGoal.target_value,
+    progressPercentage: ((parseFloat(historyGoal.finalValue || historyGoal.final_value || '0') / parseFloat(historyGoal.targetValue || historyGoal.target_value || '1')) * 100),
+    status: historyGoal.status,
+    completedAt: historyGoal.completedAt || historyGoal.completed_at,
+    daysRemaining: 0,
+    isExpired: true
+  })) : [];
 
-  const filteredGoals = (activeTab === "active" ? activeGoals : completedGoals).filter((goal: any) => {
-    const metricMatch = selectedMetric === "all" || goal.metric === selectedMetric;
-    const periodMatch = selectedPeriod === "all" || goal.period === selectedPeriod;
-    return metricMatch && periodMatch;
-  });
+  // Filter goals based on active tab and selections
+  const filteredGoals = (activeTab === "active" ? activeGoals : completedGoals)
+    .filter((goal: any) => selectedMetric === "all" || goal.metric === selectedMetric)
+    .filter((goal: any) => selectedPeriod === "all" || goal.period === selectedPeriod);
 
   const getStatusColor = (status: string) => {
     switch (status) {

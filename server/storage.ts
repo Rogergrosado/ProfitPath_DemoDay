@@ -779,7 +779,7 @@ export class DatabaseStorage implements IStorage {
     // Create goal history record matching existing table structure
     const historyRecord = {
       user_id: goal.userId,
-      goal_id: goal.id, // Using goal_id instead of original_goal_id
+      originalGoalId: goal.id,
       metric: goal.metric,
       target_value: goal.targetValue,
       final_value: achievedValue.toString(), // Using final_value instead of achieved_value
@@ -798,13 +798,13 @@ export class DatabaseStorage implements IStorage {
       // Use raw SQL for goal_history insert to match existing table structure
       await db.execute(sql`
         INSERT INTO goal_history (
-          user_id, goal_id, metric, target_value, final_value, 
+          user_id, original_goal_id, metric, target_value, final_value, 
           scope, target_category, target_sku, period, description, 
-          status, start_date, end_date, progress_percentage
+          status, start_date, end_date
         ) VALUES (
           ${goal.userId}, ${goal.id}, ${goal.metric}, ${goal.targetValue}, ${achievedValue.toString()},
           ${goal.scope}, ${goal.targetCategory || ''}, ${goal.targetSKU || ''}, ${goal.period}, ${goal.description || ''},
-          ${status}, ${startDate}, ${endDate}, ${(achievedValue / Number(goal.targetValue)) * 100}
+          ${status}, ${startDate}, ${endDate}
         )
       `);
       
