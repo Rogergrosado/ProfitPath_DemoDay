@@ -95,6 +95,25 @@ export const goals = pgTable("goals", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const goalHistory = pgTable("goal_history", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  originalGoalId: integer("original_goal_id").notNull(),
+  metric: text("metric").notNull(),
+  targetValue: decimal("target_value", { precision: 15, scale: 2 }).notNull(),
+  achievedValue: decimal("achieved_value", { precision: 15, scale: 2 }).notNull(),
+  scope: text("scope").notNull(),
+  targetCategory: text("target_category"),
+  targetSKU: text("target_sku"),
+  period: text("period").notNull(),
+  description: text("description"),
+  status: text("status").notNull(), // "met", "unmet"
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  completedAt: timestamp("completed_at").notNull().defaultNow(),
+  daysToComplete: integer("days_to_complete"),
+});
+
 export const reports = pgTable("reports", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
@@ -151,6 +170,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   inventory: many(inventory),
   sales: many(sales),
   goals: many(goals),
+  goalHistory: many(goalHistory),
   reports: many(reports),
   salesHistory: many(salesHistory),
   calendarSales: many(calendarSales),
@@ -224,6 +244,13 @@ export const goalsRelations = relations(goals, ({ one }) => ({
   }),
 }));
 
+export const goalHistoryRelations = relations(goalHistory, ({ one }) => ({
+  user: one(users, {
+    fields: [goalHistory.userId],
+    references: [users.id],
+  }),
+}));
+
 export const reportsRelations = relations(reports, ({ one }) => ({
   user: one(users, {
     fields: [reports.userId],
@@ -281,6 +308,14 @@ export const insertGoalSchema = createInsertSchema(goals).omit({
   targetValue: z.union([z.string(), z.number()]).transform(val => Number(val)) // Accept both string and number, convert to number
 });
 
+export const insertGoalHistorySchema = createInsertSchema(goalHistory).omit({
+  id: true,
+  completedAt: true,
+}).extend({
+  targetValue: z.union([z.string(), z.number()]).transform(val => Number(val)),
+  achievedValue: z.union([z.string(), z.number()]).transform(val => Number(val))
+});
+
 export const insertReportSchema = createInsertSchema(reports).omit({
   id: true,
   createdAt: true,
@@ -335,6 +370,8 @@ export type Sale = typeof sales.$inferSelect;
 export type InsertSale = z.infer<typeof insertSaleSchema>;
 export type Goal = typeof goals.$inferSelect;
 export type InsertGoal = z.infer<typeof insertGoalSchema>;
+export type GoalHistory = typeof goalHistory.$inferSelect;
+export type InsertGoalHistory = z.infer<typeof insertGoalHistorySchema>;
 export type Report = typeof reports.$inferSelect;
 export type InsertReport = z.infer<typeof insertReportSchema>;
 

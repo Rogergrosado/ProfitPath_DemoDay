@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,6 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Target, TrendingUp, Calendar, DollarSign } from 'lucide-react';
+import { GoalCelebration } from '@/components/Celebrations/GoalCelebration';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface Goal {
@@ -31,6 +33,8 @@ interface KPIs {
 
 export function GoalProgressSection() {
   const { user, loading } = useAuth();
+  const [celebratingGoal, setCelebratingGoal] = useState<Goal | null>(null);
+  const [previousGoals, setPreviousGoals] = useState<Goal[]>([]);
 
   const { data: goals = [], isLoading: goalsLoading } = useQuery<Goal[]>({
     queryKey: ['/api/goals/with-progress'],
@@ -41,6 +45,27 @@ export function GoalProgressSection() {
     queryKey: ['/api/dashboard/kpis'],
     enabled: !!user && !loading,
   });
+
+  // Check for newly completed goals and trigger celebration
+  useEffect(() => {
+    if (!goals || goals.length === 0) return;
+
+    // Check if any goal was just completed
+    goals.forEach(goal => {
+      const previousGoal = previousGoals.find(p => p.id === goal.id);
+      
+      // If goal was previously not at 100% but now is at 100%, trigger celebration
+      if (previousGoal && 
+          previousGoal.progressPercentage < 100 && 
+          goal.progressPercentage >= 100 && 
+          goal.status === 'met') {
+        console.log(`🎉 Goal completed: ${goal.description || goal.metric}`);
+        setCelebratingGoal(goal);
+      }
+    });
+
+    setPreviousGoals(goals);
+  }, [goals]);
 
   const activeGoals = goals.filter(goal => goal.status !== 'met' && goal.status !== 'unmet');
 
@@ -261,6 +286,17 @@ export function GoalProgressSection() {
           )}
         </CardContent>
       </Card>
+
+      {/* Goal Celebration Component */}
+      {celebratingGoal && (
+        <GoalCelebration
+          isTriggered={!!celebratingGoal}
+          goalTitle={celebratingGoal.description || celebratingGoal.metric}
+          achievedValue={celebratingGoal.currentValue}
+          targetValue={Number(celebratingGoal.targetValue)}
+          onComplete={() => setCelebratingGoal(null)}
+        />
+      )}
     </motion.div>
   );
 }

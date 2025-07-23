@@ -1121,6 +1121,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/goals/history", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const goalHistory = await storage.getGoalHistory(authReq.userId);
+      res.json(goalHistory);
+    } catch (error: any) {
+      console.error("Error fetching goal history:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Helper function for performance recalculation
   async function triggerPerformanceRecalculation(userId: number): Promise<void> {
     console.log(`🔄 Triggering performance recalculation for user ${userId}`);

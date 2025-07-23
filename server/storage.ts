@@ -4,6 +4,7 @@ import {
   inventory,
   sales,
   goals,
+  goalHistory,
   reports,
   salesHistory,
   calendarSales,
@@ -20,6 +21,8 @@ import {
   type InsertSale,
   type Goal,
   type InsertGoal,
+  type GoalHistory,
+  type InsertGoalHistory,
   type Report,
   type InsertReport,
   type SalesHistory,
@@ -720,10 +723,11 @@ export class DatabaseStorage implements IStorage {
       console.log(`⏰ Days remaining: ${daysRemaining}, Expired: ${isGoalExpired}`);
       console.log(`🔍 Goal scope: ${goal.scope}, target SKU: ${goal.targetSKU}, metric: ${goal.metric}`);
 
-      // Move completed goals to history table if they're met and expired
-      if (isGoalExpired && progressPercentage >= 100) {
-        console.log(`🏆 Goal ${goal.id} completed and expired, should move to history`);
-        // TODO: Move to goal_history table and remove from active goals
+      // Auto-archive completed goals that are met before expiration OR expired goals
+      if ((progressPercentage >= 100 && !isGoalExpired) || (isGoalExpired && progressPercentage >= 100)) {
+        console.log(`🏆 Goal ${goal.id} completed (${progressPercentage.toFixed(1)}%), archiving to history`);
+        await this.archiveGoal(goal, currentValue, startDate, goalEndDate, status === 'met' ? 'met' : 'unmet');
+        continue; // Skip adding to active goals list
       }
 
       goalsWithProgress.push({
@@ -751,6 +755,56 @@ export class DatabaseStorage implements IStorage {
       case '1y': return 365;
       default: return 30;
     }
+  }
+
+  // Goal History Management
+  async archiveGoal(goal: Goal, achievedValue: number, startDate: Date, endDate: Date, status: 'met' | 'unmet'): Promise<void> {
+    const now = new Date();
+    const daysToComplete = Math.ceil((now.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000));
+    
+    // Create goal history record matching existing table structure
+    const historyRecord = {
+      user_id: goal.userId,
+      goal_id: goal.id, // Using goal_id instead of original_goal_id
+      metric: goal.metric,
+      target_value: goal.targetValue,
+      final_value: achievedValue.toString(), // Using final_value instead of achieved_value
+      scope: goal.scope,
+      target_category: goal.targetCategory,
+      target_sku: goal.targetSKU,
+      period: goal.period,
+      description: goal.description,
+      status,
+      start_date: startDate,
+      end_date: endDate,
+      progress_percentage: (achievedValue / Number(goal.targetValue)) * 100
+    };
+
+    try {
+      // Use raw SQL for goal_history insert to match existing table structure
+      await db.execute(sql`
+        INSERT INTO goal_history (
+          user_id, goal_id, metric, target_value, final_value, 
+          scope, target_category, target_sku, period, description, 
+          status, start_date, end_date, progress_percentage
+        ) VALUES (
+          ${goal.userId}, ${goal.id}, ${goal.metric}, ${goal.targetValue}, ${achievedValue.toString()},
+          ${goal.scope}, ${goal.targetCategory || ''}, ${goal.targetSKU || ''}, ${goal.period}, ${goal.description || ''},
+          ${status}, ${startDate}, ${endDate}, ${(achievedValue / Number(goal.targetValue)) * 100}
+        )
+      `);
+      
+      // Remove from active goals
+      await db.delete(goals).where(eq(goals.id, goal.id));
+      
+      console.log(`✅ Goal ${goal.id} successfully archived to history with status: ${status}`);
+    } catch (error) {
+      console.error(`❌ Failed to archive goal ${goal.id}:`, error);
+    }
+  }
+
+  async getGoalHistory(userId: number): Promise<any[]> {
+    return db.select().from(goalHistory).where(eq(goalHistory.userId, userId)).orderBy(desc(goalHistory.completedAt));
   }
 
   // Reports
