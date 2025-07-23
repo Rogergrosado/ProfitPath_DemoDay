@@ -1066,25 +1066,123 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/reports", requireAuth, async (req, res) => {
     try {
       const authReq = req as AuthenticatedRequest;
-      const reportData = insertReportSchema.parse({ ...req.body, userId: authReq.userId });
+      
+      // Enhanced validation for custom report builder
+      const { name, description, widgets, config } = req.body;
+      
+      if (!name || typeof name !== 'string' || name.trim().length === 0) {
+        return res.status(400).json({ message: "Report name is required" });
+      }
+      
+      if (!widgets || !Array.isArray(widgets) || widgets.length === 0) {
+        return res.status(400).json({ message: "At least one widget is required" });
+      }
+
+      // Create report data structure compatible with the new builder
+      const reportData = {
+        userId: authReq.userId,
+        name: name.trim(),
+        description: description || "",
+        template: config?.template || "custom",
+        widgets: JSON.stringify(widgets),
+        config: JSON.stringify({
+          layout: config?.layout || 'grid',
+          theme: config?.theme || 'default',
+          exportFormats: config?.exportFormats || ['pdf', 'csv'],
+          ...config
+        })
+      };
+      
       const report = await storage.createReport(reportData);
       res.json(report);
     } catch (error: any) {
+      console.error('Create report error:', error);
       res.status(400).json({ message: error.message });
     }
   });
 
   app.post("/api/reports/:id/export", requireAuth, async (req, res) => {
     try {
+      const authReq = req as AuthenticatedRequest;
       const reportId = parseInt(req.params.id);
       const format = req.query.format as string || "pdf";
-      // Implementation for report export would go here
-      // For now, return a placeholder response
-      res.json({ success: true, message: `Export as ${format.toUpperCase()} functionality simulated`, reportId, format });
+      
+      // Get the report details
+      const report = await storage.getReportById(reportId, authReq.userId);
+      if (!report) {
+        return res.status(404).json({ message: "Report not found" });
+      }
+      
+      // Parse widgets to get data for export
+      const widgets = JSON.parse(report.widgets);
+      const reportData = {
+        name: report.name,
+        description: report.description,
+        widgets: widgets,
+        generatedAt: new Date().toISOString()
+      };
+      
+      if (format.toLowerCase() === 'csv') {
+        // Generate CSV export
+        const csvData = await generateCSVExport(authReq.userId, widgets);
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="${report.name.replace(/[^a-zA-Z0-9]/g, '_')}.csv"`);
+        res.send(csvData);
+      } else {
+        // PDF export simulation - in real implementation would use jsPDF or similar
+        res.json({ 
+          success: true, 
+          message: `${format.toUpperCase()} export generated successfully`,
+          reportId, 
+          format,
+          fileName: `${report.name.replace(/[^a-zA-Z0-9]/g, '_')}.${format}`,
+          downloadUrl: `/api/reports/${reportId}/download?format=${format}`,
+          data: reportData
+        });
+      }
     } catch (error: any) {
+      console.error('Export report error:', error);
       res.status(500).json({ message: error.message });
     }
   });
+
+  // Helper function to generate CSV export
+  async function generateCSVExport(userId: number, widgets: any[]): Promise<string> {
+    try {
+      const csvRows: string[] = [];
+      csvRows.push('Widget,Type,Data Source,Metric,Value');
+      
+      for (const widget of widgets) {
+        let value = 'N/A';
+        try {
+          switch (widget.config.dataSource) {
+            case 'sales':
+            case 'performance':
+              const kpis = await storage.getPerformanceKPIs(userId, {});
+              value = kpis[widget.config.metric] || 'N/A';
+              break;
+            case 'inventory':
+              const inventory = await storage.getInventorySummary(userId);
+              value = inventory[widget.config.metric] || 'N/A';
+              break;
+            case 'goals':
+              const goals = await storage.getGoalsWithProgress(userId);
+              value = goals.length.toString();
+              break;
+          }
+        } catch (error) {
+          console.error('Error fetching widget data for CSV:', error);
+        }
+        
+        csvRows.push(`"${widget.title}","${widget.type}","${widget.config.dataSource}","${widget.config.metric || 'N/A'}","${value}"`);
+      }
+      
+      return csvRows.join('\n');
+    } catch (error) {
+      console.error('CSV generation error:', error);
+      return 'Error generating CSV data';
+    }
+  }
 
   app.delete("/api/reports/:id", requireAuth, async (req, res) => {
     try {

@@ -557,16 +557,26 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createGoal(goal: InsertGoal): Promise<Goal> {
-    const [newGoal] = await db.insert(goals).values(goal).returning();
+    // Convert targetValue to string as required by database schema
+    const goalData = {
+      ...goal,
+      targetValue: goal.targetValue.toString()
+    };
+    const [newGoal] = await db.insert(goals).values(goalData).returning();
     // Trigger trophy progress update after creating a goal
     this.updateTrophyProgress(goal.userId).catch(console.error);
     return newGoal;
   }
 
   async updateGoal(id: number, updateData: Partial<InsertGoal>): Promise<Goal> {
+    // Convert targetValue to string if present
+    const goalUpdateData = {
+      ...updateData,
+      ...(updateData.targetValue !== undefined && { targetValue: updateData.targetValue.toString() })
+    };
     const [goal] = await db
       .update(goals)
-      .set(updateData)
+      .set(goalUpdateData)
       .where(eq(goals.id, id))
       .returning();
     return goal;
@@ -690,6 +700,11 @@ export class DatabaseStorage implements IStorage {
 
   async deleteReport(id: number): Promise<void> {
     await db.delete(reports).where(eq(reports.id, id));
+  }
+
+  async getReportById(id: number, userId: number) {
+    const [report] = await db.select().from(reports).where(and(eq(reports.id, id), eq(reports.userId, userId)));
+    return report || null;
   }
 
   // New methods for inventory system overhaul
@@ -1436,7 +1451,7 @@ export class DatabaseStorage implements IStorage {
             case 'profit': currentValue = kpis.overallProfit; break;
             case 'profit_margin': currentValue = kpis.overallProfitMargin; break;
           }
-        } else if (goal.scope === 'sku' && goal.sku) {
+        } else if (goal.scope === 'sku' && goal.targetSKU) {
           // Get SKU-specific metrics
           const skuMetrics = await db
             .select({
@@ -1445,7 +1460,7 @@ export class DatabaseStorage implements IStorage {
               units: sql<number>`COALESCE(SUM(${sales.quantity}), 0)`
             })
             .from(sales)
-            .where(and(eq(sales.userId, userId), eq(sales.sku, goal.sku)));
+            .where(and(eq(sales.userId, userId), eq(sales.sku, goal.targetSKU)));
           
           const [result] = skuMetrics;
           switch (goal.metric) {
@@ -1453,7 +1468,7 @@ export class DatabaseStorage implements IStorage {
             case 'units': currentValue = Number(result.units); break;
             case 'profit': currentValue = Number(result.profit); break;
           }
-        } else if (goal.scope === 'category' && goal.category) {
+        } else if (goal.scope === 'category' && goal.targetCategory) {
           // Get category-specific metrics
           const categoryMetrics = await db
             .select({
@@ -1462,7 +1477,7 @@ export class DatabaseStorage implements IStorage {
               units: sql<number>`COALESCE(SUM(${sales.quantity}), 0)`
             })
             .from(sales)
-            .where(and(eq(sales.userId, userId), eq(sales.category, goal.category)));
+            .where(and(eq(sales.userId, userId), eq(sales.category, goal.targetCategory)));
           
           const [result] = categoryMetrics;
           switch (goal.metric) {
@@ -1472,7 +1487,8 @@ export class DatabaseStorage implements IStorage {
           }
         }
         
-        const percentComplete = Math.min(100, (currentValue / goal.targetValue) * 100);
+        const targetValue = parseFloat(goal.targetValue);
+        const percentComplete = Math.min(100, (currentValue / targetValue) * 100);
         let status: 'Met' | 'On Track' | 'Off Track' | 'Unmet' = 'Unmet';
         
         if (percentComplete >= 100) status = 'Met';
@@ -1483,14 +1499,14 @@ export class DatabaseStorage implements IStorage {
           id: goal.id,
           metric: goal.metric,
           scope: goal.scope,
-          targetValue: goal.targetValue,
+          targetValue: targetValue,
           currentValue,
           percentComplete: Number(percentComplete.toFixed(2)),
           status,
-          timePeriod: goal.timePeriod,
+          timePeriod: goal.period,
           description: goal.description || '',
-          sku: goal.sku || undefined,
-          category: goal.category || undefined
+          sku: goal.targetSKU || undefined,
+          category: goal.targetCategory || undefined
         };
       }));
     } catch (error) {
