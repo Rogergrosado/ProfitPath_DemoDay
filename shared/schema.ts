@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, decimal, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, decimal, jsonb, unique } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -278,7 +278,7 @@ export const insertGoalSchema = createInsertSchema(goals).omit({
   createdAt: true,
   updatedAt: true,
 }).extend({
-  targetValue: z.string().transform(val => Number(val)) // Fix: convert string to number
+  targetValue: z.union([z.string(), z.number()]).transform(val => Number(val)) // Accept both string and number, convert to number
 });
 
 export const insertReportSchema = createInsertSchema(reports).omit({
@@ -365,7 +365,9 @@ export const userTrophies = pgTable("user_trophies", {
   percentComplete: decimal("percent_complete", { precision: 5, scale: 2 }).default("0").notNull(),
   earnedAt: timestamp("earned_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  uniqueUserTrophy: unique().on(table.trophyId, table.userId)
+}));
 
 // Trophy System Relations
 export const trophiesRelations = relations(trophies, ({ many }) => ({

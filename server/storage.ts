@@ -1284,47 +1284,82 @@ export class DatabaseStorage implements IStorage {
         
         if (isCompleted) completedTrophies++;
         
-        // Insert or update user trophy progress
-        await db
-          .insert(userTrophies)
-          .values({
-            trophyId: trophy.id,
-            userId,
-            completed: isCompleted,
-            percentComplete: percentComplete.toFixed(2),
-            earnedAt: isCompleted ? new Date() : null
-          })
-          .onConflictDoUpdate({
-            target: [userTrophies.trophyId, userTrophies.userId],
-            set: {
+        // Insert or update user trophy progress using upsert pattern
+        const existingRecord = await db
+          .select()
+          .from(userTrophies)
+          .where(and(
+            eq(userTrophies.trophyId, trophy.id),
+            eq(userTrophies.userId, userId)
+          ))
+          .limit(1);
+
+        if (existingRecord.length > 0) {
+          // Update existing record
+          await db
+            .update(userTrophies)
+            .set({
               completed: isCompleted,
               percentComplete: percentComplete.toFixed(2),
-              earnedAt: isCompleted ? sql`COALESCE(${userTrophies.earnedAt}, NOW())` : null
-            }
-          });
+              earnedAt: isCompleted && !existingRecord[0].earnedAt ? new Date() : existingRecord[0].earnedAt
+            })
+            .where(and(
+              eq(userTrophies.trophyId, trophy.id),
+              eq(userTrophies.userId, userId)
+            ));
+        } else {
+          // Insert new record
+          await db
+            .insert(userTrophies)
+            .values({
+              trophyId: trophy.id,
+              userId,
+              completed: isCompleted,
+              percentComplete: percentComplete.toFixed(2),
+              earnedAt: isCompleted ? new Date() : null
+            });
+        }
       }
       
       // Handle Platinum trophy (all others completed)
       const platinumTrophy = allTrophies.find(t => t.tier === 'platinum');
       if (platinumTrophy) {
         const platinumCompleted = completedTrophies >= 30;
-        await db
-          .insert(userTrophies)
-          .values({
-            trophyId: platinumTrophy.id,
-            userId,
-            completed: platinumCompleted,
-            percentComplete: ((completedTrophies / 30) * 100).toFixed(2),
-            earnedAt: platinumCompleted ? new Date() : null
-          })
-          .onConflictDoUpdate({
-            target: [userTrophies.trophyId, userTrophies.userId],
-            set: {
+        
+        const existingPlatinumRecord = await db
+          .select()
+          .from(userTrophies)
+          .where(and(
+            eq(userTrophies.trophyId, platinumTrophy.id),
+            eq(userTrophies.userId, userId)
+          ))
+          .limit(1);
+
+        if (existingPlatinumRecord.length > 0) {
+          // Update existing platinum trophy record
+          await db
+            .update(userTrophies)
+            .set({
               completed: platinumCompleted,
               percentComplete: ((completedTrophies / 30) * 100).toFixed(2),
-              earnedAt: platinumCompleted ? sql`COALESCE(${userTrophies.earnedAt}, NOW())` : null
-            }
-          });
+              earnedAt: platinumCompleted && !existingPlatinumRecord[0].earnedAt ? new Date() : existingPlatinumRecord[0].earnedAt
+            })
+            .where(and(
+              eq(userTrophies.trophyId, platinumTrophy.id),
+              eq(userTrophies.userId, userId)
+            ));
+        } else {
+          // Insert new platinum trophy record
+          await db
+            .insert(userTrophies)
+            .values({
+              trophyId: platinumTrophy.id,
+              userId,
+              completed: platinumCompleted,
+              percentComplete: ((completedTrophies / 30) * 100).toFixed(2),
+              earnedAt: platinumCompleted ? new Date() : null
+            });
+        }
       }
       
       console.log(`🏆 Trophy progress updated for user ${userId}: ${completedTrophies}/30 completed`);

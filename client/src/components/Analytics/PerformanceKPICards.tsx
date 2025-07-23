@@ -5,7 +5,7 @@ import { TrendingUp, ShoppingCart, DollarSign, Percent, ArrowUp, ArrowDown } fro
 
 export function PerformanceKPICards() {
   const { data: metrics, isLoading } = useQuery({
-    queryKey: ["/api/performance/metrics"],
+    queryKey: ["/api/performance/kpis"],
   });
 
   if (isLoading) {
@@ -35,8 +35,8 @@ export function PerformanceKPICards() {
       iconColor: "text-green-400",
     },
     {
-      title: "Total Orders",
-      value: metrics?.totalUnits?.toLocaleString() || "0",
+      title: "Units Sold",
+      value: metrics?.unitsSold?.toLocaleString() || "0",
       change: "+8.7%",
       changeType: "positive" as const,
       icon: ShoppingCart,
@@ -45,7 +45,7 @@ export function PerformanceKPICards() {
     },
     {
       title: "Avg Order Value",
-      value: `$${metrics?.averageOrderValue?.toFixed(2) || "0.00"}`,
+      value: `$${metrics?.avgOrderValue?.toFixed(2) || "0.00"}`,
       change: "-2.1%",
       changeType: "negative" as const,
       icon: DollarSign,

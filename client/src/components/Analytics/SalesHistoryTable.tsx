@@ -34,9 +34,9 @@ export function SalesHistoryTable({ className }: SalesHistoryTableProps) {
   const salesHistory = Array.isArray(salesResponse) ? salesResponse : [];
 
   const { data: salesMetrics } = useQuery({
-    queryKey: ["/api/performance/metrics", dateRange],
+    queryKey: ["/api/performance/kpis", dateRange],
     queryFn: async () => {
-      const response = await apiRequest(`/api/performance/metrics/${dateRange}`);
+      const response = await apiRequest(`/api/performance/kpis`);
       return response.json();
     },
   });
@@ -58,6 +58,7 @@ export function SalesHistoryTable({ className }: SalesHistoryTableProps) {
       
       // Refresh all related queries
       queryClient.invalidateQueries({ queryKey: ["/api/sales"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/performance/kpis"] });
       queryClient.invalidateQueries({ queryKey: ["/api/performance/metrics"] });
       queryClient.invalidateQueries({ queryKey: ["/api/performance/categories"] });
       queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
@@ -143,7 +144,7 @@ export function SalesHistoryTable({ className }: SalesHistoryTableProps) {
               <div>
                 <p className="text-sm font-medium text-green-600 dark:text-green-400">Total Revenue</p>
                 <p className="text-2xl font-bold text-green-700 dark:text-green-300">
-                  {formatCurrency(isNaN(salesMetrics?.totalRevenue) ? 0 : (salesMetrics?.totalRevenue || 0))}
+                  {formatCurrency(salesMetrics?.totalRevenue || 0)}
                 </p>
               </div>
               <DollarSign className="h-8 w-8 text-green-500" />
@@ -157,7 +158,7 @@ export function SalesHistoryTable({ className }: SalesHistoryTableProps) {
               <div>
                 <p className="text-sm font-medium text-blue-600 dark:text-blue-400">Total Profit</p>
                 <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">
-                  {formatCurrency(isNaN(salesMetrics?.totalProfit) ? 0 : (salesMetrics?.totalProfit || 0))}
+                  {formatCurrency(salesMetrics?.totalProfit || 0)}
                 </p>
               </div>
               <TrendingUp className="h-8 w-8 text-blue-500" />
@@ -171,7 +172,7 @@ export function SalesHistoryTable({ className }: SalesHistoryTableProps) {
               <div>
                 <p className="text-sm font-medium text-purple-600 dark:text-purple-400">Units Sold</p>
                 <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">
-                  {isNaN(salesMetrics?.totalUnits) ? 0 : (salesMetrics?.totalUnits || 0)}
+                  {salesMetrics?.unitsSold || 0}
                 </p>
               </div>
               <Package className="h-8 w-8 text-purple-500" />
@@ -185,7 +186,7 @@ export function SalesHistoryTable({ className }: SalesHistoryTableProps) {
               <div>
                 <p className="text-sm font-medium text-orange-600 dark:text-orange-400">Avg Order Value</p>
                 <p className="text-2xl font-bold text-orange-700 dark:text-orange-300">
-                  {formatCurrency(isNaN(salesMetrics?.averageOrderValue) ? 0 : (salesMetrics?.averageOrderValue || 0))}
+                  {formatCurrency(salesMetrics?.avgOrderValue || 0)}
                 </p>
               </div>
               <Calendar className="h-8 w-8 text-orange-500" />

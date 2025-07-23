@@ -979,6 +979,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Alias for goals with progress - used by dashboard
+  app.get("/api/goals/with-progress", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const goals = await storage.getGoalsWithProgress(authReq.userId);
+      res.json(goals);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   app.post("/api/goals", requireAuth, async (req, res) => {
     try {
       const authReq = req as AuthenticatedRequest;

@@ -42,7 +42,7 @@ export function CreateGoalModal({ open, onOpenChange }: CreateGoalModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: inventoryItems = [] } = useQuery({
+  const { data: inventoryItems = [] } = useQuery<any[]>({
     queryKey: ["/api/inventory"],
     enabled: open,
   });
@@ -124,7 +124,7 @@ export function CreateGoalModal({ open, onOpenChange }: CreateGoalModalProps) {
 
     createMutation.mutate({
       ...formData,
-      targetValue: parseFloat(formData.targetValue),
+      targetValue: formData.targetValue, // Keep as string, backend will handle conversion
       isActive: true,
     });
   };
@@ -153,7 +153,7 @@ export function CreateGoalModal({ open, onOpenChange }: CreateGoalModalProps) {
     }
   };
 
-  const categories = [...new Set(inventoryItems.map((item: any) => item.category))];
+  const categories = Array.from(new Set(inventoryItems.map((item: any) => item.category).filter(Boolean)));
   const skus = inventoryItems.map((item: any) => ({ sku: item.sku, name: item.name }));
 
   return (

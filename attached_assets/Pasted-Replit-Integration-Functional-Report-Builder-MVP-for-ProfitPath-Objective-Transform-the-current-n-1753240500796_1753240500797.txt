@@ -1,0 +1,99 @@
+Replit Integration — Functional Report Builder MVP for ProfitPath
+Objective:
+Transform the current non-functional report builder into a working drag-and-drop based custom reporting tool using ProfitPath’s existing backend data (Inventory, Sales, Goals, etc). Output should be exportable and readable (PDF/CSV).
+
+📌 Frontend (React + Builder-style Component Canvas)
+File: /frontend/pages/reports/index.jsx and /frontend/components/reportBuilder/
+
+Enable Drag-and-Drop Widget System
+
+Use react-dnd or @dnd-kit/core for drag-and-drop functionality.
+
+Define widget types: KPI Card, Line Chart, Bar Chart, Pie Chart, Data Table, Text Block.
+
+Widget Library Panel
+
+js
+Copiar
+Editar
+const WIDGET_TYPES = ['KPI Card', 'Line Chart', 'Bar Chart', 'Pie Chart', 'Data Table', 'Text Block'];
+Canvas State Structure
+
+js
+Copiar
+Editar
+const [canvasWidgets, setCanvasWidgets] = useState([
+  // each widget contains its type and config
+  { id: '1', type: 'Line Chart', config: { metric: 'Revenue', timeframe: '7d' } },
+]);
+Report Metadata Input
+
+Report Name (required)
+
+Description (optional)
+
+Validate submission (prevent empty name, prompt inline error)
+
+🧠 Backend (Node.js/Express API)
+File: /backend/routes/reports.js
+
+POST /api/reports/custom
+
+js
+Copiar
+Editar
+router.post('/custom', async (req, res) => {
+  const { name, widgets, description } = req.body;
+  if (!name || widgets.length === 0) return res.status(400).json({ error: 'Missing fields' });
+
+  const report = await ReportModel.create({ name, widgets, description, createdAt: new Date() });
+  res.json(report);
+});
+GET /api/reports/user/:uid
+
+Return all reports saved by user, preload widgets config.
+
+📊 Widgets Logic (Chart/Rendering Components)
+Folder: /frontend/components/widgets/
+
+Use Recharts or Chart.js for graphs.
+
+js
+Copiar
+Editar
+<LineChart data={salesData}>
+  <XAxis dataKey="date" />
+  <Line type="monotone" dataKey="revenue" stroke="#fd7014" />
+</LineChart>
+KPI Cards dynamically render values from API:
+
+jsx
+Copiar
+Editar
+<KPI title="Revenue" value={`$${totalRevenue}`} />
+Data Tables use react-table with pagination, sort, and CSV export button.
+
+⚙️ Export & Generate
+Backend: Use pdfkit or html-pdf-node to export to PDF.
+Frontend: Add download button on report view page.
+Optional CSV export using json2csv.
+
+🧪 Testing / Data Sources
+Each widget pulls from:
+
+/api/performance/kpi
+
+/api/inventory/summary
+
+/api/goals/progress
+
+/api/sales/history
+
+🧼 UX Considerations
+Drag handles and delete icon on each widget
+
+Save + Cancel button
+
+Live preview for chart/data widgets
+
+Fallback message: “No data available for selected range”
