@@ -92,10 +92,12 @@ export default function Inventory() {
     enabled: !!user,
   });
 
-  const { data: inventory = [], isLoading } = useQuery({
+  const { data: inventoryResponse, isLoading } = useQuery({
     queryKey: ["/api/inventory"],
     enabled: !!user,
   });
+  
+  const inventory = (inventoryResponse as any)?.results || [];
 
   if (loading || isLoading) {
     return (
@@ -165,11 +167,11 @@ export default function Inventory() {
             <div className="flex justify-between items-center">
               <div>
                 <h1 className="text-3xl font-bold mb-2">
-                  {userProfile?.businessName ? `${userProfile.businessName} Inventory` : 'Inventory Management'}
+                  {(userProfile as any)?.businessName ? `${(userProfile as any).businessName} Inventory` : 'Inventory Management'}
                 </h1>
                 <p className="text-gray-600 dark:text-slate-400">
-                  {userProfile?.businessName 
-                    ? `Central hub for managing ${userProfile.businessName} launched, stocked, and sell-ready products`
+                  {(userProfile as any)?.businessName 
+                    ? `Central hub for managing ${(userProfile as any).businessName} launched, stocked, and sell-ready products`
                     : "Central hub for managing launched, stocked, and sell-ready products"
                   }
                 </p>

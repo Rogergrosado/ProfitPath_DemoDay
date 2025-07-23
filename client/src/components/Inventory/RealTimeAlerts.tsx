@@ -82,15 +82,19 @@ export function RealTimeAlerts() {
   const [showAllAlerts, setShowAllAlerts] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
 
-  const { data: inventory = [] } = useQuery({
+  const { data: inventoryResponse } = useQuery({
     queryKey: ["/api/inventory"],
     refetchInterval: 30000, // Refresh every 30 seconds
   });
+  
+  const inventory = (inventoryResponse as any)?.results || [];
 
-  const { data: salesData = [] } = useQuery({
+  const { data: salesResponse } = useQuery({
     queryKey: ["/api/sales"],
     refetchInterval: 60000, // Refresh every minute
   });
+  
+  const salesData = (salesResponse as any)?.results || [];
 
   // Generate real-time alerts based on inventory data
   useEffect(() => {

@@ -20,7 +20,7 @@ export function InventoryDataIntegration() {
   });
 
   // Fetch real inventory items for recent updates
-  const { data: inventoryItems = [], isLoading: itemsLoading } = useQuery({
+  const { data: inventoryData, isLoading: itemsLoading } = useQuery({
     queryKey: ["/api/inventory"],
   });
 
@@ -42,7 +42,8 @@ export function InventoryDataIntegration() {
     );
   }
 
-  const summary = inventorySummary || { totalItems: 0, totalValue: 0, lowStockItems: 0, outOfStockItems: 0 };
+  const summary = (inventorySummary as any) || { totalItems: 0, totalValue: 0, lowStockItems: 0, outOfStockItems: 0 };
+  const inventoryItems = (inventoryData as any)?.results || [];
   const recentItems = inventoryItems.slice(0, 3); // Show 3 most recent items
 
   return (
