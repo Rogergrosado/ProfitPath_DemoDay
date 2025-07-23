@@ -50,19 +50,17 @@ export default function Goals() {
     enabled: !!user,
   });
 
-  const { data: goals = [], refetch: refetchGoals } = useQuery<any[]>({
+  const { data: goals = [], refetch: refetchGoals } = useQuery({
     queryKey: ["/api/goals/with-progress"],
     enabled: !!user,
     staleTime: 0, // Always fetch fresh data
-    cacheTime: 0, // Don't cache results
   });
 
   // Fetch goal history for completed goals tab
-  const { data: goalHistory = [] } = useQuery<any[]>({
+  const { data: goalHistory = [] } = useQuery({
     queryKey: ["/api/goals/history"],
     enabled: !!user,
     staleTime: 0,
-    cacheTime: 0,
   });
 
   if (loading) {
@@ -91,10 +89,10 @@ export default function Goals() {
   };
 
   // Goals already come with progress data from backend
-  const goalsWithProgress = goals.map((goal: any) => ({
+  const goalsWithProgress = Array.isArray(goals) ? goals.map((goal: any) => ({
     ...goal,
     ...getGoalProgress(goal)
-  }));
+  })) : [];
 
   const activeGoals = goalsWithProgress.filter((goal: any) => goal.status !== 'met' && goal.status !== 'unmet');
   // Combine active goals with completed goals from history
@@ -158,10 +156,10 @@ export default function Goals() {
   // Goal status summary for dashboard
   const goalSummary = {
     total: activeGoals.length,
-    met: activeGoals.filter(g => g.status === 'met').length,
-    onTrack: activeGoals.filter(g => g.status === 'on_track').length,
-    offTrack: activeGoals.filter(g => g.status === 'off_track').length,
-    unmet: activeGoals.filter(g => g.status === 'unmet').length,
+    met: activeGoals.filter((g: any) => g.status === 'met').length,
+    onTrack: activeGoals.filter((g: any) => g.status === 'on_track').length,
+    offTrack: activeGoals.filter((g: any) => g.status === 'off_track').length,
+    unmet: activeGoals.filter((g: any) => g.status === 'unmet').length,
   };
 
   const handleGoalClick = (goal: any) => {
@@ -181,11 +179,11 @@ export default function Goals() {
             <div className="flex justify-between items-center">
               <div>
                 <h1 className="text-3xl font-bold mb-2">
-                  {userProfile?.businessName ? `${userProfile.businessName} Goals & Targets` : 'Goals & Targets'}
+                  {(userProfile as any)?.businessName ? `${(userProfile as any).businessName} Goals & Targets` : 'Goals & Targets'}
                 </h1>
                 <p className="text-gray-600 dark:text-slate-400">
-                  {userProfile?.businessName 
-                    ? `Set, track, and achieve ${userProfile.businessName} business objectives`
+                  {(userProfile as any)?.businessName 
+                    ? `Set, track, and achieve ${(userProfile as any).businessName} business objectives`
                     : "Set, track, and achieve your business objectives"
                   }
                 </p>

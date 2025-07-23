@@ -590,7 +590,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getGoalHistory(userId: number): Promise<any[]> {
-    return db.select().from(goalHistory).where(eq(goalHistory.userId, userId)).orderBy(desc(goalHistory.createdAt));
+    try {
+      const history = await db.select().from(goalHistory).where(eq(goalHistory.userId, userId));
+      console.log(`📊 Retrieved ${history.length} goal history records for user ${userId}`);
+      return history;
+    } catch (error) {
+      console.error("Error fetching goal history:", error);
+      return [];
+    }
   }
 
   async getGoalsWithProgress(userId: number): Promise<any[]> {
@@ -811,7 +818,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getGoalHistory(userId: number): Promise<any[]> {
-    return db.select().from(goalHistory).where(eq(goalHistory.userId, userId)).orderBy(desc(goalHistory.createdAt));
+    try {
+      const history = await db.select().from(goalHistory).where(eq(goalHistory.userId, userId));
+      console.log(`📊 Retrieved ${history.length} goal history records for user ${userId}`);
+      return history;
+    } catch (error) {
+      console.error("Error fetching goal history:", error);
+      return [];
+    }
   }
 
   // Reports
