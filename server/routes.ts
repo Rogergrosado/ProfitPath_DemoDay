@@ -182,11 +182,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Products (Watchlist)
+  // Products (Watchlist) with pagination
   app.get("/api/products/watchlist", requireAuth, async (req, res) => {
     try {
       const authReq = req as AuthenticatedRequest;
-      const products = await storage.getWatchlistProducts(authReq.userId);
+      const { sortBy, order, page, limit } = req.query;
+      
+      const products = await storage.getWatchlistProducts(authReq.userId, {
+        sortBy: sortBy as string,
+        order: order as 'asc' | 'desc',
+        page: page ? parseInt(page as string) : undefined,
+        limit: limit ? parseInt(limit as string) : undefined
+      });
       res.json(products);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -476,11 +483,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Inventory
+  // Inventory with pagination
   app.get("/api/inventory", requireAuth, async (req, res) => {
     try {
       const authReq = req as AuthenticatedRequest;
-      const inventory = await storage.getInventory(authReq.userId);
+      const { sortBy, order, page, limit } = req.query;
+      
+      const inventory = await storage.getInventory(authReq.userId, {
+        sortBy: sortBy as string,
+        order: order as 'asc' | 'desc',
+        page: page ? parseInt(page as string) : undefined,
+        limit: limit ? parseInt(limit as string) : undefined
+      });
       res.json(inventory);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -536,11 +550,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Sales
+  // Sales with pagination
   app.get("/api/sales", requireAuth, async (req, res) => {
     try {
       const authReq = req as AuthenticatedRequest;
       const range = req.query.range as string;
+      const { sortBy, order, page, limit } = req.query;
       
       let startDate: Date | undefined;
       let endDate: Date | undefined;
@@ -566,7 +581,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
       }
       
-      const sales = await storage.getSales(authReq.userId, startDate, endDate);
+      const sales = await storage.getSales(authReq.userId, startDate, endDate, {
+        sortBy: sortBy as string,
+        order: order as 'asc' | 'desc',
+        page: page ? parseInt(page as string) : undefined,
+        limit: limit ? parseInt(limit as string) : undefined
+      });
       res.json(sales);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -839,16 +859,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // NEW: SKU Leaderboard API
+  // NEW: SKU Leaderboard API with pagination
   app.get("/api/analytics/sku-leaderboard", requireAuth, async (req, res) => {
     try {
       const authReq = req as AuthenticatedRequest;
-      const { sortBy, order, category } = req.query;
+      const { sortBy, order, category, page, limit } = req.query;
 
       const leaderboard = await storage.getSKULeaderboard(authReq.userId, {
         sortBy: sortBy as 'unitsSold' | 'revenue' | 'profit' | 'margin',
         order: order as 'asc' | 'desc',
-        category: category as string
+        category: category as string,
+        page: page ? parseInt(page as string) : undefined,
+        limit: limit ? parseInt(limit as string) : undefined
       });
       
       res.json(leaderboard);
