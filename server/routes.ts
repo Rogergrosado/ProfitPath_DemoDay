@@ -585,6 +585,115 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Bulk operations endpoints
+  app.post("/api/inventory/bulk-edit", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      console.log("🔄 Bulk edit initiated");
+      const { items, updates } = req.body;
+      
+      if (!Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ error: "Items array is required" });
+      }
+
+      if (!updates || Object.keys(updates).length === 0) {
+        return res.status(400).json({ error: "Updates object is required" });
+      }
+
+      let updated = 0;
+      const errors: string[] = [];
+
+      for (const itemId of items) {
+        try {
+          await storage.updateInventoryItem(itemId, updates);
+          updated++;
+        } catch (error: any) {
+          errors.push(`Failed to update item ${itemId}: ${error.message}`);
+        }
+      }
+      
+      console.log(`✅ Bulk edit completed: ${updated} items updated`);
+      res.json({ 
+        message: "Bulk edit successful", 
+        updated,
+        errors: errors.length > 0 ? errors : undefined
+      });
+    } catch (error: any) {
+      console.error("❌ Bulk edit error:", error);
+      res.status(500).json({ error: error.message || "Failed to update items" });
+    }
+  });
+
+  app.delete("/api/inventory/bulk-delete", requireAuth, async (req, res) => {
+    try {
+      console.log("🗑️ Bulk delete initiated");
+      const { items } = req.body;
+      
+      if (!Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ error: "Items array is required" });
+      }
+
+      let deleted = 0;
+      const errors: string[] = [];
+
+      for (const itemId of items) {
+        try {
+          await storage.deleteInventoryItem(itemId);
+          deleted++;
+        } catch (error: any) {
+          errors.push(`Failed to delete item ${itemId}: ${error.message}`);
+        }
+      }
+      
+      console.log(`✅ Bulk delete completed: ${deleted} items deleted`);
+      res.json({ 
+        message: "Bulk delete successful", 
+        deleted,
+        errors: errors.length > 0 ? errors : undefined
+      });
+    } catch (error: any) {
+      console.error("❌ Bulk delete error:", error);
+      res.status(500).json({ error: error.message || "Failed to delete items" });
+    }
+  });
+
+  app.post("/api/inventory/bulk-category", requireAuth, async (req, res) => {
+    try {
+      console.log("🏷️ Bulk category update initiated");
+      const { items, category } = req.body;
+      
+      if (!Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ error: "Items array is required" });
+      }
+
+      if (!category) {
+        return res.status(400).json({ error: "Category is required" });
+      }
+
+      let updated = 0;
+      const errors: string[] = [];
+
+      for (const itemId of items) {
+        try {
+          await storage.updateInventoryItem(itemId, { category });
+          updated++;
+        } catch (error: any) {
+          errors.push(`Failed to update category for item ${itemId}: ${error.message}`);
+        }
+      }
+      
+      console.log(`✅ Bulk category update completed: ${updated} items updated`);
+      res.json({ 
+        message: "Bulk category update successful", 
+        updated,
+        errors: errors.length > 0 ? errors : undefined
+      });
+    } catch (error: any) {
+      console.error("❌ Bulk category update error:", error);
+      res.status(500).json({ error: error.message || "Failed to update categories" });
+    }
+  });
+
   // Sales
   app.get("/api/sales", requireAuth, async (req, res) => {
     try {

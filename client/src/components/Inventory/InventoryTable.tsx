@@ -1,7 +1,10 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Package as PackageRestock, Package, AlertTriangle, TrendingUp } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { BulkActionToolbar } from "./BulkActionToolbar";
+import { Edit, Package as PackageRestock, Package, AlertTriangle, TrendingUp, CheckSquare } from "lucide-react";
 import { 
   ProfitTooltip, 
   VelocityTooltip, 
@@ -17,6 +20,35 @@ interface InventoryTableProps {
 }
 
 export function InventoryTable({ items, onEdit, onRestock, onAnalytics }: InventoryTableProps) {
+  const [selectedItems, setSelectedItems] = useState<any[]>([]);
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedItems([...items]);
+    } else {
+      setSelectedItems([]);
+    }
+  };
+
+  const handleSelectItem = (item: any, checked: boolean) => {
+    if (checked) {
+      setSelectedItems([...selectedItems, item]);
+    } else {
+      setSelectedItems(selectedItems.filter(selected => selected.id !== item.id));
+    }
+  };
+
+  const isSelected = (item: any) => {
+    return selectedItems.some(selected => selected.id === item.id);
+  };
+
+  const isAllSelected = items.length > 0 && selectedItems.length === items.length;
+  const isIndeterminate = selectedItems.length > 0 && selectedItems.length < items.length;
+
+  const handleBulkActionComplete = () => {
+    setSelectedItems([]);
+  };
+
   const getStockStatus = (item: any) => {
     const currentStock = item.currentStock || 0;
     const reorderPoint = item.reorderPoint || 0;
@@ -48,15 +80,36 @@ export function InventoryTable({ items, onEdit, onRestock, onAnalytics }: Invent
   }
 
   return (
-    <Card className="bg-gray-50 dark:bg-[#222831] border-gray-200 dark:border-slate-700">
-      <CardHeader>
-        <CardTitle className="text-black dark:text-white">Inventory Items</CardTitle>
-      </CardHeader>
-      <CardContent>
+    <>
+      <BulkActionToolbar 
+        selectedItems={selectedItems}
+        onSelectionClear={() => setSelectedItems([])}
+        onActionComplete={handleBulkActionComplete}
+      />
+      
+      <Card className="bg-gray-50 dark:bg-[#222831] border-gray-200 dark:border-slate-700">
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between text-black dark:text-white">
+            <span>Inventory Items</span>
+            {selectedItems.length > 0 && (
+              <Badge variant="secondary" className="bg-[#fd7014] text-white">
+                {selectedItems.length} selected
+              </Badge>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
         <div className="overflow-x-auto">
           <table className="min-w-full">
             <thead>
               <tr className="border-b border-gray-200 dark:border-slate-600">
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400 w-12">
+                  <Checkbox
+                    checked={isAllSelected}
+                    onCheckedChange={handleSelectAll}
+                    className="data-[state=checked]:bg-[#fd7014] data-[state=checked]:border-[#fd7014]"
+                  />
+                </th>
                 <StockTooltip>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400 cursor-help">Product</th>
                 </StockTooltip>
@@ -80,7 +133,14 @@ export function InventoryTable({ items, onEdit, onRestock, onAnalytics }: Invent
               {items.map((item) => {
                 const stockValue = (item.currentStock || 0) * parseFloat(item.sellingPrice || 0);
                 return (
-                  <tr key={item.id} className="hover:bg-gray-100 dark:hover:bg-slate-700/50">
+                  <tr key={item.id} className={`hover:bg-gray-100 dark:hover:bg-slate-700/50 ${isSelected(item) ? 'bg-orange-50 dark:bg-orange-900/20' : ''}`}>
+                    <td className="px-4 py-4">
+                      <Checkbox
+                        checked={isSelected(item)}
+                        onCheckedChange={(checked) => handleSelectItem(item, !!checked)}
+                        className="data-[state=checked]:bg-[#fd7014] data-[state=checked]:border-[#fd7014]"
+                      />
+                    </td>
                     <td className="px-4 py-4">
                       <div className="flex items-center space-x-3">
                         {item.imageUrl ? (
@@ -164,7 +224,8 @@ export function InventoryTable({ items, onEdit, onRestock, onAnalytics }: Invent
             </tbody>
           </table>
         </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </>
   );
 }
