@@ -22,7 +22,7 @@ export function SalesHistoryTable({ className }: SalesHistoryTableProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: salesResponse = [], isLoading } = useQuery({
+  const { data: salesResponse, isLoading } = useQuery({
     queryKey: ["/api/sales", dateRange],
     queryFn: async () => {
       const response = await apiRequest(`/api/sales?range=${dateRange}`);
@@ -30,8 +30,8 @@ export function SalesHistoryTable({ className }: SalesHistoryTableProps) {
     },
   });
 
-  // Ensure we always have an array to work with
-  const salesHistory = Array.isArray(salesResponse) ? salesResponse : [];
+  // Extract sales data from paginated response
+  const salesHistory = (salesResponse as any)?.results || [];
 
   const { data: salesMetrics } = useQuery({
     queryKey: ["/api/performance/metrics", dateRange],

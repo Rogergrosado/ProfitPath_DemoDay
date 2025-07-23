@@ -42,7 +42,7 @@ export function SalesHistoryTable({ inventorySku, startDate, endDate }: SalesHis
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      return Array.isArray(data) ? data : [];
+      return (data as any)?.results || [];
     },
   });
 
