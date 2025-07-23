@@ -101,9 +101,9 @@ export default function Goals() {
     ...historyGoal,
     // Map database fields to display format
     id: historyGoal.originalGoalId || historyGoal.id,
-    currentValue: historyGoal.finalValue || historyGoal.final_value,
+    currentValue: historyGoal.finalValue || historyGoal.final_value || historyGoal.achievedValue,
     targetValue: historyGoal.targetValue || historyGoal.target_value,
-    progressPercentage: ((parseFloat(historyGoal.finalValue || historyGoal.final_value || '0') / parseFloat(historyGoal.targetValue || historyGoal.target_value || '1')) * 100),
+    progressPercentage: ((parseFloat(historyGoal.finalValue || historyGoal.final_value || historyGoal.achievedValue || '0') / parseFloat(historyGoal.targetValue || historyGoal.target_value || '1')) * 100),
     status: historyGoal.status,
     completedAt: historyGoal.completedAt || historyGoal.completed_at,
     daysRemaining: 0,

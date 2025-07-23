@@ -101,7 +101,7 @@ export const goalHistory = pgTable("goal_history", {
   originalGoalId: integer("original_goal_id").notNull(),
   metric: text("metric").notNull(),
   targetValue: decimal("target_value", { precision: 15, scale: 2 }).notNull(),
-  achievedValue: decimal("achieved_value", { precision: 15, scale: 2 }).notNull(),
+  finalValue: decimal("final_value", { precision: 15, scale: 2 }).notNull(),
   scope: text("scope").notNull(),
   targetCategory: text("target_category"),
   targetSKU: text("target_sku"),
