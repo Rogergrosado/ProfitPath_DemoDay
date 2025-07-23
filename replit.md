@@ -4,14 +4,28 @@
 
 ProfitPath is a comprehensive business intelligence dashboard designed for Amazon FBA sellers. It's a full-stack SaaS application that provides product research, inventory management, sales analytics, and goal tracking capabilities. The application follows a modern monorepo structure with shared types and a clear separation between frontend and backend concerns.
 
-## Recent Changes (July 22, 2025)
+## Recent Changes (July 23, 2025)
+
+✅ **Contextual Tooltips & Calendar Restructuring**: Complete UI enhancement with intelligent guidance system
+  - Implemented comprehensive tooltip system with witty inventory management tips throughout interface
+  - Removed restock inventory section from inventory detail modal (streamlined to 3-tab interface)
+  - Renamed "Advanced Calendar" to "Reorder Calendar" with focused inventory restocking functionality
+  - Added date press functionality with descriptions to reorder calendar for detailed event viewing
+  - Eliminated all sales calendar functionality from reorder section to prevent confusion
+  - Established clear separation: Inventory page = Reorder Calendar only, Analytics page = Sales Calendar only
+  - Created InventoryTooltip component with entertaining, educational tips for stock management
+  - Enhanced inventory table headers with contextual tooltips for better user guidance
+  - Fixed calendar overlapping issues and ensured single calendar per section architecture
+  - Improved user experience with hover-based help system and cleaner interface organization
+
+## Previous Changes (July 22, 2025)
 
 ✅ **Major Inventory System Overhaul**: Complete enhancement of inventory management capabilities
-  - Enhanced InventoryDetailModal with 4-tab interface (Overview, Restock, History, Analytics)
+  - Enhanced InventoryDetailModal with comprehensive inventory management interface
   - Added comprehensive restock functionality with quantity tracking, validation, and notes
   - Created SalesHistoryTable component with revenue, units sold, and profit summaries
-  - Built CalendarView component supporting both sales and reorder calendar visualization
-  - Enhanced inventory page with advanced dual calendar views (sales/reorder)
+  - Built CalendarView component supporting inventory management visualization
+  - Enhanced inventory page with advanced calendar management
   - Integrated real sales history data with enhanced inventory detail modals
   - Added comprehensive analytics with stock turn rates, days of supply, and reorder value calculations
   - Created new API endpoints: /sales-history, /calendar-sales, /reorder-calendar with proper authentication

@@ -190,9 +190,7 @@ export default function Analytics() {
             </TabsContent>
 
             <TabsContent value="forecasting">
-              <div className="space-y-6">
-                <SalesHistoryCalendar />
-              </div>
+              <SalesHistoryCalendar />
             </TabsContent>
 
             <TabsContent value="insights">

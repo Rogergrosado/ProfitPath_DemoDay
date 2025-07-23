@@ -350,13 +350,7 @@ export default function Inventory() {
             </TabsContent>
 
             <TabsContent value="calendar" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <CalendarView type="sales" />
-                <CalendarView type="reorder" />
-              </div>
-              <div className="grid grid-cols-1 gap-6">
-                <SalesHistoryTable />
-              </div>
+              <AdvancedReorderCalendar />
             </TabsContent>
 
             <TabsContent value="analytics" className="space-y-6">
