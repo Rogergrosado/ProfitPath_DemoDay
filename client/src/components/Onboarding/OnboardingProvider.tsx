@@ -20,6 +20,7 @@ interface OnboardingContextType {
   previousStep: () => void;
   skipOnboarding: () => void;
   completeOnboarding: () => void;
+  completeWelcome: () => void;
   isStepVisible: (stepId: string) => boolean;
 }
 
@@ -164,6 +165,14 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
     }
   };
 
+  const completeWelcome = () => {
+    // For compatibility with existing WelcomeModal
+    setHasCompletedOnboarding(true);
+    if (user) {
+      localStorage.setItem(`onboarding_completed_${user.firebaseUid}`, 'true');
+    }
+  };
+
   const isStepVisible = (stepId: string) => {
     if (!isActive) return false;
     const step = ONBOARDING_STEPS[currentStep];
@@ -179,6 +188,7 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
     previousStep,
     skipOnboarding,
     completeOnboarding,
+    completeWelcome,
     isStepVisible,
   };
 

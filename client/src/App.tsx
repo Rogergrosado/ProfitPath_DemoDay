@@ -6,7 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { InventoryProvider } from "@/contexts/InventoryContext";
-import { OnboardingProvider } from "@/contexts/OnboardingContext";
+import { OnboardingProvider } from "@/components/Onboarding/OnboardingProvider";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import Auth from "@/pages/auth";
@@ -27,6 +27,7 @@ import FeatureGoalTracking from "@/pages/feature-goal-tracking";
 import TrophyRoomPage from "@/pages/trophies-room";
 import TrophyProgressPage from "@/pages/trophies-progress";
 import WelcomeModal from "@/components/Onboarding/WelcomeModal";
+import { OnboardingWrapper } from "@/components/Onboarding/OnboardingWrapper";
 import { useAuth } from "@/contexts/AuthContext";
 
 function Router() {
@@ -73,6 +74,9 @@ function Router() {
         onClose={() => setShowWelcome(false)}
         userName={user?.displayName || user?.email?.split("@")[0] || "User"}
       />
+
+      {/* Smart Onboarding Walkthrough */}
+      <OnboardingWrapper />
     </>
   );
 }

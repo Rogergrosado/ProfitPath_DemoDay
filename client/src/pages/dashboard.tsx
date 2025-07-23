@@ -13,6 +13,7 @@ import { DashboardKPIs } from "@/components/Dashboard/DashboardKPIs";
 import { InventoryDataIntegration } from "@/components/Dashboard/InventoryDataIntegration";
 import { GoalProgressSection } from "@/components/Dashboard/GoalProgressSection";
 import { WhatIfSimulator } from "@/components/Dashboard/WhatIfSimulator";
+import { OnboardingTrigger } from "@/components/Onboarding/OnboardingTrigger";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowUp, TriangleAlert, BarChart3, DollarSign, Package, TrendingUp, Users } from "lucide-react";
@@ -123,20 +124,23 @@ export default function Dashboard() {
       <main className="flex-1 ml-60 p-6">
         <div className="fade-in">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2 text-foreground">
-              Welcome back, {displayName.split(' ')[0]}
-            </h1>
-            <p className="text-muted-foreground">
-              {businessName 
-                ? `${businessName} business overview - Monitor your Amazon FBA performance` 
-                : "Monitor your Amazon FBA business performance"
-              }
-            </p>
+          <div className="mb-8 flex justify-between items-start">
+            <div>
+              <h1 className="text-3xl font-bold mb-2 text-foreground">
+                Welcome back, {displayName.split(' ')[0]}
+              </h1>
+              <p className="text-muted-foreground">
+                {businessName 
+                  ? `${businessName} business overview - Monitor your Amazon FBA performance` 
+                  : "Monitor your Amazon FBA business performance"
+                }
+              </p>
+            </div>
+            <OnboardingTrigger />
           </div>
 
           {/* KPI Cards with Animation - Real Data */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" data-onboarding="dashboard-kpis">
             <AnimatedKPICard
               title="Total Revenue"
               value={Math.round(kpis.overallRevenue)}
@@ -181,7 +185,9 @@ export default function Dashboard() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
             {/* Real-Time Inventory Data Integration */}
-            <InventoryDataIntegration />
+            <div data-onboarding="inventory-snapshot">
+              <InventoryDataIntegration />
+            </div>
 
             {/* Goal Progress */}
             <Card className="bg-card text-card-foreground">

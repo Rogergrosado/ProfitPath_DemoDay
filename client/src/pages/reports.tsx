@@ -232,7 +232,7 @@ export default function Reports() {
       <Sidebar />
       <ThemeToggle />
       
-      <main className="flex-1 ml-64 p-6">
+      <main className="flex-1 ml-64 p-6" data-onboarding="reports-main">
         <div className="fade-in">
           <AdvancedReportBuilder />
           {/* Header */}

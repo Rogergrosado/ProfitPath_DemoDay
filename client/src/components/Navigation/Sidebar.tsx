@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
-import { useOnboarding } from "@/contexts/OnboardingContext";
+import { useOnboarding } from "@/components/Onboarding/OnboardingProvider";
 import {
   Home,
   Search,
@@ -59,7 +59,8 @@ function SidebarLink({ icon: Icon, label, path, locked = false, lockReason = "" 
 
 export function Sidebar() {
   const { logout } = useAuth();
-  const { unlockAdvancedFeatures } = useOnboarding();
+  // For now, features are always unlocked for onboarding purposes
+  const unlockAdvancedFeatures = true;
 
   const handleLogout = async () => {
     try {
@@ -73,7 +74,7 @@ export function Sidebar() {
   const lockReason = "Add sales data first to unlock this feature";
 
   return (
-    <aside className="w-60 h-screen bg-[#222831] flex flex-col justify-between fixed">
+    <aside className="w-60 h-screen bg-[#222831] flex flex-col justify-between fixed" data-onboarding="sidebar">
       {/* Header */}
       <div className="px-6 py-4 border-b border-[#37414f] flex items-center justify-center">
         <img 

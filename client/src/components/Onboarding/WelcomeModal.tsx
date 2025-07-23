@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Search, Package, BarChart3, Target, TrendingUp, FileText, ChevronRight } from "lucide-react";
-import { useOnboarding } from "@/contexts/OnboardingContext";
+import { useOnboarding } from "./OnboardingProvider";
 
 interface WelcomeModalProps {
   isOpen: boolean;
