@@ -14,7 +14,7 @@ import Dashboard from "@/pages/dashboard";
 import Products from "@/pages/products";
 import Inventory from "@/pages/inventory";
 import SimpleAnalytics from "@/pages/simple-analytics";
-import Reports from "@/pages/reports";
+
 import Analytics from "@/pages/analytics";
 import Goals from "@/pages/goals";
 import Settings from "@/pages/settings";
@@ -44,7 +44,7 @@ function Router() {
         <Route path="/analytics" component={Analytics} />
         {/* Legacy route redirect */}
         <Route path="/simple-analytics" component={Analytics} />
-        <Route path="/reports" component={Reports} />
+
         <Route path="/goals" component={Goals} />
         <Route path="/goals/trophy-room" component={TrophyRoomPage} />
         <Route path="/goals/trophies-progress" component={TrophyProgressPage} />

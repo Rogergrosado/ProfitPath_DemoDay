@@ -5,7 +5,6 @@ import {
   sales,
   goals,
   goalHistory,
-  reports,
   salesHistory,
   calendarSales,
   reorderCalendar,
@@ -24,8 +23,6 @@ import {
   type InsertGoal,
   type GoalHistory,
   type InsertGoalHistory,
-  type Report,
-  type InsertReport,
   type SalesHistory,
   type InsertSalesHistory,
   type CalendarSales,
@@ -52,7 +49,6 @@ export interface IStorage {
     inventoryItems: number;
     salesEntries: number;
     goalProgress: number;
-    reportsExported: number;
     totalRevenue: number;
     totalProfit: number;
   }>;
@@ -101,10 +97,7 @@ export interface IStorage {
   deleteGoal(id: number): Promise<void>;
   getGoalsWithProgress(userId: number): Promise<any[]>;
 
-  // Reports
-  getReports(userId: number): Promise<Report[]>;
-  createReport(report: InsertReport): Promise<Report>;
-  deleteReport(id: number): Promise<void>;
+
 
   // Sales History & Calendar (New for inventory system overhaul)
   createSalesHistoryEntry(entry: InsertSalesHistory): Promise<SalesHistory>;
@@ -190,7 +183,7 @@ export class DatabaseStorage implements IStorage {
     inventoryItems: number;
     salesEntries: number;
     goalProgress: number;
-    reportsExported: number;
+
     totalRevenue: number;
     totalProfit: number;
   }> {
@@ -204,10 +197,7 @@ export class DatabaseStorage implements IStorage {
       .from(sales)
       .where(eq(sales.userId, userId));
 
-    const [reportsCount] = await db
-      .select({ count: sql<number>`COUNT(*)` })
-      .from(reports)
-      .where(eq(reports.userId, userId));
+
 
     const [salesMetrics] = await db
       .select({
@@ -233,7 +223,7 @@ export class DatabaseStorage implements IStorage {
       inventoryItems: Number(inventoryCount.count),
       salesEntries: Number(salesCount.count),
       goalProgress,
-      reportsExported: Number(reportsCount.count),
+
       totalRevenue: Number(salesMetrics.totalRevenue),
       totalProfit: Number(salesMetrics.totalProfit),
     };
@@ -884,24 +874,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Reports
-  async getReports(userId: number): Promise<Report[]> {
-    return db.select().from(reports).where(eq(reports.userId, userId)).orderBy(desc(reports.createdAt));
-  }
 
-  async createReport(report: InsertReport): Promise<Report> {
-    const [newReport] = await db.insert(reports).values(report).returning();
-    return newReport;
-  }
-
-  async deleteReport(id: number): Promise<void> {
-    await db.delete(reports).where(eq(reports.id, id));
-  }
-
-  async getReportById(id: number, userId: number) {
-    const [report] = await db.select().from(reports).where(and(eq(reports.id, id), eq(reports.userId, userId)));
-    return report || null;
-  }
 
   // New methods for inventory system overhaul
   async createSalesHistoryEntry(entry: InsertSalesHistory): Promise<SalesHistory> {

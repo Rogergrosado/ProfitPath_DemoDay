@@ -7,7 +7,6 @@ import {
   Search,
   Package,
   BarChart3,
-  FileText,
   Target,
   Settings,
   User,
@@ -138,7 +137,7 @@ export function Sidebar({ onNavigate }: SidebarProps = {}) {
               lockReason={lockReason}
               onNavigate={onNavigate}
             />
-            <SidebarLink icon={FileText} label="Reports" path="/reports" onNavigate={onNavigate} />
+
           </div>
         </div>
 

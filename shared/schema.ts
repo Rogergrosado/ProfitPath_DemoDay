@@ -114,15 +114,7 @@ export const goalHistory = pgTable("goal_history", {
   daysToComplete: integer("days_to_complete"),
 });
 
-export const reports = pgTable("reports", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
-  name: text("name").notNull(),
-  type: text("type").notNull(), // "sales_summary", "inventory_report", "profit_analysis", "custom"
-  config: jsonb("config"), // Stores widget configuration for custom reports
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
+
 
 // New tables for inventory system overhaul
 // Activity Log for Recent Activity tracking
@@ -181,7 +173,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   sales: many(sales),
   goals: many(goals),
   goalHistory: many(goalHistory),
-  reports: many(reports),
+
   salesHistory: many(salesHistory),
   calendarSales: many(calendarSales),
   reorderCalendar: many(reorderCalendar),
@@ -261,12 +253,7 @@ export const goalHistoryRelations = relations(goalHistory, ({ one }) => ({
   }),
 }));
 
-export const reportsRelations = relations(reports, ({ one }) => ({
-  user: one(users, {
-    fields: [reports.userId],
-    references: [users.id],
-  }),
-}));
+
 
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
@@ -326,11 +313,7 @@ export const insertGoalHistorySchema = createInsertSchema(goalHistory).omit({
   achievedValue: z.union([z.string(), z.number()]).transform(val => Number(val))
 });
 
-export const insertReportSchema = createInsertSchema(reports).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+
 
 // New insert schemas for inventory system overhaul
 export const insertSalesHistorySchema = createInsertSchema(salesHistory).omit({
@@ -387,8 +370,7 @@ export type Goal = typeof goals.$inferSelect;
 export type InsertGoal = z.infer<typeof insertGoalSchema>;
 export type GoalHistory = typeof goalHistory.$inferSelect;
 export type InsertGoalHistory = z.infer<typeof insertGoalHistorySchema>;
-export type Report = typeof reports.$inferSelect;
-export type InsertReport = z.infer<typeof insertReportSchema>;
+
 
 // New types for inventory system overhaul
 export type SalesHistory = typeof salesHistory.$inferSelect;
