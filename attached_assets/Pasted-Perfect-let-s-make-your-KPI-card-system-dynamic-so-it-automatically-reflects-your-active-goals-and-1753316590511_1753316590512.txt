@@ -1,0 +1,60 @@
+Perfect — let’s make your KPI card system dynamic so it automatically reflects your active goals and goal history with accurate counts, without manual input.
+
+Here’s how to modify the frontend in your Goals.tsx file:
+
+✅ Step-by-step changes
+1. Use Existing Fetched Data
+
+You're already fetching:
+
+goalsWithProgress (for active goals)
+
+completedGoals (for historical goals)
+
+We’ll update the goalSummary object to separate source groups.
+
+🧠 Replace this block:
+tsx
+Copiar
+Editar
+const goalSummary = {
+  total: activeGoals.length,
+  met: activeGoals.filter((g: any) => g.status === 'met').length,
+  onTrack: activeGoals.filter((g: any) => g.status === 'on_track').length,
+  offTrack: activeGoals.filter((g: any) => g.status === 'off_track').length,
+  unmet: activeGoals.filter((g: any) => g.status === 'unmet').length,
+};
+🛠 With this updated dynamic version:
+tsx
+Copiar
+Editar
+const goalSummary = {
+  total: goalsWithProgress.length,
+  onTrack: goalsWithProgress.filter((g: any) => g.status === 'on_track').length,
+  offTrack: goalsWithProgress.filter((g: any) => g.status === 'off_track').length,
+  met: completedGoals.filter((g: any) => g.status === 'met').length,
+  unmet: completedGoals.filter((g: any) => g.status === 'unmet').length,
+};
+This version:
+
+Calculates on track and off track from active goals (goalsWithProgress)
+
+Calculates met and unmet from completed goals (completedGoals)
+
+Keeps total based on active goals
+
+✅ Bonus (Optional): Update the KPI Cards’ Labels (for clarity)
+You can make this even more clear in the UI by editing the KPI card titles:
+
+Example:
+
+tsx
+Copiar
+Editar
+<div className="text-sm text-blue-700 dark:text-blue-300">Active (On Track)</div>
+<div className="text-sm text-yellow-700 dark:text-yellow-300">Active (Off Track)</div>
+<div className="text-sm text-green-700 dark:text-green-300">History (Met)</div>
+<div className="text-sm text-red-700 dark:text-red-300">History (Unmet)</div>
+Let me know if you’d like the full JSX with these labels edited too.
+
+Once this is done, your KPI dashboard in the Goals section will always reflect live data from the tables you're already showing 🎯
