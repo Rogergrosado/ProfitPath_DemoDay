@@ -1,0 +1,71 @@
+To reposition the "Goals" and "Trophy Room" links in the sidebar between "Performance" and "Reports" without breaking functionality or code integration, here's how to proceed safely:
+
+✅ Summary of Safe Move Instructions
+1. Sidebar Display Order (UI-only):
+Update your sidebar navigation JSX/TSX so that the rendered order of the sidebar links is:
+
+tsx
+Copiar
+Editar
+// Main
+Dashboard  
+Product Workspace  
+Inventory  
+
+// Analytics
+Performance  
+Goals                 ← moved here
+Trophy Room           ← moved here
+Reports  
+
+// Account
+Profile  
+Settings
+✅ What You Must Ensure Internally
+This move only affects visual placement, not logic. Here's how to avoid breaking sub-page functionality:
+
+✔️ 1. Keep Route Paths and Page Files Unchanged
+No need to rename or move:
+
+ts
+Copiar
+Editar
+/goals
+/goals/trophy-room
+As long as routes and components stay where they are (e.g., pages/goals.tsx, pages/goals/trophy-room.tsx), no internal routing or data logic is affected.
+
+✔️ 2. Sidebar Navigation Component Example Update
+In your Sidebar.tsx or SidebarMenu.tsx, safely reorder like this:
+
+tsx
+Copiar
+Editar
+<ul className="space-y-2">
+  {/* Main */}
+  <SidebarLink label="Dashboard" href="/dashboard" icon={<DashboardIcon />} />
+  <SidebarLink label="Product Workspace" href="/products" icon={<ProductIcon />} />
+  <SidebarLink label="Inventory" href="/inventory" icon={<InventoryIcon />} />
+
+  {/* Analytics */}
+  <SidebarLink label="Performance" href="/analytics/performance" icon={<PerformanceIcon />} />
+
+  {/* Moved Here */}
+  <SidebarLink label="Goals" href="/goals" icon={<GoalIcon />} />
+  <SidebarLink label="Trophy Room" href="/goals/trophy-room" icon={<TrophyIcon />} />
+
+  <SidebarLink label="Reports" href="/analytics/reports" icon={<ReportIcon />} />
+
+  {/* Account */}
+  <SidebarLink label="Profile" href="/profile" icon={<ProfileIcon />} />
+  <SidebarLink label="Settings" href="/settings" icon={<SettingsIcon />} />
+</ul>
+☑️ This preserves all integrations and page links without errors.
+
+🧪 Final Checklist for Developer
+ Make sure SidebarLink uses useRouter or Link for client-side navigation (do not hardcode anchors).
+
+ Confirm Goals and Trophy Room routes are still accessible directly via /goals and /goals/trophy-room.
+
+ Verify KPI, goal tracking, and trophy unlock systems are unchanged and still functional.
+
+Once this visual order change is made, everything will still work perfectly — your progress tracking and goal logic remain untouched ✅

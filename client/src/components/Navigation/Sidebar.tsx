@@ -107,6 +107,21 @@ export function Sidebar({ onNavigate }: SidebarProps = {}) {
             />
             <SidebarLink icon={Search} label="Product Workspace" path="/products" onNavigate={onNavigate} />
             <SidebarLink icon={Package} label="Inventory" path="/inventory" onNavigate={onNavigate} />
+          </div>
+        </div>
+
+        {/* Analytics Section */}
+        <div>
+          <p className="text-gray-400 uppercase text-xs px-2 mb-2">Analytics</p>
+          <div className="space-y-1">
+            <SidebarLink 
+              icon={BarChart3} 
+              label="Performance" 
+              path="/analytics" 
+              locked={!unlockAdvancedFeatures}
+              lockReason={lockReason}
+              onNavigate={onNavigate}
+            />
             <SidebarLink 
               icon={Target} 
               label="Goals" 
@@ -119,21 +134,6 @@ export function Sidebar({ onNavigate }: SidebarProps = {}) {
               icon={TrendingUp} 
               label="Trophy Room" 
               path="/goals/trophy-room" 
-              locked={!unlockAdvancedFeatures}
-              lockReason={lockReason}
-              onNavigate={onNavigate}
-            />
-          </div>
-        </div>
-
-        {/* Analytics Section */}
-        <div>
-          <p className="text-gray-400 uppercase text-xs px-2 mb-2">Analytics</p>
-          <div className="space-y-1">
-            <SidebarLink 
-              icon={BarChart3} 
-              label="Performance" 
-              path="/analytics" 
               locked={!unlockAdvancedFeatures}
               lockReason={lockReason}
               onNavigate={onNavigate}
