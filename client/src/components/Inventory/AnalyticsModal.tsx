@@ -171,32 +171,32 @@ export function AnalyticsModal({ isOpen, onClose, inventory }: AnalyticsModalPro
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-[hsl(240,10%,13%)] border-[hsl(240,3.7%,15.9%)] text-white max-w-4xl max-h-[90vh] overflow-y-auto" aria-describedby="analytics-modal-description">
+      <DialogContent className="bg-white dark:bg-[hsl(240,10%,13%)] border-gray-200 dark:border-[hsl(240,3.7%,15.9%)] text-black dark:text-white max-w-4xl max-h-[90vh] overflow-y-auto" aria-describedby="analytics-modal-description">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-[hsl(20,90%,54%)]" />
+          <DialogTitle className="flex items-center gap-2 text-black dark:text-white">
+            <TrendingUp className="h-5 w-5 text-[#fd7014]" />
             Analytics & Sales Entry - {inventory?.name}
           </DialogTitle>
-          <p id="analytics-modal-description" className="text-sm text-gray-400">
+          <p id="analytics-modal-description" className="text-sm text-gray-600 dark:text-gray-400">
             Record sales data manually or import from CSV files to update performance metrics
           </p>
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 bg-slate-800">
-            <TabsTrigger value="manual" className="data-[state=active]:bg-[hsl(20,90%,54%)]">
+          <TabsList className="grid w-full grid-cols-2 bg-gray-100 dark:bg-slate-800">
+            <TabsTrigger value="manual" className="data-[state=active]:bg-[#fd7014] data-[state=active]:text-white">
               Manual Entry
             </TabsTrigger>
-            <TabsTrigger value="csv" className="data-[state=active]:bg-[hsl(20,90%,54%)]">
+            <TabsTrigger value="csv" className="data-[state=active]:bg-[#fd7014] data-[state=active]:text-white">
               CSV Import
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="manual" className="space-y-4">
-            <Card className="bg-slate-800 border-slate-700">
+            <Card className="bg-gray-50 dark:bg-slate-800 border-gray-200 dark:border-slate-700">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="h-4 w-4" />
+                <CardTitle className="flex items-center gap-2 text-black dark:text-white">
+                  <DollarSign className="h-4 w-4 text-[#fd7014]" />
                   Record Individual Sale
                 </CardTitle>
               </CardHeader>
@@ -204,56 +204,61 @@ export function AnalyticsModal({ isOpen, onClose, inventory }: AnalyticsModalPro
                 <form onSubmit={handleManualSubmit} className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label>Quantity Sold</Label>
+                      <Label className="text-black dark:text-white">Quantity Sold</Label>
                       <Input
                         type="number"
                         min="1"
                         value={formData.quantity}
                         onChange={(e) => setFormData({...formData, quantity: parseInt(e.target.value) || 1})}
-                        className="bg-slate-700 border-slate-600 text-white"
+                        className="bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-black dark:text-white"
                       />
                     </div>
                     <div>
-                      <Label>Unit Price ($)</Label>
+                      <Label className="text-black dark:text-white">Unit Price ($)</Label>
                       <Input
                         type="number"
                         step="0.01"
                         min="0"
                         value={formData.unitPrice}
                         onChange={(e) => setFormData({...formData, unitPrice: parseFloat(e.target.value) || 0})}
-                        className="bg-slate-700 border-slate-600 text-white"
+                        className="bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-black dark:text-white"
                       />
                     </div>
                   </div>
                   
                   <div>
-                    <Label>Sale Date</Label>
+                    <Label className="text-black dark:text-white">Sale Date</Label>
                     <Input
                       type="date"
                       value={formData.saleDate}
                       onChange={(e) => setFormData({...formData, saleDate: e.target.value})}
-                      className="bg-slate-700 border-slate-600 text-white"
+                      className="bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-black dark:text-white"
                     />
                   </div>
 
                   <div>
-                    <Label>Notes (Optional)</Label>
+                    <Label className="text-black dark:text-white">Notes (Optional)</Label>
                     <Textarea
                       value={formData.notes}
                       onChange={(e) => setFormData({...formData, notes: e.target.value})}
                       placeholder="Additional notes about this sale..."
-                      className="bg-slate-700 border-slate-600 text-white"
+                      className="bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-black dark:text-white"
                     />
                   </div>
 
                   <div className="flex justify-end space-x-2">
-                    <Button type="button" variant="outline" onClick={onClose}>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={onClose}
+                      className="border-gray-300 dark:border-slate-600 text-black dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700"
+                    >
                       Cancel
                     </Button>
                     <Button 
                       type="submit" 
                       disabled={createSaleMutation.isPending}
-                      className="bg-[hsl(20,90%,54%)] hover:bg-[hsl(20,90%,48%)]"
+                      className="bg-[#fd7014] hover:bg-[#e5640f] text-white"
                     >
                       {createSaleMutation.isPending ? "Recording..." : "Record Sale"}
                     </Button>
@@ -264,20 +269,20 @@ export function AnalyticsModal({ isOpen, onClose, inventory }: AnalyticsModalPro
           </TabsContent>
 
           <TabsContent value="csv" className="space-y-4">
-            <Card className="bg-slate-800 border-slate-700">
+            <Card className="bg-gray-50 dark:bg-slate-800 border-gray-200 dark:border-slate-700">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Upload className="h-4 w-4" />
+                <CardTitle className="flex items-center gap-2 text-black dark:text-white">
+                  <Upload className="h-4 w-4 text-[#fd7014]" />
                   Bulk CSV Import
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label>Import Mode</Label>
+                  <Label className="text-black dark:text-white">Import Mode</Label>
                   <select
                     value={csvMode}
                     onChange={(e) => setCsvMode(e.target.value as "sales" | "products" | "mixed")}
-                    className="w-full p-2 bg-slate-700 border-slate-600 text-white rounded"
+                    className="w-full p-2 bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-black dark:text-white rounded"
                   >
                     <option value="sales">Sales Data Only</option>
                     <option value="products">Products/Inventory Only</option>
@@ -291,7 +296,7 @@ export function AnalyticsModal({ isOpen, onClose, inventory }: AnalyticsModalPro
                     variant="outline"
                     size="sm"
                     onClick={() => downloadTemplate("sales")}
-                    className="text-xs"
+                    className="text-xs border-gray-300 dark:border-slate-600 text-black dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700"
                   >
                     Sales Template
                   </Button>
@@ -300,7 +305,7 @@ export function AnalyticsModal({ isOpen, onClose, inventory }: AnalyticsModalPro
                     variant="outline"
                     size="sm"
                     onClick={() => downloadTemplate("products")}
-                    className="text-xs"
+                    className="text-xs border-gray-300 dark:border-slate-600 text-black dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700"
                   >
                     Products Template
                   </Button>
@@ -309,7 +314,7 @@ export function AnalyticsModal({ isOpen, onClose, inventory }: AnalyticsModalPro
                     variant="outline"
                     size="sm"
                     onClick={() => downloadTemplate("mixed")}
-                    className="text-xs"
+                    className="text-xs border-gray-300 dark:border-slate-600 text-black dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700"
                   >
                     Mixed Template
                   </Button>
@@ -317,23 +322,28 @@ export function AnalyticsModal({ isOpen, onClose, inventory }: AnalyticsModalPro
 
                 <form onSubmit={handleCsvSubmit} className="space-y-4">
                   <div>
-                    <Label>Select CSV File</Label>
+                    <Label className="text-black dark:text-white">Select CSV File</Label>
                     <Input
                       type="file"
                       accept=".csv"
                       onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
-                      className="bg-slate-700 border-slate-600 text-white"
+                      className="bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-black dark:text-white"
                     />
                   </div>
 
                   <div className="flex justify-end space-x-2">
-                    <Button type="button" variant="outline" onClick={onClose}>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={onClose}
+                      className="border-gray-300 dark:border-slate-600 text-black dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700"
+                    >
                       Cancel
                     </Button>
                     <Button 
                       type="submit" 
                       disabled={csvImportMutation.isPending || !csvFile}
-                      className="bg-[hsl(20,90%,54%)] hover:bg-[hsl(20,90%,48%)]"
+                      className="bg-[#fd7014] hover:bg-[#e5640f] text-white"
                     >
                       {csvImportMutation.isPending ? "Importing..." : "Import CSV"}
                     </Button>
