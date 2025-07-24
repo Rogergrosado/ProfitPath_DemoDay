@@ -3,9 +3,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, getAuthHeaders } from "@/lib/queryClient";
 import { Sidebar } from "@/components/Navigation/Sidebar";
 import { ThemeToggle } from "@/components/Navigation/ThemeToggle";
+import { ReportViewer } from "@/components/Reports/ReportViewer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -108,16 +109,17 @@ export default function Reports() {
   const [reportName, setReportName] = useState("");
   const [reportDescription, setReportDescription] = useState("");
   const [dateRange, setDateRange] = useState("30d");
+  const [previewReportId, setPreviewReportId] = useState<number | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data: reports = [] } = useQuery({
     queryKey: ["/api/reports"],
     enabled: !!user,
-  });
+  }) as { data: any[] };
 
   const createReportMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("POST", "/api/reports", data),
+    mutationFn: (data: any) => apiRequest("POST", "/api/reports", { body: JSON.stringify(data) }),
     onSuccess: () => {
       toast({ title: "Report created successfully" });
       setCreateModalOpen(false);
@@ -130,19 +132,75 @@ export default function Reports() {
   });
 
   const exportReportMutation = useMutation({
-    mutationFn: ({ reportId, format }: { reportId: number; format: string }) =>
-      apiRequest("POST", `/api/reports/${reportId}/export?format=${format}`),
-    onSuccess: (data, variables) => {
-      // In a real app, this would trigger a download
-      toast({ title: `Report exported as ${variables.format.toUpperCase()}` });
+    mutationFn: async ({ reportId, format }: { reportId: number; format: string }) => {
+      const response = await fetch(`/api/reports/${reportId}/export?format=${format}`, {
+        method: 'POST',
+        headers: await getAuthHeaders()
+      });
+
+      if (!response.ok) {
+        throw new Error(`Export failed: ${response.statusText}`);
+      }
+
+      if (format === 'csv') {
+        // Handle CSV download
+        const csvData = await response.text();
+        const blob = new Blob([csvData], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `report_${reportId}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        return { success: true, format: 'csv' };
+      } else {
+        // Handle PDF generation
+        const data = await response.json();
+        if (data.success && data.htmlContent) {
+          // Use html2pdf to generate PDF from HTML content
+          const element = document.createElement('div');
+          element.innerHTML = data.htmlContent;
+          element.style.display = 'none';
+          document.body.appendChild(element);
+
+          // Generate PDF using html2pdf
+          const html2pdf = (await import('html2pdf.js')).default;
+          await html2pdf()
+            .set({
+              margin: 1,
+              filename: data.fileName || `report_${reportId}.pdf`,
+              image: { type: 'jpeg', quality: 0.98 },
+              html2canvas: { scale: 2 },
+              jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+            })
+            .from(element)
+            .save();
+
+          document.body.removeChild(element);
+          return { success: true, format: 'pdf' };
+        }
+        throw new Error('Invalid PDF data received');
+      }
     },
-    onError: () => {
-      toast({ title: "Failed to export report", variant: "destructive" });
+    onSuccess: (data, variables) => {
+      toast({ 
+        title: `Report exported as ${variables.format.toUpperCase()}`, 
+        description: `Your ${variables.format.toUpperCase()} file has been downloaded.`
+      });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Failed to export report", 
+        description: error.message || "An error occurred during export",
+        variant: "destructive" 
+      });
     },
   });
 
   const deleteReportMutation = useMutation({
-    mutationFn: (reportId: number) => apiRequest("DELETE", `/api/reports/${reportId}`),
+    mutationFn: (reportId: number) => apiRequest("DELETE", `/api/reports/${reportId}`, {}),
     onSuccess: () => {
       toast({ title: "Report deleted successfully" });
       queryClient.invalidateQueries({ queryKey: ["/api/reports"] });
@@ -194,6 +252,10 @@ export default function Reports() {
 
   const handleExportReport = (reportId: number, format: string) => {
     exportReportMutation.mutate({ reportId, format });
+  };
+
+  const handlePreviewReport = (reportId: number) => {
+    setPreviewReportId(reportId);
   };
 
   const handleDeleteReport = (reportId: number) => {
@@ -450,7 +512,12 @@ export default function Reports() {
                         </TableCell>
                         <TableCell>
                           <div className="flex space-x-2">
-                            <Button size="sm" variant="outline" className="border-gray-300 dark:border-slate-600 text-black dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700">
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => handlePreviewReport(report.id)}
+                              className="border-gray-300 dark:border-slate-600 text-black dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700"
+                            >
                               <Eye className="h-4 w-4" />
                             </Button>
                             <Button
@@ -488,6 +555,16 @@ export default function Reports() {
           </Card>
         </div>
       </main>
+
+      {/* Report Preview Modal */}
+      {previewReportId && (
+        <ReportViewer
+          reportId={previewReportId}
+          isOpen={!!previewReportId}
+          onClose={() => setPreviewReportId(null)}
+          onExport={(format) => handleExportReport(previewReportId, format)}
+        />
+      )}
     </div>
   );
 }

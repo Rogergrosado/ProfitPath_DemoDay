@@ -1341,30 +1341,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Report not found" });
       }
       
-      // Parse widgets to get data for export
-      const widgets = JSON.parse(report.widgets);
-      const reportData = {
-        name: report.name,
-        description: report.description,
-        widgets: widgets,
-        generatedAt: new Date().toISOString()
-      };
+      // Parse widgets and generate real report data
+      const widgets = JSON.parse(report.widgets || "[]");
+      const reportData = await generateReportContent(authReq.userId, report, widgets);
       
       if (format.toLowerCase() === 'csv') {
-        // Generate CSV export
-        const csvData = await generateCSVExport(authReq.userId, widgets);
+        // Generate real CSV export with actual data
+        const csvData = await generateCSVExport(authReq.userId, widgets, reportData);
         res.setHeader('Content-Type', 'text/csv');
         res.setHeader('Content-Disposition', `attachment; filename="${report.name.replace(/[^a-zA-Z0-9]/g, '_')}.csv"`);
         res.send(csvData);
+      } else if (format.toLowerCase() === 'pdf') {
+        // Generate HTML template for PDF conversion
+        const htmlContent = await generateHTMLReport(reportData);
+        res.setHeader('Content-Type', 'application/json');
+        res.json({
+          success: true,
+          message: "PDF data generated successfully",
+          reportId,
+          format: 'pdf',
+          fileName: `${report.name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
+          htmlContent,
+          data: reportData
+        });
       } else {
-        // PDF export simulation - in real implementation would use jsPDF or similar
+        // Return structured data for frontend processing
         res.json({ 
           success: true, 
           message: `${format.toUpperCase()} export generated successfully`,
           reportId, 
           format,
           fileName: `${report.name.replace(/[^a-zA-Z0-9]/g, '_')}.${format}`,
-          downloadUrl: `/api/reports/${reportId}/download?format=${format}`,
           data: reportData
         });
       }
@@ -1374,35 +1381,113 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Helper function to generate CSV export
-  async function generateCSVExport(userId: number, widgets: any[]): Promise<string> {
+  // Helper function to generate real report content with actual data
+  async function generateReportContent(userId: number, report: any, widgets: any[]) {
+    try {
+      const reportData = {
+        id: report.id,
+        name: report.name,
+        description: report.description,
+        type: report.type,
+        generatedAt: new Date().toISOString(),
+        widgets: []
+      };
+
+      // Fetch all necessary data sources
+      const [kpis, inventory, sales, goals] = await Promise.all([
+        storage.getPerformanceKPIs(userId, {}),
+        storage.getInventorySummary(userId),
+        storage.getSales(userId),
+        storage.getGoalsWithProgress(userId)
+      ]);
+
+      // Generate data for each widget
+      for (const widget of widgets) {
+        const widgetData: any = {
+          id: widget.id,
+          title: widget.title,
+          type: widget.type,
+          config: widget.config,
+          data: null,
+          value: null
+        };
+
+        switch (widget.config?.dataSource) {
+          case 'sales':
+          case 'performance':
+            if (widget.type === 'kpi') {
+              widgetData.value = kpis[widget.config.metric] || 0;
+              widgetData.data = { value: widgetData.value, formatted: formatValue(widgetData.value, widget.config.format) };
+            } else if (widget.type === 'chart') {
+              widgetData.data = generateChartData(sales, widget.config);
+            }
+            break;
+            
+          case 'inventory':
+            if (widget.type === 'kpi') {
+              widgetData.value = inventory[widget.config.metric] || 0;
+              widgetData.data = { value: widgetData.value, formatted: formatValue(widgetData.value, widget.config.format) };
+            } else if (widget.type === 'table') {
+              const inventoryItems = await storage.getInventoryItems(userId);
+              widgetData.data = processInventoryTableData(inventoryItems, widget.config);
+            }
+            break;
+            
+          case 'goals':
+            if (widget.type === 'progress') {
+              widgetData.data = processGoalsData(goals);
+            } else if (widget.type === 'kpi') {
+              widgetData.value = goals.length;
+              widgetData.data = { value: widgetData.value, formatted: goals.length.toString() };
+            }
+            break;
+        }
+
+        reportData.widgets.push(widgetData);
+      }
+
+      return reportData;
+    } catch (error) {
+      console.error('Error generating report content:', error);
+      throw error;
+    }
+  }
+
+  // Helper function to generate CSV export with real data
+  async function generateCSVExport(userId: number, widgets: any[], reportData: any): Promise<string> {
     try {
       const csvRows: string[] = [];
-      csvRows.push('Widget,Type,Data Source,Metric,Value');
       
-      for (const widget of widgets) {
-        let value = 'N/A';
-        try {
-          switch (widget.config.dataSource) {
-            case 'sales':
-            case 'performance':
-              const kpis = await storage.getPerformanceKPIs(userId, {});
-              value = kpis[widget.config.metric] || 'N/A';
-              break;
-            case 'inventory':
-              const inventory = await storage.getInventorySummary(userId);
-              value = inventory[widget.config.metric] || 'N/A';
-              break;
-            case 'goals':
-              const goals = await storage.getGoalsWithProgress(userId);
-              value = goals.length.toString();
-              break;
+      // Add report header
+      csvRows.push(`# ${reportData.name}`);
+      csvRows.push(`# Generated: ${new Date(reportData.generatedAt).toLocaleString()}`);
+      csvRows.push('');
+      
+      // Add widget data
+      for (const widget of reportData.widgets) {
+        csvRows.push(`## ${widget.title}`);
+        
+        if (widget.type === 'kpi' && widget.data) {
+          csvRows.push(`Value,${widget.data.formatted || widget.data.value}`);
+        } else if (widget.type === 'table' && widget.data && Array.isArray(widget.data)) {
+          if (widget.data.length > 0) {
+            const headers = Object.keys(widget.data[0]);
+            csvRows.push(headers.join(','));
+            widget.data.forEach((row: any) => {
+              csvRows.push(headers.map(h => `"${row[h] || ''}"`).join(','));
+            });
           }
-        } catch (error) {
-          console.error('Error fetching widget data for CSV:', error);
+        } else if (widget.type === 'chart' && widget.data && Array.isArray(widget.data)) {
+          if (widget.data.length > 0) {
+            const headers = Object.keys(widget.data[0]);
+            csvRows.push(headers.join(','));
+            widget.data.forEach((row: any) => {
+              csvRows.push(headers.map(h => `"${row[h] || ''}"`).join(','));
+            });
+          }
         }
         
-        csvRows.push(`"${widget.title}","${widget.type}","${widget.config.dataSource}","${widget.config.metric || 'N/A'}","${value}"`);
+        csvRows.push('');
       }
       
       return csvRows.join('\n');
@@ -1410,6 +1495,122 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('CSV generation error:', error);
       return 'Error generating CSV data';
     }
+  }
+
+  // Helper function to generate HTML report for PDF conversion
+  async function generateHTMLReport(reportData: any): Promise<string> {
+    const widgets = reportData.widgets.map((widget: any) => {
+      let content = '';
+      
+      if (widget.type === 'kpi') {
+        content = `
+          <div class="widget kpi-widget">
+            <h3>${widget.title}</h3>
+            <div class="kpi-value">${widget.data?.formatted || widget.value || 'N/A'}</div>
+          </div>
+        `;
+      } else if (widget.type === 'table' && widget.data && Array.isArray(widget.data)) {
+        const headers = widget.data.length > 0 ? Object.keys(widget.data[0]) : [];
+        content = `
+          <div class="widget table-widget">
+            <h3>${widget.title}</h3>
+            <table>
+              <thead>
+                <tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>
+              </thead>
+              <tbody>
+                ${widget.data.map((row: any) => 
+                  `<tr>${headers.map(h => `<td>${row[h] || ''}</td>`).join('')}</tr>`
+                ).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      } else if (widget.type === 'chart') {
+        content = `
+          <div class="widget chart-widget">
+            <h3>${widget.title}</h3>
+            <div class="chart-placeholder">Chart data available in CSV export</div>
+          </div>
+        `;
+      }
+      
+      return content;
+    }).join('');
+
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>${reportData.name}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          .report-header { margin-bottom: 30px; border-bottom: 2px solid #fd7014; padding-bottom: 15px; }
+          .report-title { color: #fd7014; margin: 0; }
+          .report-meta { color: #666; margin: 5px 0; }
+          .widget { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+          .kpi-widget .kpi-value { font-size: 2em; font-weight: bold; color: #fd7014; }
+          table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+          th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+          th { background-color: #f5f5f5; }
+          .chart-placeholder { padding: 40px; text-align: center; color: #666; border: 2px dashed #ddd; }
+        </style>
+      </head>
+      <body>
+        <div class="report-header">
+          <h1 class="report-title">${reportData.name}</h1>
+          <div class="report-meta">Generated: ${new Date(reportData.generatedAt).toLocaleString()}</div>
+          <div class="report-meta">${reportData.description || ''}</div>
+        </div>
+        ${widgets}
+      </body>
+      </html>
+    `;
+  }
+
+  // Helper functions for data processing
+  function formatValue(value: any, format?: string): string {
+    if (format === 'currency') {
+      return `$${parseFloat(value || 0).toFixed(2)}`;
+    }
+    return value?.toString() || '0';
+  }
+
+  function generateChartData(sales: any[], config: any) {
+    // Generate chart data based on sales
+    const dailyData = sales.reduce((acc: any, sale: any) => {
+      const date = new Date(sale.saleDate).toISOString().split('T')[0];
+      if (!acc[date]) acc[date] = 0;
+      acc[date] += parseFloat(sale.totalRevenue || 0);
+      return acc;
+    }, {});
+
+    return Object.entries(dailyData).map(([date, revenue]) => ({
+      date,
+      revenue,
+      formatted: `$${parseFloat(revenue as string).toFixed(2)}`
+    }));
+  }
+
+  function processInventoryTableData(inventory: any[], config: any) {
+    return inventory.slice(0, 10).map(item => ({
+      SKU: item.sku,
+      Name: item.productName,
+      Category: item.category,
+      'Stock Level': item.stockLevel,
+      'Unit Cost': `$${parseFloat(item.unitCost || 0).toFixed(2)}`,
+      'Total Value': `$${(item.stockLevel * parseFloat(item.unitCost || 0)).toFixed(2)}`
+    }));
+  }
+
+  function processGoalsData(goals: any[]) {
+    return goals.map(goal => ({
+      title: goal.title,
+      progress: goal.progressPercentage || 0,
+      status: goal.status,
+      target: goal.targetValue,
+      current: goal.currentValue
+    }));
   }
 
   app.delete("/api/reports/:id", requireAuth, async (req, res) => {
