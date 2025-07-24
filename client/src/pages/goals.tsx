@@ -119,6 +119,8 @@ export default function Goals() {
     switch (status) {
       case 'met': return 'bg-green-500';
       case 'on_track': return 'bg-blue-500';
+      case 'at_risk': return 'bg-orange-500';
+      case 'critical': return 'bg-red-500';
       case 'off_track': return 'bg-yellow-500';
       case 'unmet': return 'bg-red-500';
       default: return 'bg-gray-500';
@@ -129,6 +131,8 @@ export default function Goals() {
     switch (status) {
       case 'met': return <CheckCircle className="h-5 w-5 text-green-500" />;
       case 'on_track': return <TrendingUp className="h-5 w-5 text-blue-500" />;
+      case 'at_risk': return <AlertTriangle className="h-5 w-5 text-orange-500" />;
+      case 'critical': return <AlertTriangle className="h-5 w-5 text-red-500" />;
       case 'off_track': return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
       case 'unmet': return <AlertTriangle className="h-5 w-5 text-red-500" />;
       default: return <Clock className="h-5 w-5 text-gray-500" />;
@@ -139,6 +143,8 @@ export default function Goals() {
     const statusConfig = {
       met: { label: "Met ✅", className: "bg-green-500/20 text-green-600 dark:text-green-400" },
       on_track: { label: "On Track 📈", className: "bg-blue-500/20 text-blue-600 dark:text-blue-400" },
+      at_risk: { label: "At Risk ⚠️", className: "bg-orange-500/20 text-orange-600 dark:text-orange-400" },
+      critical: { label: "Critical 🚨", className: "bg-red-500/20 text-red-600 dark:text-red-400" },
       off_track: { label: "Off Track ⚠️", className: "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400" },
       unmet: { label: "Unmet ❌", className: "bg-red-500/20 text-red-600 dark:text-red-400" }
     };
@@ -164,10 +170,15 @@ export default function Goals() {
     }
   };
 
+  // Debug: Log goal statuses to understand what values we're getting
+  console.log("🎯 Goals with progress:", goalsWithProgress.map(g => ({ id: g.id, status: g.status, metric: g.metric })));
+  console.log("🏆 Completed goals:", completedGoals.map(g => ({ id: g.id, status: g.status })));
+
   // Goal status summary for dashboard (dynamic data from fetched goals and history)
+  // Include all possible active status values: on_track, at_risk, critical, off_track
   const goalSummary = {
     total: goalsWithProgress.length,
-    onTrack: goalsWithProgress.filter((g: any) => g.status === 'on_track').length,
+    onTrack: goalsWithProgress.filter((g: any) => ['on_track', 'at_risk', 'critical'].includes(g.status)).length,
     offTrack: goalsWithProgress.filter((g: any) => g.status === 'off_track').length,
     met: completedGoals.filter((g: any) => g.status === 'met').length,
     unmet: completedGoals.filter((g: any) => g.status === 'unmet').length,
