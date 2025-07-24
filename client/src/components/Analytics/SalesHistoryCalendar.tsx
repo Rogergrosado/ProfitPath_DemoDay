@@ -5,7 +5,9 @@ import { getAuthHeaders } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, ChevronLeft, ChevronRight, TrendingUp, DollarSign } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Calendar, ChevronLeft, ChevronRight, TrendingUp, DollarSign, X, Package } from "lucide-react";
+import { format } from "date-fns";
 
 interface SalesHistoryCalendarProps {
   className?: string;
@@ -14,6 +16,9 @@ interface SalesHistoryCalendarProps {
 export function SalesHistoryCalendar({ className = "" }: SalesHistoryCalendarProps) {
   const { user } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedDaySales, setSelectedDaySales] = useState<any[]>([]);
+  const [modalOpen, setModalOpen] = useState(false);
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
 
@@ -70,6 +75,16 @@ export function SalesHistoryCalendar({ className = "" }: SalesHistoryCalendarPro
     return sales.reduce((total: number, sale: any) => total + parseFloat(sale.totalRevenue || 0), 0);
   };
 
+  const handleDateClick = (day: number) => {
+    const sales = salesByDate[day] || [];
+    if (sales.length > 0) {
+      const clickedDate = new Date(currentYear, currentMonth, day);
+      setSelectedDate(clickedDate);
+      setSelectedDaySales(sales);
+      setModalOpen(true);
+    }
+  };
+
   const renderCalendarDay = (day: number) => {
     const sales = salesByDate[day] || [];
     const totalRevenue = getTotalForDate(day);
@@ -79,10 +94,11 @@ export function SalesHistoryCalendar({ className = "" }: SalesHistoryCalendarPro
     return (
       <div
         key={day}
+        onClick={() => handleDateClick(day)}
         className={`
           min-h-[80px] p-2 border border-gray-200 dark:border-slate-600 
           ${isToday ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-600' : 'bg-white dark:bg-slate-800'}
-          ${hasSales ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700' : ''}
+          ${hasSales ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors duration-200' : ''}
         `}
       >
         <div className="flex justify-between items-start mb-1">
@@ -217,6 +233,119 @@ export function SalesHistoryCalendar({ className = "" }: SalesHistoryCalendarPro
           </div>
         )}
       </CardContent>
+
+      {/* Daily Sales Modal */}
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Calendar className="h-5 w-5 text-[#fd7014]" />
+              <span>Sales on {selectedDate && format(selectedDate, 'MMMM d, yyyy')}</span>
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {selectedDaySales.length > 0 ? (
+              <>
+                {/* Summary Stats */}
+                <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-[#fd7014]">
+                      {selectedDaySales.length}
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">SKUs Sold</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-600">
+                      ${selectedDaySales.reduce((total, sale) => total + parseFloat(sale.totalRevenue || 0), 0).toFixed(2)}
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">Revenue</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-600">
+                      {selectedDaySales.reduce((total, sale) => total + parseInt(sale.quantity || 0), 0)}
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">Units Sold</div>
+                  </div>
+                </div>
+
+                {/* Detailed Sales List */}
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {selectedDaySales.map((sale, index) => (
+                    <div 
+                      key={index} 
+                      className="p-4 bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-700 shadow-sm"
+                    >
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <div className="font-semibold text-gray-900 dark:text-white">
+                            {sale.productName || sale.sku}
+                          </div>
+                          <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
+                            <Package className="h-4 w-4" />
+                            <span>SKU: {sale.sku}</span>
+                          </div>
+                        </div>
+                        <Badge variant="secondary" className="bg-[#fd7014]/10 text-[#fd7014] border-[#fd7014]/20">
+                          {sale.marketplace || 'Direct'}
+                        </Badge>
+                      </div>
+                      
+                      <div className="grid grid-cols-3 gap-4 text-sm">
+                        <div>
+                          <div className="text-gray-600 dark:text-gray-400">Units Sold</div>
+                          <div className="font-medium">{sale.quantity} units</div>
+                        </div>
+                        <div>
+                          <div className="text-gray-600 dark:text-gray-400">Unit Price</div>
+                          <div className="font-medium">${parseFloat(sale.unitPrice || 0).toFixed(2)}</div>
+                        </div>
+                        <div>
+                          <div className="text-gray-600 dark:text-gray-400">Total Revenue</div>
+                          <div className="font-medium text-green-600">${parseFloat(sale.totalRevenue || 0).toFixed(2)}</div>
+                        </div>
+                      </div>
+
+                      {sale.profit && (
+                        <div className="mt-2 pt-2 border-t border-gray-100 dark:border-slate-700">
+                          <div className="text-sm">
+                            <span className="text-gray-600 dark:text-gray-400">Profit: </span>
+                            <span className="font-medium text-green-600">${parseFloat(sale.profit).toFixed(2)}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {sale.notes && (
+                        <div className="mt-2 pt-2 border-t border-gray-100 dark:border-slate-700">
+                          <div className="text-sm">
+                            <span className="text-gray-600 dark:text-gray-400">Notes: </span>
+                            <span className="text-gray-900 dark:text-white">{sale.notes}</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No sales recorded for this date.</p>
+              </div>
+            )}
+
+            {/* Close Button */}
+            <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-slate-700">
+              <Button 
+                onClick={() => setModalOpen(false)} 
+                className="bg-[#fd7014] hover:bg-[#e5640f] text-white"
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
