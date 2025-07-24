@@ -25,6 +25,14 @@ ProfitPath is a comprehensive business intelligence dashboard designed for Amazo
   - **Wouter Integration**: Proper routing integration using useLocation hook for client-side navigation
   - **Status**: Production ready - users now have reliable backup navigation across all sub-pages
 
+✅ **Dynamic KPI Card System for Goals**: Complete implementation of real-time goal status tracking with intelligent data separation
+  - **Dynamic Data Source**: KPI cards now use real-time data from goalsWithProgress (active) and completedGoals (history) APIs
+  - **Intelligent Status Calculation**: "On Track" and "Off Track" show active goal counts, "Met" and "Unmet" show historical completion data
+  - **Clear Label Enhancement**: Added "(Active)" and "(History)" prefixes to KPI card labels for better user understanding
+  - **Real-Time Updates**: Goal counts automatically update when goals are created, completed, or status changes
+  - **Data Integrity**: No manual calculations - uses authentic backend-calculated progress and status data
+  - **Status**: Production ready - Goals page KPI dashboard reflects live goal data without placeholder metrics
+
 ✅ **Comprehensive Real-Time Activity Log System**: Complete implementation with database integration and authentic data tracking
   - **Database Schema Complete**: Created activity_log table with proper structure for tracking user actions and metadata storage
   - **Backend API Implementation**: Added /api/activity-log endpoint with user-specific filtering, pagination, and SQL query optimization

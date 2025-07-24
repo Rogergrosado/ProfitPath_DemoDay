@@ -164,13 +164,13 @@ export default function Goals() {
     }
   };
 
-  // Goal status summary for dashboard
+  // Goal status summary for dashboard (dynamic data from fetched goals and history)
   const goalSummary = {
-    total: activeGoals.length,
-    met: activeGoals.filter((g: any) => g.status === 'met').length,
-    onTrack: activeGoals.filter((g: any) => g.status === 'on_track').length,
-    offTrack: activeGoals.filter((g: any) => g.status === 'off_track').length,
-    unmet: activeGoals.filter((g: any) => g.status === 'unmet').length,
+    total: goalsWithProgress.length,
+    onTrack: goalsWithProgress.filter((g: any) => g.status === 'on_track').length,
+    offTrack: goalsWithProgress.filter((g: any) => g.status === 'off_track').length,
+    met: completedGoals.filter((g: any) => g.status === 'met').length,
+    unmet: completedGoals.filter((g: any) => g.status === 'unmet').length,
   };
 
   const handleGoalClick = (goal: any) => {
@@ -223,7 +223,7 @@ export default function Goals() {
               <CardContent className="p-4 text-center">
                 <CheckCircle className="h-8 w-8 text-green-600 mx-auto mb-2" />
                 <div className="text-2xl font-bold text-green-600">{goalSummary.met}</div>
-                <div className="text-sm text-green-700 dark:text-green-300">Met</div>
+                <div className="text-sm text-green-700 dark:text-green-300">History (Met)</div>
               </CardContent>
             </Card>
 
@@ -231,7 +231,7 @@ export default function Goals() {
               <CardContent className="p-4 text-center">
                 <TrendingUp className="h-8 w-8 text-blue-600 mx-auto mb-2" />
                 <div className="text-2xl font-bold text-blue-600">{goalSummary.onTrack}</div>
-                <div className="text-sm text-blue-700 dark:text-blue-300">On Track</div>
+                <div className="text-sm text-blue-700 dark:text-blue-300">Active (On Track)</div>
               </CardContent>
             </Card>
 
@@ -239,7 +239,7 @@ export default function Goals() {
               <CardContent className="p-4 text-center">
                 <AlertTriangle className="h-8 w-8 text-yellow-600 mx-auto mb-2" />
                 <div className="text-2xl font-bold text-yellow-600">{goalSummary.offTrack}</div>
-                <div className="text-sm text-yellow-700 dark:text-yellow-300">Off Track</div>
+                <div className="text-sm text-yellow-700 dark:text-yellow-300">Active (Off Track)</div>
               </CardContent>
             </Card>
 
@@ -247,7 +247,7 @@ export default function Goals() {
               <CardContent className="p-4 text-center">
                 <AlertTriangle className="h-8 w-8 text-red-600 mx-auto mb-2" />
                 <div className="text-2xl font-bold text-red-600">{goalSummary.unmet}</div>
-                <div className="text-sm text-red-700 dark:text-red-300">Unmet</div>
+                <div className="text-sm text-red-700 dark:text-red-300">History (Unmet)</div>
               </CardContent>
             </Card>
           </div>
